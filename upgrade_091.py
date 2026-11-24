@@ -87,7 +87,7 @@ public class Vincent extends PathfinderMob {
             playSound(SoundEvents.PLAYER_ATTACK_STRONG,.65f,.65f);
         }
     }
-}'''.replace('import net.minecraft.world.entity.monster.*;','import net.minecraft.world.entity.monster.*;\nimport net.minecraft.world.entity.boss.wither.WitherBoss;'))
+}'''.replace('import net.minecraft.world.entity.monster.*;','import net.minecraft.world.entity.monster.*;\nimport net.minecraft.world.entity.boss.wither.WitherBoss;\nimport net.minecraft.world.entity.monster.warden.Warden;'))
 write('VincentEncounter.java','''package it.noctis.magic;
 import net.minecraft.core.*;
 import net.minecraft.server.level.*;
