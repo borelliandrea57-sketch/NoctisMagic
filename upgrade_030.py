@@ -131,6 +131,19 @@ public class Encounter {
                 Angel a=Noctis.ANGEL.get().create(l);if(a!=null){a.moveTo(x+.5,pos.getY(),z+.5);if(l.noCollision(a))l.addFreshEntity(a);}
             }
         }
+        if(l.dimension()==Level.OVERWORLD&&!l.isDay()&&p.getRandom().nextInt(4)==0&&l.getDifficulty()!=net.minecraft.world.Difficulty.PEACEFUL&&l.getEntitiesOfClass(Vampire.Friendly.class,p.getBoundingBox().inflate(40)).isEmpty()){
+            boolean door=false;
+            for(BlockPos q:BlockPos.betweenClosed(p.blockPosition().offset(-5,-2,-5),p.blockPosition().offset(5,2,5))){
+                if(l.getBlockState(q).getBlock() instanceof net.minecraft.world.level.block.DoorBlock){door=true;break;}
+            }
+            if(door)for(int i=0;i<12;i++){
+                int x=p.getBlockX()+p.getRandom().nextInt(25)-12,z=p.getBlockZ()+p.getRandom().nextInt(25)-12;
+                if(Math.abs(x-p.getBlockX())+Math.abs(z-p.getBlockZ())<8)continue;
+                BlockPos pos=l.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,xz(x,z));
+                if(!l.hasChunkAt(pos)||Math.abs(pos.getY()-p.getBlockY())>3||!l.canSeeSky(pos)||!l.getBlockState(pos).isAir()||!l.getBlockState(pos.above()).isAir())continue;
+                Vampire.Friendly v=Noctis.FRIENDLY.get().create(l);if(v!=null){v.moveTo(x+.5,pos.getY(),z+.5);if(l.noCollision(v)){l.addFreshEntity(v);break;}}
+            }
+        }
         if(l.dimension()==Level.NETHER&&p.getRandom().nextInt(3)==0&&l.getEntitiesOfClass(Demon.class,p.getBoundingBox().inflate(48)).size()<2){
             for(int i=0;i<12;i++){int x=p.getBlockX()+p.getRandom().nextInt(35)-17,z=p.getBlockZ()+p.getRandom().nextInt(35)-17;
                 BlockPos pos=new BlockPos(x,p.getBlockY()+p.getRandom().nextInt(13)-6,z);
@@ -222,7 +235,7 @@ edit(java/'Client.java',[
                 body.addOrReplaceChild("monocle",CubeListBuilder.create().texOffs(106,0).addBox(1,-8,-6.3f,4,1,.5f).texOffs(106,0).addBox(1,-5,-6.3f,4,1,.5f).texOffs(106,0).addBox(1,-7,-6.3f,1,2,.5f).texOffs(106,0).addBox(4,-7,-6.3f,1,2,.5f).texOffs(106,0).addBox(4,-4,-6.3f,.5f,4,.5f),PartPose.ZERO);
                 body.addOrReplaceChild("bowtie",CubeListBuilder.create().texOffs(112,16).addBox(-3,-3,-6.4f,6,2,.8f),PartPose.ZERO);
                 for(int i=0;i<8;i++){double a=i*Math.PI/4;'''),
-('}else{\\n                r.addOrReplaceChild("body",CubeListBuilder.create().texOffs(0,0).addBox(-3,-7,-2,6,7,4)', '''}else if(k==7){
+('}else{\n                r.addOrReplaceChild("body",CubeListBuilder.create().texOffs(0,0).addBox(-3,-7,-2,6,7,4)', '''}else if(k==7){
                 r.addOrReplaceChild("body",CubeListBuilder.create().texOffs(0,0).addBox(-4,-4,-4,8,8,8),PartPose.offset(0,12,0));
                 for(int ring=0;ring<3;ring++){
                     PartDefinition band=r.addOrReplaceChild("ring"+ring,CubeListBuilder.create(),PartPose.offsetAndRotation(0,12,0,ring==1?1.05f:0,ring==2?1.05f:0,ring==0?.3f:ring==1?-.5f:1.0f));
