@@ -96,7 +96,7 @@ public class VampireLife {
     static void leaveBat(ServerPlayer p){
         CompoundTag d=Noctis.data(p);
         if(d.getBoolean("batGrantedFlight")&&!p.isCreative()&&!p.isSpectator()&&d.getInt("flight")<=0){p.getAbilities().mayfly=false;p.getAbilities().flying=false;p.onUpdateAbilities();d.putBoolean("grantedFlight",false);}
-        d.putBoolean("batForm",false);d.putBoolean("batGrantedFlight",false);p.removeEffect(BAT.get());p.resetFallDistance();
+        if(d.getBoolean("batForm")&&!p.onGround()&&p.isAlive())p.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING,160,0,false,false));d.putBoolean("batForm",false);d.putBoolean("batGrantedFlight",false);p.removeEffect(BAT.get());p.resetFallDistance();
     }
     @SubscribeEvent public static void collect(LivingDeathEvent e){
         if(!(e.getSource().getEntity() instanceof ServerPlayer p))return;
@@ -249,9 +249,10 @@ public class VampireVisuals {
     }
     @Mod.EventBusSubscriber(modid=Noctis.ID,value=Dist.CLIENT,bus=Mod.EventBusSubscriber.Bus.FORGE)
     public static class Render {
+        private static Bat previewBat;
         @SubscribeEvent public static void bat(RenderPlayerEvent.Pre e){
             if(!e.getEntity().hasEffect(VampireLife.BAT.get())||e.getEntity().isInvisible())return;
-            Bat b=EntityType.BAT.create(e.getEntity().level());if(b==null)return;
+            if(previewBat==null||previewBat.level()!=e.getEntity().level())previewBat=EntityType.BAT.create(e.getEntity().level());Bat b=previewBat;if(b==null)return; b.setPos(e.getEntity().getX(),e.getEntity().getY(),e.getEntity().getZ());
             b.setResting(false);b.tickCount=e.getEntity().tickCount;b.setYRot(e.getEntity().getYRot());b.yRotO=b.getYRot();b.yBodyRot=b.getYRot();b.yBodyRotO=b.yBodyRot;
             b.setXRot(e.getEntity().getXRot());b.xRotO=b.getXRot();b.setYHeadRot(b.getYRot());
             e.setCanceled(true);e.getPoseStack().pushPose();e.getPoseStack().translate(0,.4,0);
