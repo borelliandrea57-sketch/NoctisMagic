@@ -142,12 +142,10 @@ for u in (36,48):
         for y in (28,29):mark(x,y)
 # tail band across both sides, top and bottom
 rect(40,0,20,11,(27,29,43),6)
-for x in range(43,45):
-    for y in range(0,8):mark(x,y)
-for x in range(53,55):
-    for y in range(0,8):mark(x,y)
-for y in (9,10):
-    for x in range(40,60):mark(x,y)
+for x in (43,44,53,54):
+    for y in range(8,11):mark(x,y)
+for y in (3,4):
+    for x in list(range(48,50))+list(range(50,52)):mark(x,y)
 rect(64,0,12,8,(26,28,40),5)
 for i in range(4):
     u=i*10;rect(u,48,8,7,(30,31,43),5)
