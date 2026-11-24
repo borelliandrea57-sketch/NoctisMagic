@@ -46,6 +46,7 @@ jobs:
           python3 upgrade_082.py "$(dirname "$wrapper")"
           python3 upgrade_090.py "$(dirname "$wrapper")"
           python3 upgrade_091.py "$(dirname "$wrapper")"
+          python3 upgrade_092.py "$(dirname "$wrapper")"
       - name: Integra musica del boss
         run: |
           audio='One_-_Winged Angel (Final Fantasy VII) - Arnie Roth.mp3'
@@ -54,7 +55,7 @@ jobs:
           ffmpeg -nostdin -loglevel error -y -i "$audio" -map 0:a:0 -vn -c:a libvorbis -q:a 5 "$target"
           test -s "$target"
           ffprobe -v error -show_entries stream=codec_name:format=duration -of default=noprint_wrappers=1 "$target"
-          sed -i 's/^mod_version=0\.8\.0$/mod_version=0.9.1/' "$PROJECT_DIR/gradle.properties"
+          sed -i 's/^mod_version=0\.8\.0$/mod_version=0.9.2/' "$PROJECT_DIR/gradle.properties"
       - name: Compila Forge
         run: |
           cd "$PROJECT_DIR"
@@ -74,6 +75,6 @@ jobs:
       - name: Carica JAR
         uses: actions/upload-artifact@v4
         with:
-          name: NoctisMagic-0.9.1
+          name: NoctisMagic-0.9.2
           path: progetto/**/build/libs/*.jar
           if-no-files-found: error
