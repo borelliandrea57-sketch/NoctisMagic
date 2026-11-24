@@ -27,6 +27,7 @@ jobs:
           wrapper=$(find progetto -name gradlew -type f -print -quit)
           test -n "$wrapper"
           echo "PROJECT_DIR=$(dirname "$wrapper")" >> "$GITHUB_ENV"
+          python3 upgrade_030.py "$(dirname "$wrapper")"
       - name: Compila Forge
         run: |
           cd "$PROJECT_DIR"
@@ -34,6 +35,6 @@ jobs:
       - name: Carica JAR
         uses: actions/upload-artifact@v4
         with:
-          name: NoctisMagic-0.2.0
+          name: NoctisMagic-0.3.0
           path: progetto/**/build/libs/*.jar
           if-no-files-found: error
