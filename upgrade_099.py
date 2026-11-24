@@ -75,9 +75,9 @@ p=java/'DragonClient.java';s=p.read_text(encoding='utf-8');start=s.index('    st
         {dragon=null;}
         @Override protected void init(){
             all=ForgeRegistries.ITEMS.getValues().stream().filter(i->i!=Items.AIR).sorted(Comparator.comparing(i->new ItemStack(i).getHoverName().getString(),String.CASE_INSENSITIVE_ORDER)).toList();
-            filtered=all;compact=width<420;w=Math.min(width-16,compact?340:430);h=Math.min(height-12,252);x=(width-w)/2;y=(height-h)/2;
+            filtered=all;compact=width<420;w=Math.min(width-16,compact?340:430);h=Math.min(height-12,252);x=width>=620?width-w-12:(width-w)/2;y=(height-h)/2;
             int detail=compact?0:128;cols=Math.max(3,(w-24-detail)/CELL);rows=Math.max(1,(h-(compact?129:101))/CELL);capacity=cols*rows;gx=x+12;gy=y+66;detailX=gx+cols*CELL+8;
-            search=new EditBox(font,x+12,y+42,w-24,19,Component.literal("Cerca oggetto"));search.setMaxLength(100);search.setHint(Component.literal("Cerca nome o ID della mod..."));addRenderableWidget(search);
+            search=new EditBox(font,x+12,y+44,w-24,19,Component.literal("Cerca oggetto"));search.setMaxLength(100);search.setHint(Component.literal("Cerca nome o ID della mod..."));addRenderableWidget(search);
             int navY=gy+rows*CELL+3;
             prev=addRenderableWidget(Button.builder(Component.literal("<"),b->{page--;refresh();}).bounds(gx,navY,24,18).build());
             next=addRenderableWidget(Button.builder(Component.literal(">"),b->{page++;refresh();}).bounds(gx+cols*CELL-24,navY,24,18).build());
@@ -95,9 +95,9 @@ p=java/'DragonClient.java';s=p.read_text(encoding='utf-8');start=s.index('    st
             g.fill(x-2,y-2,x+w+2,y+h+2,0xAA07120D);
             g.fill(x,y,x+w,y+h,0xE90A211A);
             g.renderOutline(x,y,w,h,0xFFBC934C);g.renderOutline(x+3,y+3,w-6,h-6,0xFF416A4B);
-            g.drawCenteredString(font,"S H E N R O N",width/2,y+9,0xFFFFD987);
-            g.drawCenteredString(font,"Le sette sfere hanno risposto al tuo richiamo.",width/2,y+22,0xFFCFD9B9);
-            for(int i=0;i<7;i++)g.renderItem(new ItemStack(Noctis.DRAGON_BALLS.get(i).get()),x+w/2-56+i*16,y+29);
+            g.drawCenteredString(font,"S H E N R O N",x+w/2,y+9,0xFFFFD987);
+            g.drawCenteredString(font,"Le sette sfere hanno risposto al tuo richiamo.",x+w/2,y+20,0xFFCFD9B9);
+            for(int i=0;i<7;i++)g.renderItem(new ItemStack(Noctis.DRAGON_BALLS.get(i).get()),x+w/2-56+i*16,y+27);
             int hover=indexAt(mx,my);
             for(int i=0;i<capacity;i++){
                 int n=page*capacity+i,sx=gx+i%cols*CELL,sy=gy+i/cols*CELL;
