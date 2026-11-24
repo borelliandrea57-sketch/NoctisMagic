@@ -70,6 +70,11 @@ public class DragonWish {
             return InteractionResultHolder.sidedSuccess(p.getItemInHand(h),l.isClientSide);
         }
     }
+    @SubscribeEvent public static void reopen(net.minecraftforge.event.ServerChatEvent e){
+        if(!e.getRawText().trim().equalsIgnoreCase("shenron"))return;
+        ServerPlayer p=e.getPlayer();var data=Noctis.data(p);
+        if(data.hasUUID("dragonWishId")&&p.serverLevel().getEntity(data.getUUID("dragonWishId")) instanceof Shenron d&&d.canWish(p))open(p,d);
+    }
     static int count(Player p,Item item){int n=0;for(int i=0;i<p.getInventory().getContainerSize();i++){ItemStack s=p.getInventory().getItem(i);if(s.is(item))n+=s.getCount();}return n;}
     static void take(Player p,Item item){for(int i=0;i<p.getInventory().getContainerSize();i++){ItemStack s=p.getInventory().getItem(i);if(s.is(item)){s.shrink(1);p.getInventory().setChanged();return;}}}
     static void invoke(ServerPlayer p){
@@ -90,7 +95,7 @@ public class DragonWish {
         l.sendParticles(ParticleTypes.END_ROD,d.getX(),d.getY()+4,d.getZ(),130,3,4,3,.15);
         l.sendParticles(ParticleTypes.ELECTRIC_SPARK,d.getX(),d.getY()+3,d.getZ(),100,3,3,3,.15);
         d.playSound(net.minecraft.sounds.SoundEvents.ENDER_DRAGON_GROWL,2,.65f);
-        p.sendSystemMessage(Component.literal("Shenron: Hai riunito le sette sfere. Esprimi il tuo desiderio."));
+        p.sendSystemMessage(Component.literal("Shenron: Hai riunito le sette sfere. Esprimi il tuo desiderio. Scrivi shenron in chat per riaprire il menu."));
         open(p,d);
     }
     static void grant(ServerPlayer p,Wish wish){
@@ -209,7 +214,7 @@ public class ShenronRenderer extends MobRenderer<Shenron,ShenronRenderer.Model>{
         MeshDefinition m=new MeshDefinition();PartDefinition r=m.getRoot();
         for(int i=0;i<30;i++){
             float size=6.5f-i*.12f;
-            PartDefinition b=r.addOrReplaceChild("coil"+i,c(0,0).addBox(-size/2,-size/2,-4,size,size,8).texOffs(0,24).addBox(-size*.37f,size/2-.5f,-4,size*.74f,1,8),PartPose.ZERO);
+            PartDefinition b=r.addOrReplaceChild("coil"+i,c(0,0).addBox(-size/2,-size/2,-4.8f,size,size,9.6f).texOffs(0,24).addBox(-size*.37f,size/2-.5f,-4.8f,size*.74f,1,9.6f),PartPose.ZERO);
             b.addOrReplaceChild("spine",c(40,0).addBox(-1,-size/2-2,-2,2,3,4),PartPose.offsetAndRotation(0,0,0,-.3f,0,0));
             if(i==4||i==9)for(int s:new int[]{-1,1}){
                 PartDefinition leg=b.addOrReplaceChild("claw"+s,c(40,16).addBox(-1,0,-1,2,5,2).texOffs(52,16).addBox(-1,4,-3,2,2,3),PartPose.offsetAndRotation(s*size*.45f,1,0,-.45f,0,-s*.9f));
