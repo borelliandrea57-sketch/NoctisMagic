@@ -3,27 +3,37 @@ name: Compila Noctis Magic
 on:
   workflow_dispatch:
   push:
-    branches: [main, master]
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
+      - name: Estrai progetto
+        run: |
+          unzip -t 'NoctisMagic-0.2.0-progetto-compilazione(1).zip'
+          unzip -q 'NoctisMagic-0.2.0-progetto-compilazione(1).zip' -d progetto
+          wrapper=$(find progetto -name gradlew -type f -print -quit)
+          test -n "$wrapper"
+          echo "PROJECT_DIR=$(dirname "$wrapper")" >> "$GITHUB_ENV"
       - name: Compila Forge
-        run: bash gradlew --no-daemon build
-
+        run: |
+          cd "$PROJECT_DIR"
+          bash gradlew --no-daemon build --stacktrace
       - name: Carica JAR
         uses: actions/upload-artifact@v4
         with:
           name: NoctisMagic-0.2.0
-          path: build/libs/*.jar
+          path: progetto/**/build/libs/*.jar
           if-no-files-found: error
