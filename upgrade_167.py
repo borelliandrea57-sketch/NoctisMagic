@@ -2409,3 +2409,48 @@ for name in ['metal_sonic','neo_metal_sonic']:
    q=(y*W+x)*4;pix[q:q+4]=bytes((*c,255))
  png(p,W,H,pix)
 print('Metal Sonic and Neo Metal Sonic hover with no gravity, a central detailed turbine, thrust particles and airborne poses.')
+
+
+# Gennaro: blue cap and blue shirt with red lettering; golden rosary and crucifix.
+edit('ScrapThiefClient.java','        return LayerDefinition.create(m,128,64);','''        PartDefinition body=r.getChild("body");
+        for(int side:new int[]{-1,1}){
+            for(int i=0;i<8;i++){
+                float t=i/7f;
+                body.addOrReplaceChild("rosary"+side+"_"+i,CubeListBuilder.create().texOffs(108,32).addBox(-.23f,-.23f,-.23f,.46f,.46f,.46f),PartPose.offsetAndRotation(side*(2.95f-2.65f*t),.3f+t*4.8f,-2.13f-.12f*t,0,0,side*.17f));
+            }
+        }
+        body.addOrReplaceChild("crucifix",CubeListBuilder.create().texOffs(108,38).addBox(-.19f,0,-.20f,.38f,2.6f,.4f).texOffs(112,38).addBox(-.95f,.76f,-.22f,1.9f,.39f,.44f),PartPose.offset(0,5.05f,-2.25f));
+        return LayerDefinition.create(m,128,64);''')
+p=assets/'textures/entity/scrap_thief.png'
+raw=p.read_bytes();off=8;compressed=b''
+while off<len(raw):
+ n=int.from_bytes(raw[off:off+4],'big');tag=raw[off+4:off+8];data=raw[off+8:off+8+n];off+=n+12
+ if tag==b'IHDR':ow,oh=struct.unpack('>II',data[:8])
+ if tag==b'IDAT':compressed+=data
+scan=zlib.decompress(compressed);stride=ow*4+1
+assert all(scan[y*stride]==0 for y in range(oh))
+old=b''.join(scan[y*stride+1:(y+1)*stride] for y in range(oh))
+W,H=ow*4,oh*4;pix=bytearray(W*H*4)
+for y in range(H):
+ for x in range(W):
+  u,v=x//4,y//4;q=(v*ow+u)*4;c=tuple(old[q:q+3]);alpha=old[q+3]
+  if (16<=u<40 and 16<=v<32) or (40<=u<56 and 16<=v<32 and not (44<=u<48 and v>=24)) or (64<=u<104 and v<14) or (64<=u<92 and 16<=v<23):
+   grain=.92+.08*math.sin(x*1.7+y*2.1)**2
+   c=shade((24,62,159),grain*(.90+.13*math.sin(u*.8)**2));alpha=255
+  if 108<=u<124 and 32<=v<46:
+   c=shade((226,172,46),.80+.22*math.sin(x*.66+y*.19)**2);alpha=255
+  q=(y*W+x)*4;pix[q:q+4]=bytes((*c,alpha))
+letters={'L':['100','100','100','100','111'],'E':['111','100','110','100','111'],'T':['111','010','010','010','010']}
+def word(x,y,scale):
+ for i,ch in enumerate('LETE'):
+  for dy,row in enumerate(letters[ch]):
+   for dx,b in enumerate(row):
+    if b=='1':
+     for a in range(scale):
+      for z in range(scale):
+       xx=x+(i*4+dx)*scale+z;yy=y+dy*scale+a;q=(yy*W+xx)*4
+       pix[q:q+4]=bytes((235,35,47,255))
+word(81,93,2)
+word(296,38,2)
+png(p,W,H,pix)
+print('Gennaro blue cap and shirt, red LETE lettering, golden 3D rosary and crucifix.')
