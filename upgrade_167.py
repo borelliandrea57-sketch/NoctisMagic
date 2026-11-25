@@ -3559,3 +3559,130 @@ edit('CrossoverGuest.java','void say(ServerLevel l,String s){NpcDialogue.say(l,C
         NpcDialogue.say(l,msg);
     }''')
 print('Uploaded English Objection recordings and distinct blue/red courtroom dialogue.')
+
+
+# Client-side facial expressions and smooth, varied idle poses for Waifu and Slime Lady.
+write('AdmirerExpressions.java','''package it.noctis.magic;
+public final class AdmirerExpressions{
+ private static int cycle(Admirer e){return Math.floorMod(e.tickCount+e.getId()*47,240);}
+ public static int pose(Admirer e){return Math.floorMod(Math.floorDiv(e.tickCount+e.getId()*47,240),5)+1;}
+ public static float blend(Admirer e,float amount){
+  if(e.isInSittingPose()||e.hurtTime>0||amount>.09f)return 0;
+  int t=cycle(e);if(t>90)return 0;
+  float f=Math.min(1f,Math.min(t/12f,(90-t)/12f));return f*f*(3-2*f);
+ }
+ public static int expression(Admirer e){
+  if(e.hurtTime>0)return 4;
+  if(e.isInSittingPose())return 1;
+  if(cycle(e)<90&&e.getDeltaMovement().horizontalDistanceSqr()<.003){return switch(pose(e)){case 1,4->1;case 2->3;case 3->2;default->0;};}
+  return Math.floorMod(e.tickCount+e.getId()*13,97)<3?4:0;
+ }
+}''')
+p=java/'WaifuTailoredClient.java';s=p.read_text(encoding='utf-8')
+s=s.replace('import it.noctis.magic.SculptedGuestsClient.Part;','import it.noctis.magic.SculptedGuestsClient.Part;\nimport it.noctis.magic.SculptedGuestsClient.V;\nimport it.noctis.magic.SculptedGuestsClient.Q;',1)
+s=s.replace(' static class M extends EntityModel<Admirer>{',''' static V facial(V v,boolean f){return new V(v.x(),v.y(),v.z(),f?Math.max(.025f,Math.min(.975f,.5f+v.x()/6.75f)):.025f,Math.max(.025f,Math.min(.975f,(v.y()+7.4f)/7.4f)),v.nx(),v.ny(),v.nz());}
+ static void face(Part p){for(int i=0;i<p.faces.size();i++){Q q=p.faces.get(i);if(q.tile()!=5)continue;boolean f=q.a().nz()+q.b().nz()+q.c().nz()+q.d().nz()<-.05f;p.faces.set(i,new Q(facial(q.a(),f),facial(q.b(),f),facial(q.c(),f),facial(q.d(),f),5));}}
+ static class M extends EntityModel<Admirer>{''',1)
+s=s.replace('   head.loft(6,24,-8.65f','   face(head);\n   head.loft(6,24,-8.65f',1)
+a=s.index('   boolean sit=e.isInSittingPose();',s.index('public void setupAnim'))
+b=s.index('\n  }',a)
+s=s[:a]+'''   boolean sit=e.isInSittingPose();float f=AdmirerExpressions.blend(e,amount),breath=(float)Math.sin(age*.12f);
+   int pose=AdmirerExpressions.pose(e);
+   body.rz=(float)Math.sin(limb*.7f)*amount*.035f;body.rx=sit?-.06f:0;body.ry=0;
+   head.ry=yaw*.01745f;head.rx=pitch*.015f;head.rz=0;
+   for(int i=0;i<2;i++){int side=i==0?-1:1;float step=(float)Math.cos(limb*.666f+i*Math.PI)*amount;
+    arms[i].rx=-step*.52f;arms[i].rz=side*.10f;arms[i].ry=0;fore[i].rx=-.10f-Math.max(0,step)*.28f;fore[i].rz=0;fore[i].ry=0;
+    legs[i].rx=sit?-1.35f:step*.61f;legs[i].rz=0;knees[i].rx=sit?.12f:Math.max(0,-step)*.34f;
+    locks[i].rx=amount*.15f+breath*.035f;ribbons[i].rx=amount*.30f+(float)Math.sin(age*.12f+i)*.06f;
+   }
+   if(f>0){
+    if(pose==1){arms[1].rx=-.9f*f;arms[1].rz=.55f*f;fore[1].rx=-1.45f*f;fore[1].rz=(float)Math.sin(age*.38f)*.35f*f;head.rz=.10f*f;}
+    if(pose==2){for(int i=0;i<2;i++){int side=i==0?-1:1;arms[i].rz=side*.55f*f;fore[i].rz=-side*.95f*f;fore[i].rx=-.32f*f;}body.ry=.12f*f;head.rz=-.07f*f;}
+    if(pose==3){arms[0].rx=-.64f*f;fore[0].rx=-1.78f*f;arms[0].rz=-.32f*f;head.rz=-.19f*f;head.rx+=.10f*f;}
+    if(pose==4){arms[0].rz=-1.75f*f;arms[1].rz=1.75f*f;fore[0].rx=-.31f*f;fore[1].rx=-.31f*f;body.rx=-.08f*f;}
+    if(pose==5){arms[0].rx=-.66f*f;arms[1].rx=-.66f*f;fore[0].rx=-1.23f*f;fore[1].rx=-1.23f*f;fore[0].rz=.30f*f;fore[1].rz=-.30f*f;head.rz=.13f*f;}
+   }
+   if(e.hurtTime>0){head.rx-=.15f;body.rx=.13f;arms[0].rx=-.40f;arms[1].rx=-.40f;}
+'''+s[b:]
+s=s.replace('return new ResourceLocation(Noctis.ID,"textures/entity/waifu_tailored.png");','return new ResourceLocation(Noctis.ID,"textures/entity/waifu_expression_"+AdmirerExpressions.expression(e)+".png");',1)
+p.write_text(s,encoding='utf-8')
+# Slime retains all twelve flowing-water frames and gains facial variants and five gestures.
+p=java/'SlimeLadyModel.java';s=p.read_text(encoding='utf-8')
+a='        for(int i=0;i<12;i++){ModelPart p=skirt.getChild("pleat"+i);'
+assert a in s
+s=s.replace(a,'''        float f=AdmirerExpressions.blend(e,amount);int pose=AdmirerExpressions.pose(e);head.zRot=0;body.yRot=0;
+        for(int i=0;i<2;i++){arms[i].yRot=0;arms[i].getChild("hand").xRot=0;arms[i].getChild("hand").zRot=0;legs[i].zRot=0;}
+        if(f>0){
+          if(pose==1){arms[1].xRot=-1.45f*f;arms[1].zRot=-.65f*f;arms[1].getChild("hand").zRot=(float)Math.sin(age*.35f)*.42f*f;head.zRot=.13f*f;}
+          if(pose==2){arms[0].zRot=.38f*f;arms[1].zRot=-.38f*f;arms[0].xRot=-.35f*f;arms[1].xRot=-.35f*f;body.yRot=.15f*f;}
+          if(pose==3){arms[0].xRot=-1.15f*f;arms[0].zRot=.35f*f;head.zRot=-.17f*f;head.xRot+=.12f*f;}
+          if(pose==4){arms[0].zRot=1.7f*f;arms[1].zRot=-1.7f*f;head.yScale+=.04f*f;body.xRot=-.08f*f;}
+          if(pose==5){arms[0].xRot=-1.0f*f;arms[1].xRot=-1.0f*f;arms[0].yRot=.22f*f;arms[1].yRot=-.22f*f;head.zRot=.12f*f;}
+        }
+        if(e.hurtTime>0){head.xRot-=.15f;body.xRot=.14f;}
+'''+a,1)
+s=s.replace('return FRAMES[(e.tickCount/3)%FRAMES.length];','return new ResourceLocation(Noctis.ID,"textures/entity/slime_expression_"+AdmirerExpressions.expression(e)+"_"+(e.tickCount/3%12)+".png");',1)
+p.write_text(s,encoding='utf-8')
+def read_rgba(p):
+ raw=p.read_bytes();i=8;compressed=b''
+ while i<len(raw):
+  n=int.from_bytes(raw[i:i+4],'big');tag=raw[i+4:i+8];data=raw[i+8:i+8+n];i+=n+12
+  if tag==b'IHDR':w,h=struct.unpack('>II',data[:8])
+  if tag==b'IDAT':compressed+=data
+ scan=zlib.decompress(compressed);stride=w*4+1
+ assert all(scan[y*stride]==0 for y in range(h)),p
+ return w,h,bytearray(b''.join(scan[y*stride+1:(y+1)*stride] for y in range(h)))
+def expression_color(u,v,kind,slime,frame=0):
+ base=(43,188,212) if slime else (235,190,165)
+ shadow=(12,111,155) if slime else (171,95,100)
+ c=mix(base,shadow,.14*abs(u-.5)*2+.08*v)
+ if slime:c=mix(c,(75,222,235),.11*(1+math.sin(u*10+v*8-frame*math.pi/6)))
+ ink=(19,49,65) if slime else (62,30,48)
+ eyes=[.72] if slime else [.33,.67]
+ for ex in eyes:
+  dx=(u-ex)/(.20 if slime else .125);ey=.43 if slime else .49
+  dy=(v-ey)/(.18 if slime else .077)
+  if kind==4 or kind==1:
+   if abs(dx)<1 and abs(dy-(.45 if kind==4 else -.30)*(1-dx*dx))<.13:c=ink
+  else:
+   if kind==2:dy*=.75
+   if kind==3:dy=(dy+.40*dx*(1 if ex>.5 else -1))*1.4
+   d=dx*dx+dy*dy
+   if d<1.04:c=ink
+   if d<.79:c=(247,247,235)
+   if d<.76 and abs(dx+.04)<.46:c=(218,158,35) if slime else (157,68,173)
+   if d<.72 and abs(dx+.04)<.18:c=ink
+   if d<.7 and (dx+.18)**2+(dy+.23)**2<.06:c=(255,255,250)
+  if kind==3 and abs(dx)<.92 and abs(v-(ey-.12+dx*.055*(1 if ex>.5 else -1)))<.012:c=ink
+ center=.59 if slime else .5;mx=u-center;my=v-(.75 if slime else .79)
+ if kind==2:
+  if (mx/.058)**2+(my/.071)**2<1:c=ink
+ elif kind==1:
+  if abs(mx)<.10 and abs(my-.028*(1-(mx/.10)**2))<.012:c=ink
+ elif kind==3:
+  if abs(mx)<.07 and abs(my+.018*(1-(mx/.07)**2))<.012:c=ink
+ elif kind==4:
+  if abs(mx)<.075 and abs(my+.014*(1-(mx/.075)**2))<.015:c=ink
+ elif abs(mx)<.06 and abs(my)<.010:c=ink
+ return c
+w,h,base=read_rgba(assets/'textures/entity/waifu_tailored.png')
+for kind in range(5):
+ pix=bytearray(base)
+ for y in range(128):
+  for x in range(128):
+   u=max(0,min(1,(x-3)/121));v=max(0,min(1,(y-3)/121))
+   c=expression_color(u,v,kind,False);off=(y*w+5*128+x)*4;pix[off:off+4]=bytes((*c,255))
+ png(assets/'textures/entity'/f'waifu_expression_{kind}.png',w,h,pix)
+# Locate the actual front face UV island from the generated model rather than guessing.
+m=re.search(r'PartDefinition h=r\.addOrReplaceChild\("head",CubeListBuilder\.create\(\)\.texOffs\((\d+),(\d+)\)',s)
+assert m,'slime head UV not found'
+sx,sy=(int(m.group(1))+6)*3,(int(m.group(2))+6)*3
+for frame in range(12):
+ w,h,base=read_rgba(assets/'textures/entity'/f'slime_flow_{frame}.png')
+ for kind in range(5):
+  pix=bytearray(base)
+  for y in range(21):
+   for x in range(24):
+    c=expression_color((x+.5)/24,(y+.5)/21,kind,True,frame);off=((sy+y)*w+sx+x)*4;pix[off:off+4]=bytes((*c,255))
+  png(assets/'textures/entity'/f'slime_expression_{kind}_{frame}.png',w,h,pix)
+print('Waifu and Slime Girl: five facial states, five smooth idle gestures, preserved gel-flow animation.')
