@@ -177,12 +177,12 @@ for tile in (5,10,11,13,15,16,17,26,27,28):
 im.save(assets/'textures/entity/cinnabar_rework.png')
 # Server-driven liquid metal attack with a windup, visible travelling globes and splash damage.
 p=java/'GemGuest.java';s=p.read_text(encoding='utf-8')
-a='UUID partner;int conversation=80,answer=0,pose=0;';assert a in s
+a='public class GemGuest extends PathfinderMob{';assert a in s
 s=s.replace(a,a+''' private int metalPose,metalCooldown=40,metalFlight,metalPool;
     private UUID metalTarget;
     private net.minecraft.world.phys.Vec3 metalFrom,metalTo;
 ''',1)
-a='super.tick();if(pose>0)pose--;if(conversation>0)conversation--;';assert a in s
+a='super.tick();';assert a in s
 s=s.replace(a,a+'if(metalPose>0)metalPose--;',1)
 a='if(!(level() instanceof ServerLevel l))return;';assert a in s
 s=s.replace(a,a+'\n        if(!phos())tickLiquidMetal(l);',1)
