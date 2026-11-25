@@ -6166,3 +6166,261 @@ s=s.replace(a,'''  if(incoming instanceof Arsene a&&a.owner!=null){
 '''+a,1)
 p.write_text(s,encoding='utf-8')
 print('Phantom faces: matched open mask, detailed eyes and hair, layered demonic metal face; Joker summons on damage and retargets his own Persona.')
+
+
+# Strongly readable character dialogue, preserving custom styles for all other messages.
+write('NpcDialogue.java','''package it.noctis.magic;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextColor;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.player.Player;
+public final class NpcDialogue {
+ static Component styled(Component message){
+  String s=message.getString();int split=s.indexOf(':');if(split<0)return message;
+  String name=s.substring(0,split);String line=s.substring(split+1).stripLeading();
+  int color=switch(name){
+   case "Joker"->0xFF4059;
+   case "Lelouch"->0xCF8CFF;
+   case "C.C.","CC"->0xA8FF81;
+   case "Lucy"->0x95E7FF;
+   case "Faputa"->0xFFCA62;
+   case "Giorno Giovanna","Giorno"->0xFFE16D;
+   case "Leon Kennedy","Leon"->0xB9D8F4;
+   case "Miles Edgeworth"->0xFF5555;
+   case "Phoenix Wright"->0x5599FF;
+   case "Guts"->0xFF5555;
+   case "Griffith"->0xE6E5FF;
+   default->-1;
+  };
+  if(color<0)return message;
+  return Component.literal(name+": ").withStyle(st->st.withColor(TextColor.fromRgb(color)).withBold(true))
+   .append(Component.literal(line).withStyle(st->st.withColor(TextColor.fromRgb(color)).withBold(name.equals("Joker")&&line.contains("Persona")||name.equals("Lelouch")&&line.contains("ti ordino")||line.contains("OBJECTION")||name.equals("Guts"))));
+ }
+ public static void say(Player p,Component message){if(p.getServer()!=null)p.getServer().getPlayerList().broadcastSystemMessage(styled(message),false);}
+ public static void say(ServerLevel l,Component message){l.getServer().getPlayerList().broadcastSystemMessage(styled(message),false);}
+}''')
+
+# Shared safety check for forced Geass movement. No forced jump, cliff or liquid crossing.
+write('GeassWalkSafety.java','''package it.noctis.magic;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+final class GeassWalkSafety{
+ static Vec3 direction(int i){double a=i*Math.PI/8;return new Vec3(-Math.sin(a),0,Math.cos(a));}
+ static boolean hazardous(Level l,BlockPos p){
+  var s=l.getBlockState(p);
+  return !l.getFluidState(p).isEmpty()||s.is(Blocks.CACTUS)||s.is(Blocks.MAGMA_BLOCK)||s.is(Blocks.CAMPFIRE)||s.is(Blocks.SOUL_CAMPFIRE)||s.is(Blocks.FIRE)||s.is(Blocks.SOUL_FIRE)||s.is(Blocks.POWDER_SNOW)||s.is(Blocks.SWEET_BERRY_BUSH)||s.is(Blocks.COBWEB);
+ }
+ static boolean safe(Player p,Vec3 d,double distance){
+  Level l=p.level();
+  if(p.isInWater()||p.isInLava()||!p.onGround())return false;
+  for(double step=.25;step<=distance+.001;step+=.25){
+   AABB box=p.getBoundingBox().move(d.x*step,0,d.z*step);
+   BlockPos low=BlockPos.containing(box.minX+.015,box.minY+.02,box.minZ+.015);
+   BlockPos high=BlockPos.containing(box.maxX-.015,box.maxY-.02,box.maxZ-.015);
+   for(int x=low.getX();x<=high.getX();x++)for(int z=low.getZ();z<=high.getZ();z++){
+    BlockPos feet=new BlockPos(x,low.getY(),z);
+    if(!l.hasChunkAt(feet)||!l.getWorldBorder().isWithinBounds(feet))return false;
+    BlockPos floor=BlockPos.containing(x+.5,box.minY-.10,z+.5);
+    if(hazardous(l,floor)||!l.getBlockState(floor).isFaceSturdy(l,floor,Direction.UP))return false;
+    for(int y=low.getY();y<=high.getY();y++)if(hazardous(l,new BlockPos(x,y,z)))return false;
+   }
+   if(!l.noCollision(p,box))return false;
+  }
+  return true;
+ }
+}''')
+p=java/'GeassExile.java';s=p.read_text(encoding='utf-8')
+s=s.replace('int ticks=1200,dir=-1,blocked;','int ticks=1200,dir=-1,blocked,stuck,avoid=-1;Vec3 checkpoint;',1)
+s=s.replace('origin=g.position();last=p.position();','origin=g.position();last=p.position();checkpoint=last;',1)
+s=s.replace('Component.translatable("message.noctismagic.geass_order")','Component.translatable("message.noctismagic.geass_order").withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE,net.minecraft.ChatFormatting.BOLD)',1)
+a=s.index(' static boolean safe(ServerPlayer p,Vec3 d){');b=s.index(' static void release',a)
+s=s[:a]+''' static boolean safe(ServerPlayer p,Vec3 d){return GeassWalkSafety.safe(p,d,1.25);}
+'''+s[b:]
+a=s.index('  if(o.dir<0||p.tickCount%5==0');b=s.index('  if(o.dir<16){p.setYRot',a)
+s=s[:a]+'''  if(p.tickCount%20==0){
+   double progress=now.subtract(o.checkpoint).horizontalDistance();
+   if(o.dir>=0&&o.dir<16&&progress<.28){o.stuck++;o.avoid=o.dir;}
+   else if(progress>.60){o.stuck=0;o.avoid=-1;}
+   o.checkpoint=now;
+   if(o.stuck>=4){release(p,false);return;}
+  }
+  if(o.dir<0||o.dir==16||p.tickCount%5==0||!safe(p,direction(o.dir))){
+   Vec3 away=now.subtract(o.origin).multiply(1,0,1);
+   if(away.lengthSqr()<.01)away=p.getLookAngle().multiply(1,0,1);
+   away=away.normalize();
+   int best=-1;double score=-Double.MAX_VALUE;
+   for(int i=0;i<16;i++){
+    if(i==o.avoid)continue;
+    Vec3 d=direction(i);if(!safe(p,d))continue;
+    // Prefer an open escape corridor; permit a sideways detour around obstacles.
+    double v=d.dot(away)+(i==o.dir?.28:0)+(GeassWalkSafety.safe(p,d,2.5)?.60:0)+(GeassWalkSafety.safe(p,d,4.0)?.35:0);
+    if(v>score){best=i;score=v;}
+   }
+   if(best<0){best=16;o.blocked++;if(o.blocked>=60){release(p,false);return;}}
+   else o.blocked=0;
+   if(o.dir!=best||!p.hasEffect(VampireLife.GEASS_EXILE.get())){
+    o.dir=best;p.removeEffect(VampireLife.GEASS_EXILE.get());p.addEffect(new MobEffectInstance(VampireLife.GEASS_EXILE.get(),o.ticks+20,best,false,false,false));
+   }
+  }
+'''+s[b:]
+s=s.replace('Component.translatable("message.noctismagic.geass_progress",(o.ticks+19)/20)','Component.translatable("message.noctismagic.geass_progress",(o.ticks+19)/20).withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE,net.minecraft.ChatFormatting.BOLD)',1)
+p.write_text(s,encoding='utf-8')
+p=java/'GeassExileClient.java';s=p.read_text(encoding='utf-8')
+a=s.index('  input.leftImpulse=');b=s.index('  if(dir<16){',a)
+s=s[:a]+'''  boolean walk=dir<16&&GeassWalkSafety.safe(p,GeassWalkSafety.direction(dir),.75);
+  input.leftImpulse=0;input.forwardImpulse=walk?.72f:0;input.up=walk;input.down=false;input.left=false;input.right=false;input.shiftKeyDown=false;input.jumping=false;
+'''+s[b:]
+p.write_text(s,encoding='utf-8')
+for lang in ('it_it','en_us'):
+ p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
+ d['message.noctismagic.geass_break']='Il Geass perde la presa: movimento interrotto.' if lang=='it_it' else 'Geass loses its hold: movement interrupted.'
+ write_noctis_json_resource(p,d)
+
+# Chamfered Minecraft-style heads with real flat front planes and matching UVs.
+# Each ring has a short corner bevel, unlike the former egg-shaped radial loft.
+write('VoxelPortrait.java','''package it.noctis.magic;
+import it.noctis.magic.SculptedGuestsClient.Part;
+import it.noctis.magic.SculptedGuestsClient.V;
+import it.noctis.magic.SculptedGuestsClient.Q;
+final class VoxelPortrait{
+ static float clamp(float x){return Math.max(.025f,Math.min(.975f,x));}
+ static float[][] ring(float y,float w,float d,float z,float c){
+  return new float[][]{{-w+c,y,z-d},{w-c,y,z-d},{w,y,z-d+c},{w,y,z+d-c},{w-c,y,z+d},{-w+c,y,z+d},{-w,y,z+d-c},{-w,y,z-d+c}};
+ }
+ static V v(float[] a,float nx,float ny,float nz,boolean front,float uvWidth,float uvHeight){
+  return new V(a[0],a[1],a[2],front?clamp(.5f+a[0]/uvWidth):.025f,clamp((a[1]+uvHeight)/uvHeight),nx,ny,nz);
+ }
+ static void head(Part p,int face,int skin,float uvWidth,float uvHeight,float... data){
+  int n=data.length/5;float[][][] rings=new float[n][][];
+  for(int i=0;i<n;i++){int k=i*5;rings[i]=ring(data[k],data[k+1],data[k+2],data[k+3],data[k+4]);}
+  for(int i=0;i<n-1;i++)for(int j=0;j<8;j++){
+   int k=(j+1)%8;float[] a=rings[i][j],b=rings[i+1][j],c=rings[i+1][k],d=rings[i][k];
+   float nx=d[2]-a[2],nz=-(d[0]-a[0]),m=(float)Math.hypot(nx,nz);
+   nx/=m;nz/=m;boolean f=j==0||j==1||j==7;
+   p.faces.add(new Q(v(a,nx,0,nz,f,uvWidth,uvHeight),v(b,nx,0,nz,f,uvWidth,uvHeight),v(c,nx,0,nz,f,uvWidth,uvHeight),v(d,nx,0,nz,f,uvWidth,uvHeight),f?face:skin));
+  }
+  for(int end:new int[]{0,n-1}){
+   float[][] r=rings[end];float[] center={0,r[0][1],(r[0][2]+r[4][2])*.5f};float ny=end==0?-1:1;
+   V C=v(center,0,ny,0,false,uvWidth,uvHeight);
+   for(int j=0;j<8;j++){
+    V A=v(r[j],0,ny,0,false,uvWidth,uvHeight),B=v(r[(j+1)%8],0,ny,0,false,uvWidth,uvHeight);
+    p.faces.add(end==0?new Q(C,B,A,C,skin):new Q(C,A,B,C,skin));
+   }
+  }
+ }
+ static V scale(V v,float x,float y,float z){
+  return new V(v.x()*x,v.y()*y,v.z()*z,v.u(),v.v(),v.nx(),v.ny(),v.nz());
+ }
+ static void enlarge(Part p,float x,float y,float z){
+  for(int i=0;i<p.faces.size();i++){Q q=p.faces.get(i);p.faces.set(i,new Q(scale(q.a(),x,y,z),scale(q.b(),x,y,z),scale(q.c(),x,y,z),scale(q.d(),x,y,z),q.tile()));}
+  for(Part c:p.children){c.x*=x;c.y*=y;c.z*=z;enlarge(c,x,y,z);}
+ }
+}''')
+p=java/'GeassSculptedClient.java';s=p.read_text(encoding='utf-8')
+a=s.index('            }else{\n                head.loft(6,40,');b=s.index('            // A low tapered hair shell',a)
+s=s[:a]+'''            }else{
+                VoxelPortrait.head(head,6,7,6.25f,7.8f,-7.85f,2.36f,2.12f,.10f,.36f,-7.25f,2.80f,2.53f,.02f,.46f,-5.00f,2.85f,2.53f,0,.46f,-3.00f,2.73f,2.45f,-.05f,.42f,-1.00f,2.34f,2.14f,-.13f,.48f,-.15f,1.92f,1.76f,-.12f,.41f);
+            }
+            if(cc){
+                projectFace(head);
+                head.loft(7,16,-4.8f,0,-2.36f,.14f,.10f,-3.9f,0,-2.55f,.24f,.23f,-3.05f,0,-2.78f,.33f,.29f,-2.80f,0,-2.62f,.23f,.15f);
+            }else{
+                // Shallow pixel-scale bridge and sculpted neck; no needle-shaped chin.
+                head.loft(7,8,-4.30f,0,-2.43f,.12f,.08f,-3.45f,0,-2.58f,.24f,.17f,-2.94f,0,-2.70f,.30f,.18f,-2.70f,0,-2.48f,.21f,.10f);
+                head.loft(7,8,-.65f,0,.03f,.79f,.80f,.55f,0,.03f,.97f,.95f,1.50f,0,.03f,1.12f,1.04f);
+            }
+            for(int side:new int[]{-1,1})head.oval(7,side*(cc?2.62f:2.82f),-3.60f,.06f,.30f,.66f,.42f);
+'''+s[b:]
+s=s.replace('AngularHeads.apply(head,6,cc?.85f:.82f,.98f,.94f,cc?.16f:.19f);','if(cc)AngularHeads.apply(head,6,.85f,.98f,.94f,.16f);',1)
+# More layered block-like hair in front, without replacing the existing animated rear and side locks.
+s=s.replace('q.loft(8,12,-.50f,0,.52f','q.loft(8,cc?12:8,-.50f,0,.52f',1)
+p.write_text(s,encoding='utf-8')
+
+p=java/'LucySculptedClient.java';s=p.read_text(encoding='utf-8')
+a=s.index('   head.loft(6,64,');b=s.index('   head.oval(7,-3.02f',a)
+s=s[:a]+'''   VoxelPortrait.head(head,6,7,6.5f,7.65f,-7.65f,2.43f,2.22f,.08f,.40f,-7.10f,2.92f,2.60f,.02f,.45f,-4.30f,3.03f,2.68f,-.02f,.48f,-2.10f,2.75f,2.45f,-.09f,.48f,-.65f,2.35f,2.08f,-.15f,.52f,0,1.91f,1.72f,-.15f,.43f);
+   head.loft(7,8,-4.05f,0,-2.62f,.12f,.07f,-3.24f,0,-2.73f,.19f,.13f,-2.72f,0,-2.86f,.25f,.17f,-2.46f,0,-2.66f,.16f,.08f);
+'''+s[b:]
+p.write_text(s,encoding='utf-8')
+
+p=java/'FaputaSculptedClient.java';s=p.read_text(encoding='utf-8')
+a=s.index('   head.loft(5,32,');b=s.index('   // Cream crown',a)
+s=s[:a]+'''   VoxelPortrait.head(head,5,0,6.4f,6.9f,-6.8f,2.45f,2.10f,.13f,.37f,-6.10f,2.90f,2.47f,.05f,.44f,-3.70f,2.88f,2.51f,-.04f,.46f,-2.0f,2.52f,2.23f,-.13f,.43f,-.48f,1.99f,1.75f,-.20f,.46f,0,1.59f,1.38f,-.23f,.35f);
+   // A head-attached neck overlaps the body-attached neck across all pitch/yaw angles.
+   head.loft(0,12,-.75f,0,.15f,.87f,.90f,0,0,.15f,1.02f,1.04f,1.12f,0,.19f,1.18f,1.13f,2.35f,0,.27f,1.30f,1.26f);
+   body.loft(0,12,-4.05f,0,-.41f,1.03f,1.10f,-2.55f,0,-.29f,1.31f,1.28f,-1.00f,0,0,1.85f,1.47f);
+   head.loft(0,8,-2.74f,0,-2.40f,.16f,.11f,-2.35f,0,-2.57f,.24f,.19f,-2.08f,0,-2.36f,.15f,.09f);
+   for(int side:new int[]{-1,1}){
+    head.blade(0,side*.60f,-3.78f,-2.54f,side*1.92f,-4.34f,-2.50f,.20f);
+    // Multiple layered fur tufts along the cheeks and behind the ears.
+    for(int j=0;j<5;j++)head.blade(1,side*(2.50f+.04f*j),-4.05f+j*.36f,.34f+j*.12f,side*(3.34f+.12f*j),-2.07f+j*.40f,.48f+j*.15f,.63f);
+   }
+'''+s[b:]
+# Reposition and enlarge all four independent forelimbs; maintain their own animation pivots.
+a='    // Thick furred haunches'
+assert a in s
+s=s.replace(a,'''    for(int j=0;j<2;j++){
+     int k=i*2+j;
+     for(int n=0;n<7;n++){
+      float y=.68f+n*.48f,x=s*(.70f+.12f*(n%3));
+      fore[k].blade(1,x,y,.35f,x+s*.64f,y+1.14f,.72f,.73f);
+      fore[k].blade(1,-x*.8f,y,.48f,-x*.8f-s*.42f,y+1.02f,.88f,.50f);
+     }
+     VoxelPortrait.enlarge(arms[k],1.27f,1.14f,1.23f);
+     arms[k].x+=s*(j==0?.24f:.16f);
+    }
+    // Thick furred haunches''',1)
+a='   // Three individually animated'
+s=s.replace(a,'''   // Jagged cream tufts on back, shoulders and hips, visible from behind.
+   for(int side:new int[]{-1,1})for(int j=0;j<7;j++){
+    float y=5.0f+j*.87f;
+    body.blade(1,side*(1.40f+.18f*(j%3)),y,1.63f,side*(2.47f+.10f*(j%3)),y+1.35f,2.48f,.83f);
+   }
+   // Three individually animated''',1)
+s=s.replace('head.z=-.35f-(rage?.38f:.14f);','head.z=-.35f-(rage?.18f:.08f);',1)
+s=s.replace('head.y=-3.5f;','head.y=-3.15f;',1)
+p.write_text(s,encoding='utf-8')
+
+# More deliberately pixel-defined eye details, shading and hair, keeping each original palette.
+for name,tile,hair,base,iris in [
+ ('lelouch_sculpted',6,8,(233,178,145),(168,91,219)),
+ ('lucy_sculpted',6,9,(250,226,212),(116,206,194)),
+ ('faputa_sculpted',5,1,(128,99,76),(248,197,77)),
+ ('faputa_rage',5,1,(128,99,76),(255,112,51))]:
+ p=assets/'textures/entity'/f'{name}.png';W,H,pix=read_rgba(p)
+ fap=name.startswith('faputa');lucy=name.startswith('lucy');rage=name.endswith('rage')
+ for y in range(128):
+  for x in range(128):
+   u=sat2((x-3)/121);v=sat2((y-3)/121);f=abs(u-.5)
+   # Pixel art planes: deliberate 2px clusters, not smooth sphere shading.
+   U=round(u*60)/60;V=round(v*60)/60
+   c=mix(base,(75,43,45) if fap else (151,91,93),.14*sat2((abs(U-.5)-.16)*4)+.09*V)
+   c=mix(c,(180,135,96) if fap else (255,233,213),.17*math.exp(-((U-.50)/.17)**2-((V-.46)/.31)**2))
+   for side in (-1,1):
+    ex=.5+side*.174;dx=side*(U-ex)/(.111 if fap else .121);ey=.49-(.045 if fap else .024)*dx
+    dy=(V-ey)/(.053 if fap else .055)
+    d0=abs(dx)**1.6+abs(dy)**1.45
+    if d0<1.17:c=(39,24,33)
+    if d0<.82:c=(229,211,172) if fap else (247,240,231)
+    if d0<.81 and abs(dx+.04)<.41:
+     c=mix(shade(iris,.46),iris,sat2((dy+.7)/1.4))
+     if abs(dx+.04)<(.10 if fap else .16):c=(24,17,28)
+     if (dx+.16)**2+(dy+.20)**2<.055:c=(255,246,217)
+    if abs(dx)<1.04 and abs(V-(.397-(.045 if fap else .025)*dx))<.011:c=(51,30,33) if fap else (62,39,48)
+    if lucy and abs(dx)<.99 and .88<dy<1.20-.23*abs(dx):c=(194,62,86)
+   if f<.028 and abs(V-.674)<.012:c=mix(c,(91,48,43) if fap else (167,99,100),.65)
+   mouth=.787-(.024 if fap else .009)*(1-min(1,f/.09))+.025*(U-.5)
+   if f<(.095 if fap else .066) and abs(V-mouth)<(.019 if rage else .009):c=(52,23,27) if fap else (123,57,74)
+   if rage and .035<f<.067 and abs(V-mouth)<.013:c=(239,225,194)
+   off=((tile//8*128+y)*W+tile%8*128+x)*4;pix[off:off+4]=bytes((*c,255))
+   off=((hair//8*128+y)*W+hair%8*128+x)*4;c=tuple(pix[off:off+3])
+   wave=math.sin(u*math.pi*(22 if fap else 33)+v*7+.32*math.sin(v*13))
+   c=shade(c,.91+.16*max(0,wave)**5)
+   pix[off:off+4]=bytes((*c,255))
+ png(p,W,H,pix)
+print('Colored NPC dialogue, safer Geass forced walking, voxel portrait heads and enlarged four-armed Faputa with overlapping neck geometry.')
