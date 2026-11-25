@@ -5044,3 +5044,252 @@ for n in ('ExodiaRitual.java','ExodiaEgg.java'):
  s=s[:i]+s[i:].replace(marker,marker+'\n  RitualQuests.complete(p,"exodia");\n  p.connection.disconnect(Component.literal("Hai vinto il duello.").withStyle(ChatFormatting.GOLD,ChatFormatting.BOLD));',1)
  p.write_text(s,encoding='utf-8')
 print('Leon: adult projected face, long swept fringe, locked line-of-fire and controlled aim; Exodia victory disconnect restored.')
+
+
+# Dedicated Arsene mesh: long angular masquerade demon, layered articulated raven wings.
+edit('SculptedGuestsClient.java','e.registerEntityRenderer(Noctis.ARSENE.get(),c->new R<Arsene>(c,1));','')
+write('ArseneDetailedClient.java','''package it.noctis.magic;
+import com.mojang.blaze3d.vertex.*;
+import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.renderer.entity.*;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import it.noctis.magic.SculptedGuestsClient.Part;
+import it.noctis.magic.SculptedGuestsClient.V;
+import it.noctis.magic.SculptedGuestsClient.Q;
+@Mod.EventBusSubscriber(modid=Noctis.ID,value=Dist.CLIENT,bus=Mod.EventBusSubscriber.Bus.MOD)
+public class ArseneDetailedClient{
+ @SubscribeEvent public static void renderers(EntityRenderersEvent.RegisterRenderers e){e.registerEntityRenderer(Noctis.ARSENE.get(),R::new);}
+ static void feather(Part p,int tile,float x,float y,float z,float X,float Y,float Z,float w){
+  Part f=p.child(x,y,z);
+  float dx=X-x,dy=Y-y,dz=Z-z;
+  f.rz=-(float)Math.atan2(dx,dy);
+  float length=(float)Math.sqrt(dx*dx+dy*dy);
+  f.loft(tile,10,0,0,0,w*.26f,.16f,length*.18f,0,dz*.15f,w*.58f,.29f,length*.48f,.15f,dz*.42f,w*.49f,.22f,length*.79f,.25f,dz*.75f,w*.29f,.14f,length,.45f,dz,.016f,.025f);
+  f.blade(5,0,.45f,-.28f,.32f,length*.88f,dz*.84f-.12f,.12f);
+ }
+ static void cord(Part p,float x,float y,float X,float Y,float z,float sag){
+  for(int j=0;j<24;j++){
+   float t=j/23f;
+   p.oval(4,x+(X-x)*t,y+(Y-y)*t+sag*(float)Math.sin(t*Math.PI),z-.12f*(float)Math.sin(t*Math.PI),.105f,.105f,.105f);
+  }
+ }
+ static class M extends EntityModel<Arsene>{
+  final Part root=new Part(0,0,0),body=root.child(0,0,0),head=body.child(0,-.9f,0);
+  final Part[] arms=new Part[2],elbows=new Part[2],legs=new Part[2],knees=new Part[2],wings=new Part[2],tips=new Part[2],tails=new Part[2];
+  M(){
+   body.loft(0,20,-.9f,0,0,1.28f,1.05f,.15f,0,0,3.03f,1.57f,2.0f,0,-.10f,2.66f,1.58f,4.3f,0,0,1.80f,1.14f,7.1f,0,0,1.38f,.99f,9.2f,0,0,1.85f,1.26f,10.7f,0,0,2.06f,1.34f);
+   body.loft(6,20,-.4f,0,0,1.09f,.98f,.75f,0,-.10f,1.42f,1.21f);
+   body.loft(6,20,3.5f,0,-.14f,1.93f,1.34f,5.0f,0,-.16f,1.53f,1.19f,8.5f,0,-.1f,1.48f,1.13f,10.45f,0,-.3f,.78f,.78f);
+   for(int side:new int[]{-1,1}){
+    body.blade(1,side*1.08f,-.35f,.25f,side*2.37f,-4.2f,.95f,1.64f);
+    body.blade(0,side*2.48f,.25f,-1.03f,side*.72f,3.26f,-1.43f,1.63f);
+    body.blade(1,side*2.57f,.15f,-.86f,side*2.54f,3.74f,-.55f,1.27f);
+    body.blade(3,side*.32f,3.23f,-1.50f,side*1.40f,10.70f,-.73f,.37f);
+    for(int j=0;j<4;j++){
+     body.blade(1,side*.72f,4.15f+j*.85f,-1.42f,0,4.83f+j*.85f,-1.39f,.26f);
+     body.oval(4,side*.74f,4.18f+j*.85f,-1.48f,.10f,.10f,.08f);
+    }
+    body.blade(6,side*1.42f,8.2f,-.75f,side*.58f,14.0f,.20f,1.7f);
+   }
+   // Layered white jabot and twin sagging gold chains.
+   for(int j=0;j<4;j++){
+    float y=.15f+j*.68f,w=1.20f-j*.14f;
+    body.loft(2,14,y,0,-1.58f,w*.76f,.23f,y+.24f,0,-1.80f,w,.30f,y+.64f,0,-1.92f,w*.44f,.12f);
+    body.blade(9,-w*.70f,y+.31f,-2.02f,w*.55f,y+.48f,-2.01f,.09f);
+   }
+   cord(body,-2.38f,.22f,2.30f,-.38f,-1.61f,2.90f);
+   cord(body,-2.23f,.78f,2.13f,.10f,-1.72f,3.23f);
+   // Narrow black mask, sculpted angular red cheek plates, two luminous eye slits.
+   head.loft(6,8,-6.3f,0,.17f,.80f,.84f,-5.8f,0,0,1.86f,1.43f,-4.8f,0,-.05f,1.94f,1.53f,-3.1f,0,-.25f,1.37f,1.27f,-.75f,0,-.68f,.30f,.51f,-.45f,0,-.73f,.035f,.08f);
+   for(int side:new int[]{-1,1}){
+    head.blade(1,side*1.65f,-5.32f,-.87f,side*.31f,-1.20f,-1.38f,.78f);
+    head.blade(3,side*1.52f,-5.50f,-1.04f,side*.12f,-1.14f,-1.41f,.22f);
+    Part eye=head.child(side*.77f,-3.85f,-1.41f);eye.rz=-side*.38f;
+    eye.blade(12,-.65f,0,0,.65f,0,0,.29f);
+    head.blade(6,side*.62f,-5.65f,.03f,side*3.9f,-9.1f,.35f,.68f);
+    Part ornament=head.child(side*3.32f,-7.05f,.24f);ornament.rz=side*.62f;
+    ornament.loft(6,12,-.40f,0,0,.21f,.25f,.0f,0,0,1.36f,.77f,.38f,0,0,.24f,.30f);
+    ornament.blade(1,-.85f,0,-.47f,.88f,.12f,-.47f,.29f);
+    ornament.blade(3,0,.02f,-.55f,side*.48f,-.12f,-.55f,.19f);
+   }
+   // The tall hexagonal chimney crown is open-looking, not a conventional top hat.
+   head.loft(6,6,-19.35f,0,.40f,1.29f,1.18f,-19.0f,0,.40f,1.30f,1.20f,-12.0f,0,.25f,1.08f,1.09f,-6.04f,0,.06f,.77f,.91f);
+   for(int side:new int[]{-1,1})head.blade(3,side*.90f,-18.80f,-.63f,side*.56f,-6.20f,-.70f,.17f);
+   head.loft(10,6,-19.38f,0,.40f,.98f,.88f,-19.31f,0,.40f,.98f,.88f);
+   for(int i=0;i<2;i++){
+    int side=i==0?-1:1;
+    arms[i]=body.child(side*3.10f,.15f,0);
+    arms[i].loft(0,16,-.30f,0,0,.90f,.92f,.6f,0,0,1.17f,1.09f,2.2f,0,0,.94f,.92f,5.05f,0,0,.67f,.68f);
+    arms[i].blade(1,side*.83f,.40f,-.65f,side*.54f,4.88f,-.45f,.27f);
+    elbows[i]=arms[i].child(0,5.0f,0);
+    elbows[i].loft(0,16,-.15f,0,0,.67f,.68f,1.5f,0,0,.96f,.92f,4.2f,0,0,.60f,.61f);
+    elbows[i].loft(1,12,3.48f,0,0,.81f,.78f,4.15f,0,0,.75f,.74f);
+    elbows[i].oval(0,0,4.89f,-.10f,.75f,.83f,.53f);
+    for(int j=0;j<4;j++){
+     float x=-.48f+j*.32f;
+     Part finger=elbows[i].child(x,5.2f,-.16f);finger.rz=(j-1.5f)*.19f;
+     finger.loft(0,8,0,0,0,.16f,.19f,.52f,0,-.18f,.17f,.16f,.92f,0,-.40f,.11f,.11f);
+     finger.loft(6,8,.77f,0,-.33f,.12f,.12f,1.22f,0,-.68f,.10f,.08f,1.56f,0,-.79f,.025f,.025f);
+    }
+    elbows[i].blade(6,-side*.55f,4.62f,-.22f,-side*.96f,5.63f,-.89f,.40f);
+    legs[i]=body.child(side*1.52f,9.75f,0);
+    legs[i].loft(0,16,-.46f,0,0,1.36f,1.30f,.95f,0,0,1.43f,1.32f,3.45f,0,0,1.10f,1.06f,7.05f,0,0,.65f,.68f);
+    for(int j=0;j<3;j++)legs[i].blade(1,side*(.50f+j*.26f),.65f,-1.12f,side*(.30f+j*.15f),6.32f,-.66f,.46f);
+    knees[i]=legs[i].child(0,6.9f,0);
+    knees[i].loft(0,14,-.24f,0,0,.66f,.65f,1.5f,0,0,.76f,.74f,4.5f,0,.07f,.53f,.54f,7.2f,0,-.09f,.36f,.40f,8.6f,0,-.55f,.18f,.27f);
+    knees[i].loft(6,10,7.7f,0,-.18f,.37f,.40f,8.7f,0,-.67f,.36f,.50f,9.5f,0,-1.29f,.035f,.07f);
+    knees[i].blade(3,side*.47f,4.7f,.34f,side*.88f,2.87f,1.43f,.61f);
+    knees[i].blade(6,side*.44f,6.0f,.30f,side*.88f,4.85f,1.18f,.52f);
+    tails[i]=body.child(side*1.38f,7.5f,1.1f);
+    tails[i].blade(0,0,0,0,side*1.7f,10.5f,2.35f,2.2f);
+    tails[i].blade(6,0,1.8f,.21f,side*.75f,9.4f,2.42f,1.2f);
+    // Two joints per wing, with independent curved primaries and three rows of overlapping coverts.
+    Part wing=wings[i]=body.child(side*2.18f,.25f,1.62f);
+    feather(wing,7,0,0,.3f,side*12.2f,-3.0f,1.0f,4.4f);
+    for(int j=0;j<12;j++){
+     float t=j/11f;
+     feather(wing,7,side*(.8f+10.7f*t),-.35f-2.6f*t,.4f,side*(2.4f+11.4f*t),11.6f-4.4f*t,1.55f,1.65f+1.0f*t);
+    }
+    for(int row=0;row<3;row++)for(int j=0;j<11;j++){
+     float t=j/10f;
+     feather(wing,row%2==0?8:7,side*(.75f+10.8f*t),-.9f-2.4f*t+row*1.38f,-.40f-row*.14f,side*(1.9f+11.1f*t),2.7f+row*1.8f-1.65f*t,.10f,1.72f);
+    }
+    Part tip=tips[i]=wing.child(side*10.8f,-2.7f,1.15f);
+    feather(tip,7,0,0,0,side*10.2f,5.8f,.6f,3.3f);
+    for(int j=0;j<13;j++){
+     float t=j/12f;
+     feather(tip,7,side*(.10f+9.4f*t),.12f+4.9f*t,.1f,side*(1.5f+11.3f*t),12.8f+7.2f*t,1.40f+1.3f*t,2.35f-.54f*t);
+    }
+    for(int row=0;row<3;row++)for(int j=0;j<10;j++){
+     float t=j/9f;
+     feather(tip,row==1?7:8,side*(.1f+9.0f*t),.1f+4.1f*t+row*1.40f,-.4f-.14f*row,side*(1.1f+10.0f*t),3.4f+6.0f*t+row*1.80f,.2f,1.66f);
+    }
+   }
+  }
+  @Override public void setupAnim(Arsene e,float limb,float amount,float age,float yaw,float pitch){
+   float cast=e.casting(),wave=(float)Math.sin(age*.095f);
+   root.y= -1.0f+wave*.38f;body.rz=.09f+cast*.07f;
+   head.ry=yaw*.012f;head.rx=pitch*.009f;head.rz=-.10f;
+   for(int i=0;i<2;i++){
+    int side=i==0?-1:1;
+    arms[i].rx=i==0?-.12f-cast*.72f:-.70f-cast*.53f;
+    arms[i].rz=-side*(i==0?.78f:1.13f)-side*cast*.28f;
+    elbows[i].rx=i==0?-.38f:-.80f;
+    legs[i].rz=side*(i==0?.32f:.24f);legs[i].rx=i==0?-.58f:.20f;
+    knees[i].rx=i==0?.88f:.13f;
+    tails[i].rx=.18f+wave*.10f;tails[i].rz=side*.13f;
+    wings[i].ry=side*(.13f+wave*.25f+cast*.20f);wings[i].rz=side*(.06f+wave*.11f);
+    tips[i].ry=side*(.14f+wave*.23f);tips[i].rz=side*(-.10f+wave*.11f);
+   }
+  }
+  @Override public void renderToBuffer(PoseStack p,VertexConsumer v,int light,int overlay,float r,float g,float b,float a){root.draw(p,v,light,overlay,r,g,b,a);}
+ }
+ static class R extends MobRenderer<Arsene,M>{
+  R(EntityRendererProvider.Context c){super(c,new M(),.70f);}
+  @Override protected void scale(Arsene e,PoseStack p,float partial){p.scale(1.33f,1.33f,1.33f);}
+  @Override public ResourceLocation getTextureLocation(Arsene e){return new ResourceLocation(Noctis.ID,"textures/entity/arsene_detailed.png");}
+ }
+}''')
+W,H=1024,512;pix=bytearray(W*H*4)
+pal=[(155,15,39),(210,30,49),(235,233,225),(99,104,125),(218,168,65),(74,80,102),(27,29,41),(22,25,39),(39,43,61),(128,130,145),(9,11,19),(72,10,27),(255,57,36)]
+for m,base in enumerate(pal):
+ for y in range(128):
+  v=sat2((y-3)/121)
+  for x in range(128):
+   u=sat2((x-3)/121)
+   c=shade(base,.72+.28*math.sin(math.pi*u))
+   if m in (0,1,6):
+    c=mix(c,(242,92,91) if m<2 else (108,116,143),.32*math.exp(-((u-.33)/.12)**2))
+    c=mix(c,(43,7,21) if m<2 else (7,10,18),.36*math.exp(-((u-.78)/.15)**2))
+    c=shade(c,.93+.07*math.sin(u*48+v*19)**2)
+   if m in (7,8):
+    vein=math.sin((u-.5)*math.pi*28+v*14)
+    c=mix(c,(88,103,134),.27*max(0,vein)**5+.15*math.exp(-((u-.48)/.07)**2))
+    c=mix(c,(7,9,16),.35*max(0,-vein)**5+.15*v)
+   if m==4:c=mix(c,(255,233,153),.55*math.sin(math.pi*u)**2)
+   if m==12:c=mix((255,40,27),(255,193,122),.70*math.sin(math.pi*u)**2)
+   off=((m//8*128+y)*W+m%8*128+x)*4;pix[off:off+4]=bytes((*c,255))
+png(assets/'textures/entity/arsene_detailed.png',W,H,pix)
+
+# Sculpt narrower heads with real profile changes, not merely a new skin.
+write('AngularHeads.java','''package it.noctis.magic;
+import it.noctis.magic.SculptedGuestsClient.Part;
+import it.noctis.magic.SculptedGuestsClient.V;
+import it.noctis.magic.SculptedGuestsClient.Q;
+final class AngularHeads{
+ static V shape(V v,float width,float length,float depth,float taper,boolean face){
+  float y=v.y(),lower=Math.max(0,Math.min(1,(y+4.0f)/4.0f));
+  float k=width*(face?1-taper*lower:1);
+  return new V(v.x()*k,y*length,v.z()*depth,v.u(),v.v(),v.nx(),v.ny(),v.nz());
+ }
+ static void apply(Part p,int faceTile,float width,float length,float depth,float taper){
+  for(int i=0;i<p.faces.size();i++){
+   Q q=p.faces.get(i);boolean face=q.tile()==faceTile;
+   p.faces.set(i,new Q(shape(q.a(),width,length,depth,taper,face),shape(q.b(),width,length,depth,taper,face),shape(q.c(),width,length,depth,taper,face),shape(q.d(),width,length,depth,taper,face),q.tile()));
+  }
+  for(Part child:p.children){
+   child.x*=width;child.y*=length;child.z*=depth;
+   apply(child,-1,width,1,depth,0);
+  }
+ }
+}''')
+for file,tile,expr in [('JokerDetailedClient.java',7,'AngularHeads.apply(head,7,.86f,.96f,.94f,.17f);'),('GeassSculptedClient.java',6,'AngularHeads.apply(head,6,cc?.85f:.82f,.98f,.94f,cc?.16f:.19f);'),('GiornoSculptedClient.java',5,'AngularHeads.apply(head,5,.86f,.97f,.93f,.15f);')]:
+ p=java/file;s=p.read_text(encoding='utf-8')
+ # apply once at the end of the mesh constructor, after all hair and facial features exist.
+ a=s.index('@Override public void setupAnim')
+ b=s.rfind('}',0,a);assert b>=0,file
+ s=s[:b]+expr+'\n  '+s[b:]
+ p.write_text(s,encoding='utf-8')
+# More refined face shading and individual hair striations; preserve the existing eye positions and mask.
+for name,face_tile,hair_tile in [('joker_detailed',7,9),('cc_sculpted',6,8),('lelouch_sculpted',6,8),('giorno_sculpted',5,6)]:
+ p=assets/'textures/entity'/f'{name}.png';w,h,pix=read_rgba(p)
+ for y in range(128):
+  v=sat2((y-3)/121)
+  for x in range(128):
+   u=sat2((x-3)/121);f=abs(u-.5)
+   off=((face_tile//8*128+y)*w+face_tile%8*128+x)*4
+   c=tuple(pix[off:off+3])
+   # cheeks and temples receive directional contour; do not paint over eye/lip ink.
+   if c[0]>c[1]*1.08 and c[1]>100 and .54<v<.76:
+    g=math.exp(-((f-(.22-.29*(v-.55)))/.06)**2)
+    c=mix(c,(110,61,66),.23*g*math.sin(math.pi*sat2((v-.54)/.22)))
+    c=mix(c,(255,219,190),.16*math.exp(-((f-.11)/.055)**2))
+   pix[off:off+4]=bytes((*c,255))
+   off=((hair_tile//8*128+y)*w+hair_tile%8*128+x)*4
+   c=tuple(pix[off:off+3]);wave=math.sin(u*math.pi*40+v*4.2+.46*math.sin(v*8))
+   c=shade(c,.90+.15*max(0,wave)**5+.04*math.sin(v*13))
+   pix[off:off+4]=bytes((*c,255))
+ png(p,w,h,pix)
+
+# Leon crouches while fighting, advances on distant enemies and strafes around nearby ones.
+p=java/'CrossoverGuest.java';s=p.read_text(encoding='utf-8')
+s=s.replace('int aimLock=0;','int aimLock=0;int strafeSide=1;',1)
+s=s.replace('aimLock=0;return;\n            }\n            Vec3 point=', 'aimLock=0;setShiftKeyDown(false);return;\n            }\n            setShiftKeyDown(true);\n            Vec3 point=',1)
+s=s.replace('            getNavigation().stop();\n            Vec3 eye=getEyePosition();','''            // Approach until firing distance, then periodically flank on traversable ground.
+            if(tickCount%12==0){
+                if(range>9.0)getNavigation().moveTo(t,1.08);
+                else if(range>2.4){
+                    if(tickCount%60==0)strafeSide=-strafeSide;
+                    Vec3 toward=t.position().subtract(position()).multiply(1,0,1).normalize();
+                    Vec3 side=new Vec3(-toward.z,0,toward.x).scale(strafeSide*2.4);
+                    Vec3 dest=position().add(side).add(toward.scale(range>6?1.4:range<4?-1.3:0));
+                    var path=getNavigation().createPath(net.minecraft.core.BlockPos.containing(dest.x,dest.y,dest.z),0);
+                    if(path!=null&&path.canReach())getNavigation().moveTo(path,.86);
+                    else{strafeSide=-strafeSide;getNavigation().stop();}
+                }else getNavigation().stop();
+            }
+            Vec3 eye=getEyePosition();''',1)
+# Synchronize sneak pose via existing entity flag; clear it immediately when no target remains.
+s=s.replace('if(!t.isAlive()){setTarget(null);aimLock=0;l.broadcastEntityEvent(this,(byte)106);}','if(!t.isAlive()){setTarget(null);aimLock=0;setShiftKeyDown(false);l.broadcastEntityEvent(this,(byte)106);}',1)
+p.write_text(s,encoding='utf-8')
+p=java/'LeonSculptedClient.java';s=p.read_text(encoding='utf-8')
+s=s.replace('float pose=e.aiming()?1:a;','float pose=e.aiming()?1:a;\n            float crouch=e.isShiftKeyDown()?1:0;\n            root.y=1.8f*crouch;body.rx=.13f*crouch;head.rx=-.10f*crouch;',1)
+s=s.replace('head.rx=aimPitch*.82f;','head.rx=aimPitch*.82f-.13f*crouch;',1)
+s=s.replace('arms[i].rx=-w*.55f*(1-pose)+pose*(i==1?-1.47f+aimPitch:-1.03f+aimPitch);','arms[i].rx=-w*.55f*(1-pose)+pose*(i==1?-1.47f+aimPitch:-1.03f+aimPitch)-.13f*crouch;',1)
+s=s.replace('legs[i].rx=w*.65f;calves[i].rx=Math.max(0,-w)*.35f;','legs[i].rx=w*.58f-.33f*crouch;calves[i].rx=Math.max(0,-w)*.35f+.60f*crouch;',1)
+p.write_text(s,encoding='utf-8')
+print('Dedicated Arsene, narrower non-chibi heads, refined facial and hair textures, Leon combat crouch/approach/flank.')
