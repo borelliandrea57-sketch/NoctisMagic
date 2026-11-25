@@ -311,3 +311,32 @@ for lang in ('it_it','en_us'):
     d['item.noctismagic.castle_egg']='Uovo del Castello di Valdracula' if lang=='it_it' else 'Valdracula Castle Egg'
     p.write_text(json.dumps(d,ensure_ascii=False,indent=2),encoding='utf-8')
 print('Gothic monuments: cathedral 61x91x66, castle 91x101x76; staged safe placement')
+
+
+# NPC speech is server-wide, independent of distance and dimension. Keep technical messages private.
+import re
+(java/'NpcDialogue.java').write_text('''package it.noctis.magic;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerLevel;
+public final class NpcDialogue {
+    public static void say(Player p,Component message){if(p.getServer()!=null)p.getServer().getPlayerList().broadcastSystemMessage(message,false);}
+    public static void say(ServerLevel l,Component message){l.getServer().getPlayerList().broadcastSystemMessage(message,false);}
+}''',encoding='utf-8')
+prefixes=('Vampiro:', 'Demone:', 'SirPiovra:', 'Sora:', 'Gesu:', 'Gesù:', 'Vincent:', 'Raiden:', 'Guts:', 'Gabumon:', 'Elvis:', 'Enrico Papi:', 'Gennaro:', 'Shenron:', 'Angelo:')
+for f in java.glob('*.java'):
+    source=f.read_text(encoding='utf-8')
+    out=[]
+    for line in source.splitlines(keepends=True):
+        if 'for(ServerPlayer p:l.players())if(distanceTo(p)<70)p.sendSystemMessage(' in line and 'Angelo:' in line:
+            line=line.replace('for(ServerPlayer p:l.players())if(distanceTo(p)<70)p.sendSystemMessage(', 'NpcDialogue.say(l,')
+        elif 'p.displayClientMessage(Component.literal("Elvis: Rock' in line:
+            line=line.replace('p.displayClientMessage(', 'NpcDialogue.say(p,').replace('),true);', '));')
+        elif any('"'+a in line for a in prefixes) or (f.name in ('Admirer.java','CabaretHealer.java','TalkingHorses.java') and 'sendSystemMessage' in line and ('getDisplayName().getString()' in line or 'LINES[' in line)):
+            # Only replace the calls whose literal/first expression is a character's utterance.
+            expr=r'(\b(?:p|sp|protectedPlayer|player)\.sendSystemMessage\()'
+            line=re.sub(expr,lambda m:'NpcDialogue.say('+m.group(0).split('.')[0]+',',line)
+        out.append(line)
+    dest=''.join(out)
+    if dest!=source:f.write_text(dest,encoding='utf-8')
+print('NPC dialogue broadcasts enabled')
