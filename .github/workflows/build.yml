@@ -153,6 +153,51 @@ jobs:
           assert any(target in z.namelist() and z.read(target)==source for p in jars for z in [zipfile.ZipFile(p)]), "Musica assente dal JAR"
           print("Musica del boss verificata nel JAR")
           PY
+      - name: Controllo statico sicurezza e inventario JAR
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, re, zipfile, hashlib
+          root=pathlib.Path(os.environ["PROJECT_DIR"])
+          sources=list((root/"src/main/java").rglob("*.java"))
+          rules={
+            "process execution":r'\b(?:ProcessBuilder|Runtime\s*\.\s*getRuntime)\b',
+            "network access":r'\b(?:java\.net|javax\.net|HttpClient|URLConnection|SocketChannel|ServerSocket|InetAddress)\b',
+            "filesystem access":r'\b(?:java\.io\.(?:File|FileInputStream|FileOutputStream)|java\.nio\.file|RandomAccessFile)\b',
+            "native or dynamic code":r'\b(?:System\s*\.\s*load(?:Library)?|defineClass|URLClassLoader|Unsafe)\b',
+            "environment access":r'\bSystem\s*\.\s*(?:getenv|getProperties|getProperty)\s*\(',
+          }
+          findings=[]
+          for p in sources:
+            for num,line in enumerate(p.read_text(encoding="utf-8",errors="replace").splitlines(),1):
+              for label,pattern in rules.items():
+                if re.search(pattern,line):
+                  findings.append((str(p.relative_to(root)),num,label,line.strip()[:220]))
+          print("Java sources inspected:",len(sources))
+          for f in findings: print("REVIEW:",*f)
+          print("Source indicators:",len(findings))
+          for p in [root/"build.gradle",root/"settings.gradle",root/"gradle/wrapper/gradle-wrapper.properties"]:
+            if p.exists():
+              for line in p.read_text(encoding="utf-8",errors="replace").splitlines():
+                if re.search(r'https?\\?:|dependencies|classpath|implementation|distributionUrl',line,re.I):
+                  print("Build dependency/config:",p.name,line.strip()[:220])
+          for p in sorted((root/"build/libs").glob("*.jar")):
+            print("SHA256:",hashlib.sha256(p.read_bytes()).hexdigest(),p.name)
+            with zipfile.ZipFile(p) as z:
+              names=z.namelist()
+              classes=[n for n in names if n.endswith(".class")]
+              print("JAR entries:",len(names),"classes:",len(classes))
+              suspicious=[n for n in names if n.lower().endswith((".exe",".dll",".so",".dylib",".bat",".cmd",".ps1",".sh",".jar"))]
+              print("Embedded executables/archives:",suspicious)
+              signatures=[b"java/lang/ProcessBuilder",b"java/lang/Runtime",b"java/net/Socket",b"java/net/URL",b"java/net/http/HttpClient",b"java/nio/file/Files",b"java/io/FileOutputStream",b"java/net/URLClassLoader"]
+              bytecode_hits=[]
+              for n in classes:
+                b=z.read(n)
+                for sig in signatures:
+                  if sig in b: bytecode_hits.append((n,sig.decode()))
+              for hit in bytecode_hits: print("BYTECODE REVIEW:",*hit)
+              print("Bytecode indicators:",len(bytecode_hits))
+          print("Heuristic review only; not an antivirus certification.")
+          PY
       - name: Carica JAR
         uses: actions/upload-artifact@v4
         with:
