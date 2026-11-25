@@ -20,10 +20,10 @@ def part(var,parent,name,pos,rot,boxes):
 # Adult fantasy sea-inspired dress: fitted bodice, layered flared skirt,
 # contrasting white/navy collar, rose brooch. No school uniform.
 part('b','r','body',(0,0,0),(0,0,0),[(-3,-1,-2,6,12,4,'gel'),(-4,0,-3,8,6,6,'silk'),(-3,6,-2,6,4,4,'silk')])
-part('bod','b','bodice',(0,1,-2),(0,0,0),[(-4,0,-2,8,5,3,'silk'),(-3,5,-1,6,3,2,'silk')])
+part('bod','b','bodice',(0,1,-2),(0,0,0),[(-4,0,-3,8,5,4,'silk'),(-3.5,1,-4,7,3,2,'silk'),(-3,5,-1,6,3,2,'silk')])
 part('belt','b','belt',(0,9,0),(0,0,0),[(-4,-1,-3,8,2,6,'navy')])
 part('brooch','b','brooch',(0,3,-4.2),(0,0,.15),[(-1,-1,-.5,2,2,1,'pink')])
-part('sk','b','skirt',(0,10,0),(0,0,0),[(-4,0,-3,8,3,6,'navy'),(-5,2,-4,10,2,8,'navy')])
+part('sk','b','skirt',(0,10,0),(0,0,0),[(-4,0,-3,8,3,6,'navy'),(-5,2,-4,10,3,8,'navy')])
 for i in range(12):
     a=i*math.pi/6
     part('pleat'+str(i),'sk','pleat'+str(i),(math.sin(a)*4,1,math.cos(a)*3),(-.24,a,0),[(-1.5,0,0,3,5,2,'pleat')])
@@ -131,7 +131,8 @@ def shade(mat,u,v,face,t):
         if face=='front' and v<.52 and abs(abs(u-.5)-(.42-v*.65))<.025:c=(237,245,251)
     elif mat in ('navy','pleat'):
         c=mix((12,35,81),(37,95,169),.25+.55*math.sin(u*math.pi))
-        if v>.74 and v<.81 or v>.88 and v<.94:c=(223,241,245)
+        if v>.74 and v<.81:c=(190,166,99)
+        elif v>.88 and v<.94:c=(223,241,245)
     elif mat=='pink':c=mix((152,60,107),(250,172,201),.25+.65*math.sin(u*math.pi))
     else:c=(40,150,190)
     factor={'top':1.07,'bottom':.8,'left':.91,'right':.95,'front':1,'back':.87}[face]
