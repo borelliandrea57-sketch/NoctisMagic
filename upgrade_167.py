@@ -2742,3 +2742,154 @@ public final class DivineRexJudgment{
  }
 }''')
 print('Jesus invocation instantly defeats nearby Baffosauro Rex with a visual lightning miracle.')
+
+
+# Two vulgar magical crops; seeds drop from ordinary and modded mobs.
+edit('Noctis.java','public static final RegistryObject<Item> CATHEDRAL_EGG=','''public static final RegistryObject<net.minecraft.world.level.block.Block> VAFF_CROP=VampireLife.BLOCKS.register("vaffanculo_crop",()->new InsultCrop(false));
+    public static final RegistryObject<net.minecraft.world.level.block.Block> SUCA_CROP=VampireLife.BLOCKS.register("suca_crop",()->new InsultCrop(true));
+    public static final RegistryObject<Item> VAFF_SEEDS=ITEMS.register("vaffanculo_seeds",()->new net.minecraft.world.item.ItemNameBlockItem(VAFF_CROP.get(),new Item.Properties()));
+    public static final RegistryObject<Item> SUCA_SEEDS=ITEMS.register("suca_seeds",()->new net.minecraft.world.item.ItemNameBlockItem(SUCA_CROP.get(),new Item.Properties()));
+    public static final RegistryObject<Item> VAFF_FRUIT=ITEMS.register("vaffanculo_fruit",()->new InsultFruit(false));
+    public static final RegistryObject<Item> SUCA_FRUIT=ITEMS.register("suca_fruit",()->new InsultFruit(true));
+    public static final RegistryObject<Item> CATHEDRAL_EGG=''')
+edit('Noctis.java','e.accept(CATHEDRAL_EGG.get());','e.accept(CATHEDRAL_EGG.get());e.accept(VAFF_SEEDS.get());e.accept(SUCA_SEEDS.get());e.accept(VAFF_FRUIT.get());e.accept(SUCA_FRUIT.get());')
+write('InsultCrop.java','''package it.noctis.magic;
+import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.ItemLike;
+public class InsultCrop extends CropBlock{
+ final boolean suca;
+ public InsultCrop(boolean s){super(BlockBehaviour.Properties.copy(Blocks.WHEAT));suca=s;}
+ @Override protected ItemLike getBaseSeedId(){return suca?Noctis.SUCA_SEEDS.get():Noctis.VAFF_SEEDS.get();}
+}''')
+# Separate deferred sound registry (wired to existing mod bus).
+edit('Noctis.java','VampireLife.register(bus);','VampireLife.register(bus);InsultFruit.SOUNDS.register(bus);')
+write('InsultFruit.java','''package it.noctis.magic;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.*;
+import net.minecraft.sounds.*;
+import net.minecraft.world.*;
+import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.*;
+import net.minecraft.world.level.*;
+import net.minecraft.world.phys.*;
+import net.minecraftforge.registries.*;
+public class InsultFruit extends Item{
+ static final DeferredRegister<SoundEvent> SOUNDS=DeferredRegister.create(ForgeRegistries.SOUND_EVENTS,Noctis.ID);
+ static final RegistryObject<SoundEvent> VAFF=SOUNDS.register("fruit_vaffanculo",()->SoundEvent.createVariableRangeEvent(new ResourceLocation(Noctis.ID,"fruit_vaffanculo")));
+ static final RegistryObject<SoundEvent> SUCA=SOUNDS.register("fruit_suca",()->SoundEvent.createVariableRangeEvent(new ResourceLocation(Noctis.ID,"fruit_suca")));
+ final boolean suca;
+ public InsultFruit(boolean s){super(new Item.Properties().stacksTo(32));suca=s;}
+ @Override public InteractionResultHolder<ItemStack> use(Level level,Player p,InteractionHand hand){
+  ItemStack item=p.getItemInHand(hand);
+  if(!(level instanceof ServerLevel l))return InteractionResultHolder.sidedSuccess(item,level.isClientSide);
+  Vec3 a=p.getEyePosition(),b=a.add(p.getLookAngle().scale(24));
+  var block=l.clip(new ClipContext(a,b,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p));
+  if(block.getType()!=HitResult.Type.MISS)b=block.getLocation();
+  Vec3 center=b;double nearest=a.distanceToSqr(b);
+  for(LivingEntity m:l.getEntitiesOfClass(LivingEntity.class,new AABB(a,b).inflate(1),m->m!=p&&m.isAlive()&&!m.isSpectator())){
+   var hit=m.getBoundingBox().inflate(.25).clip(a,b);
+   if(hit.isPresent()&&a.distanceToSqr(hit.get())<nearest){nearest=a.distanceToSqr(hit.get());center=hit.get();}
+  }
+  double radius=suca?3.5:4.5;
+  l.playSound(null,center.x,center.y,center.z,(suca?SUCA:VAFF).get(),SoundSource.PLAYERS,2f,1f);
+  l.sendParticles(ParticleTypes.SONIC_BOOM,center.x,center.y,center.z,1,0,0,0,0);
+  l.sendParticles(suca?ParticleTypes.HAPPY_VILLAGER:ParticleTypes.FLAME,center.x,center.y,center.z,45,radius*.45,.55,radius*.45,.03);
+  for(LivingEntity m:l.getEntitiesOfClass(LivingEntity.class,new AABB(center,center).inflate(radius),m->m!=p&&m.isAlive()&&!m.isSpectator())){
+   if(m.getBoundingBox().getCenter().distanceToSqr(center)>radius*radius)continue;
+   Vec3 eye=m.getEyePosition();
+   if(l.clip(new ClipContext(center,eye,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p)).getType()!=HitResult.Type.MISS)continue;
+   if(m.hurt(p.damageSources().playerAttack(p),suca?10:16))m.knockback(suca?1.2:1.8,center.x-m.getX(),center.z-m.getZ());
+  }
+  p.getCooldowns().addCooldown(this,30);
+  if(!p.getAbilities().instabuild)item.shrink(1);
+  return InteractionResultHolder.success(item);
+ }
+}''')
+write('InsultSeedLoot.java','''package it.noctis.magic;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.event.entity.living.LivingDropsEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+@Mod.EventBusSubscriber(modid=Noctis.ID)
+public class InsultSeedLoot{
+ @SubscribeEvent public static void drops(LivingDropsEvent e){
+  if(!(e.getEntity() instanceof Mob m)||!(m.level() instanceof ServerLevel l))return;
+  float chance=Math.min(.95f,.65f+.08f*Math.max(0,e.getLootingLevel()));
+  for(var seed:java.util.List.of(Noctis.VAFF_SEEDS,Noctis.SUCA_SEEDS)){
+   if(m.getRandom().nextFloat()<chance)e.getDrops().add(new ItemEntity(l,m.getX(),m.getY()+.3,m.getZ(),new ItemStack(seed.get(),1+m.getRandom().nextInt(3))));
+  }
+ }
+}''')
+# Explicit cutout render layer for the crop cross planes.
+write('InsultCropClient.java','''package it.noctis.magic;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+@Mod.EventBusSubscriber(modid=Noctis.ID,value=Dist.CLIENT,bus=Mod.EventBusSubscriber.Bus.MOD)
+public class InsultCropClient{
+ @SubscribeEvent public static void setup(FMLClientSetupEvent e){e.enqueueWork(()->{
+  ItemBlockRenderTypes.setRenderLayer(Noctis.VAFF_CROP.get(),RenderType.cutout());
+  ItemBlockRenderTypes.setRenderLayer(Noctis.SUCA_CROP.get(),RenderType.cutout());
+ });}
+}''')
+import subprocess
+sounds=assets/'sounds.json';sd=json.loads(sounds.read_text(encoding='utf-8')) if sounds.exists() else {}
+for name,label,color in [('vaffanculo','Vaffanculo',(231,49,45)),('suca','Suca',(159,90,235))]:
+ crop=name+'_crop';fruit=name+'_fruit';seed=name+'_seeds'
+ for stage in range(8):
+  tex=f'{crop}_{stage}';W=H=32;pix=bytearray(W*H*4)
+  for y in range(H):
+   for x in range(W):
+    c=None
+    h=5+stage*3
+    if y>=31-h and abs(x-16)<=1:c=(42,112,45)
+    for i in range(1+stage//2):
+     yy=30-i*5;xx=16+(-1 if i%2==0 else 1)*(3+i)
+     if ((x-xx)/5)**2+((y-yy)/2.3)**2<=1 and y>=31-h:c=shade((62,163,55),.8+.2*math.sin(x*.8+y*.5)**2)
+    if stage>=5:
+     for xx,yy in [(11,14),(21,18),(16,7)]:
+      if (x-xx)**2+(y-yy)**2<=(3+stage-5)**2:c=shade(color,.7+.3*math.sin((x-xx+4)*.3))
+    if c:
+     q=(y*W+x)*4;pix[q:q+4]=bytes((*c,255))
+  p=assets/'textures/block'/f'{tex}.png';p.parent.mkdir(parents=True,exist_ok=True);png(p,W,H,pix)
+  j(assets/'models/block'/f'{tex}.json',{'parent':'minecraft:block/crop','textures':{'crop':f'noctismagic:block/{tex}'}})
+ j(assets/'blockstates'/f'{crop}.json',{'variants':{f'age={i}':{'model':f'noctismagic:block/{crop}_{i}'} for i in range(8)}})
+ for item,isfruit in [(seed,False),(fruit,True)]:
+  W=H=32;pix=bytearray(W*H*4)
+  for y in range(H):
+   for x in range(W):
+    c=None
+    if isfruit:
+     if ((x-15.5)/10)**2+((y-18)/10)**2<=1:c=shade(color,.65+.35*math.exp(-((x-11)**2+(y-13)**2)/95))
+     if 4<=y<=9 and 14<=x<=16:c=(68,112,45)
+     if ((x-20)/5)**2+((y-7)/2.5)**2<=1:c=(72,171,56)
+     if 13<=y<=22 and x in (10,11,20,21) or 23<=y<=24 and 11<=x<=20:c=(65,22,34)
+    else:
+     if ((x-12)/5)**2+((y-17)/7)**2<=1 or ((x-21)/4)**2+((y-12)/5)**2<=1:c=shade(color,.7+.3*math.sin(x*.4)**2)
+    if c:
+     q=(y*W+x)*4;pix[q:q+4]=bytes((*c,255))
+  png(assets/'textures/item'/f'{item}.png',W,H,pix)
+  j(assets/'models/item'/f'{item}.json',{'parent':'minecraft:item/generated','textures':{'layer0':f'noctismagic:item/{item}'}})
+ mature={'condition':'minecraft:block_state_property','block':f'noctismagic:{crop}','properties':{'age':'7'}}
+ j(res/'data/noctismagic/loot_tables/blocks'/f'{crop}.json',{'type':'minecraft:block','pools':[{'rolls':1,'entries':[{'type':'minecraft:item','name':f'noctismagic:{seed}'}]},{'rolls':{'type':'minecraft:uniform','min':1,'max':3},'conditions':[mature],'entries':[{'type':'minecraft:item','name':f'noctismagic:{fruit}'}]},{'rolls':{'type':'minecraft:uniform','min':1,'max':2},'conditions':[mature],'entries':[{'type':'minecraft:item','name':f'noctismagic:{seed}'}]}]})
+ snd='fruit_vaffanculo' if name=='vaffanculo' else 'fruit_suca';target=assets/'sounds'/f'{snd}.ogg';target.parent.mkdir(parents=True,exist_ok=True)
+ wav=root/f'{snd}.wav'
+ subprocess.run(['espeak-ng','-v','it','-s','148','-p','38','-a','170','-w',str(wav),label+'!'],check=True)
+ subprocess.run(['ffmpeg','-nostdin','-loglevel','error','-y','-i',str(wav),'-ac','1','-c:a','libvorbis','-q:a','5',str(target)],check=True);wav.unlink()
+ sd[snd]={'subtitle':f'subtitles.noctismagic.{snd}','sounds':[f'noctismagic:{snd}']}
+ for lang in ('it_it','en_us'):
+  p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'));d[f'item.noctismagic.{seed}']=f'Semi di {label}';d[f'block.noctismagic.{crop}']=f'Pianta di {label}';d[f'item.noctismagic.{fruit}']=f'Frutto di {label}';d[f'subtitles.noctismagic.{snd}']=label+'!';j(p,d)
+j(sounds,sd)
+print('Vaffanculo and Suca crops, renewable fruits, mob seed drops, aimed area attacks and synthesized Italian voice clips.')
