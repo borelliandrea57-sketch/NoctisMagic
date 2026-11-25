@@ -4325,3 +4325,192 @@ for m,base in enumerate(pal):
    off=((m//8*128+y)*W+m%8*128+x)*4;pix[off:off+4]=bytes((*c,255))
 png(assets/'textures/entity/exodia.png',W,H,pix)
 print('Exodia remade: massive anatomy, domed shoulders, striped nemes, horns, demonic teeth, open hands, dark kilt and broken chains.')
+
+
+# One visible quest per character, retaining legacy advancement IDs and saved progress.
+base=res/'data/noctismagic/advancements/rituals'
+for f in sorted(base.glob('*_complete.json')):
+ ident=f.stem[:-9];start=base/(ident+'.json')
+ if not start.exists():continue
+ first=json.loads(start.read_text(encoding='utf-8'));last=json.loads(f.read_text(encoding='utf-8'))
+ if 'display' not in first or 'display' not in last:continue
+ # Non-displayed discovery advancement still grants its original reward and gates existing logic.
+ first.pop('display');last['parent']='noctismagic:rituals/root'
+ j(start,first);j(f,last)
+ for lang in ('it_it','en_us'):
+  lp=assets/'lang'/f'{lang}.json';d=json.loads(lp.read_text(encoding='utf-8'))
+  pre='advancement.noctismagic.rituals.'
+  first_desc=d.get(pre+ident+'.description','');last_desc=d.get(pre+ident+'_complete.description','')
+  d[pre+ident+'_complete.title']=d.get(pre+ident+'.title',d.get(pre+ident+'_complete.title',ident))
+  d[pre+ident+'_complete.description']=' '.join(dict.fromkeys(x for x in (first_desc,last_desc) if x))
+  j(lp,d)
+
+# Giorno: visibly angular adult head, slimmer temples, smaller swept crown and tighter signature rolls.
+p=java/'GiornoSculptedClient.java';s=p.read_text(encoding='utf-8')
+a=s.index('   head.loft(5,64,');b=s.index('   project(head,5,false);',a)
+s=s[:a]+'''   head.loft(5,32,-7.85f,0,.12f,1.15f,1.45f,-7.25f,0,.05f,2.17f,2.17f,-5.65f,0,-.03f,2.72f,2.55f,-4.36f,0,-.11f,2.68f,2.50f,-3.22f,0,-.19f,2.37f,2.30f,-2.12f,0,-.28f,1.92f,1.98f,-.75f,0,-.43f,1.20f,1.35f,-.10f,0,-.48f,.55f,.75f);
+'''+s[b:]
+s=s.replace('chest?8.65f:6.65f','chest?8.65f:5.85f',1)
+s=s.replace('head.loft(6,32,-9.1f,0,.16f,.5f,.6f,-8.75f,0,.18f,2.55f,2.40f,-7.55f,0,.35f,3.48f,3.10f,-6.1f,0,.5f,3.45f,3.0f);','head.loft(6,24,-8.85f,0,.16f,.70f,.75f,-8.38f,0,.18f,2.18f,2.19f,-7.55f,0,.35f,2.99f,2.79f,-6.1f,0,.5f,2.96f,2.69f);',1)
+s=s.replace('float x=(i-4)*.76f;','float x=(i-4)*.65f;',1)
+s=s.replace('q=head.child(-2.08f+j*2.08f,-6.68f,-2.69f);q.rz=(j-1)*.12f;curl(q,.79f,.90f);','q=head.child(-1.84f+j*1.84f,-6.70f,-2.55f);q.rz=(j-1)*.12f;curl(q,.68f,.78f);',1)
+s=s.replace('q.oval(7,0,0,.09f,.44f,.49f,.19f);','q.oval(6,0,0,.10f,.44f,.49f,.21f);',1)
+s=s.replace('s*3.0f,-3.25f,.13f,.4f,.82f,.54f','s*2.62f,-3.25f,.13f,.31f,.67f,.43f',1)
+s=s.replace('s*3.19f,-2.65f,.02f,.19f,.25f,.18f','s*2.79f,-2.65f,.02f,.15f,.22f,.15f',1)
+s=s.replace('head.oval(10,0,-2.05f,-2.20f,.60f,.13f,.18f);','head.oval(10,0,-1.85f,-1.97f,.49f,.08f,.10f);',1)
+p.write_text(s,encoding='utf-8')
+
+# Spawnable buildings also appear automatically in newly generated Overworld regions.
+# Use the existing structure plans and finish callbacks, not copies of their geometry.
+p=java/'GothicEgg.java';s=p.read_text(encoding='utf-8')
+assert 'this.player=player.getUUID();' in s
+s=s.replace('this.player=player.getUUID();','this.player=player==null?null:player.getUUID();',1)
+s=s.replace('void msg(String s){ServerPlayer pl=','void msg(String s){if(player==null)return;ServerPlayer pl=',1)
+s=s.replace('void refund(){ServerPlayer pl=','void refund(){if(player==null)return;ServerPlayer pl=',1)
+s=s.replace('if(!l.hasChunkAt(at)||!l.getBlockState(at).isAir()){msg','if(!l.hasChunkAt(at)||(!l.getBlockState(at).isAir()&&!(player==null&&l.getBlockState(at).canBeReplaced()&&l.getFluidState(at).isEmpty()))){msg',1)
+s=s.replace('if(!l.getBlockState(at).isAir())continue;','if(!l.getBlockState(at).isAir()&&!(player==null&&l.getBlockState(at).canBeReplaced()&&l.getFluidState(at).isEmpty()))continue;',1)
+p.write_text(s,encoding='utf-8')
+write('NaturalMonuments.java','''package it.noctis.magic;
+import java.util.*;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraftforge.event.level.ChunkEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+@Mod.EventBusSubscriber(modid=Noctis.ID)
+public final class NaturalMonuments extends SavedData{
+ static final int REGION=24;
+ final Set<Long> pending=new LinkedHashSet<>(),finished=new HashSet<>();
+ static final Map<ServerLevel,GothicEgg.Job> active=new HashMap<>();
+ static final Map<ServerLevel,Long> activeKey=new HashMap<>();
+ static NaturalMonuments get(ServerLevel l){return l.getDataStorage().computeIfAbsent(NaturalMonuments::load,NaturalMonuments::new,"noctis_natural_monuments");}
+ static NaturalMonuments load(CompoundTag tag){NaturalMonuments d=new NaturalMonuments();for(long x:tag.getLongArray("Pending"))d.pending.add(x);for(long x:tag.getLongArray("Finished"))d.finished.add(x);return d;}
+ @Override public CompoundTag save(CompoundTag tag){tag.putLongArray("Pending",pending.stream().mapToLong(Long::longValue).toArray());tag.putLongArray("Finished",finished.stream().mapToLong(Long::longValue).toArray());return tag;}
+ static Random random(ServerLevel l,int rx,int rz){return new Random(l.getSeed()^((long)rx*341873128712L)^((long)rz*132897987541L)^0x46F4347L);}
+ static int[] candidate(ServerLevel l,int rx,int rz){
+  Random r=random(l,rx,rz);if(r.nextInt(100)>=76)return null;
+  return new int[]{rx*REGION+4+r.nextInt(12),rz*REGION+4+r.nextInt(12),r.nextInt(4)};
+ }
+ @SubscribeEvent public static void generated(ChunkEvent.Load e){
+  if(!e.isNewChunk()||!(e.getLevel() instanceof ServerLevel l)||l.dimension()!=Level.OVERWORLD)return;
+  ChunkPos cp=e.getChunk().getPos();int rx=Math.floorDiv(cp.x,REGION),rz=Math.floorDiv(cp.z,REGION);
+  int[] c=candidate(l,rx,rz);if(c==null||cp.x!=c[0]||cp.z!=c[1])return;
+  long key=ChunkPos.asLong(cp.x,cp.z);
+  // Defer all world writes to the server tick, never access neighbouring chunks in this event.
+  l.getServer().execute(()->{NaturalMonuments d=get(l);if(!d.finished.contains(key)&&d.pending.add(key))d.setDirty();});
+ }
+ static boolean loaded(ServerLevel l,int x,int z,int w,int d){
+  for(int cx=x>>4;cx<=(x+w-1)>>4;cx++)for(int cz=z>>4;cz<=(z+d-1)>>4;cz++)
+   if(!l.hasChunk(cx,cz))return false;
+  return true;
+ }
+ static GothicEgg.Plan plan(int type){return switch(type){case 0->GothicEgg.bakery(false);case 1->GothicEgg.bakery(true);case 2->GothicEgg.cathedral();default->GothicEgg.castle();};}
+ static void finish(NaturalMonuments d,long key){d.pending.remove(key);d.finished.add(key);d.setDirty();}
+ @SubscribeEvent public static void tick(TickEvent.LevelTickEvent event){
+  if(event.phase!=TickEvent.Phase.END||!(event.level instanceof ServerLevel l)||l.dimension()!=Level.OVERWORLD)return;
+  if(!GothicEgg.Jobs.queue.isEmpty())return;
+  NaturalMonuments data=get(l);
+  GothicEgg.Job job=active.get(l);
+  if(job!=null){
+   if(!loaded(l,job.origin.getX(),job.origin.getZ(),job.p.w,job.p.d))return;
+   if(job.step()){finish(data,activeKey.remove(l));active.remove(l);}return;
+  }
+  if(l.getGameTime()%40!=0||data.pending.isEmpty())return;
+  for(long key:new ArrayList<>(data.pending)){
+   ChunkPos cp=new ChunkPos(key);int[] c=candidate(l,Math.floorDiv(cp.x,REGION),Math.floorDiv(cp.z,REGION));
+   if(c==null){finish(data,key);continue;}
+   int x=cp.getMinBlockX(),z=cp.getMinBlockZ();
+   if(!l.hasChunk(cp.x,cp.z))continue;
+   GothicEgg.Plan p=plan(c[2]);if(!loaded(l,x,z,p.w,p.d))continue;
+   // Search only safe, reasonably flat land. Never flatten houses, forests or cliffs.
+   int low=Integer.MAX_VALUE,high=Integer.MIN_VALUE;boolean wet=false;
+   for(int dx=0;dx<p.w;dx+=4)for(int dz=0;dz<p.d;dz+=4){
+    int h=l.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,x+dx,z+dz);
+    low=Math.min(low,h);high=Math.max(high,h);
+    if(!l.getFluidState(new BlockPos(x+dx,h-1,z+dz)).isEmpty())wet=true;
+   }
+   if(wet||high-low>3||high<l.getSeaLevel()||high+p.h>=l.getMaxBuildHeight()){finish(data,key);continue;}
+   job=new GothicEgg.Job(l,null,p,new BlockPos(x,high,z),Direction.SOUTH);
+   active.put(l,job);activeKey.put(l,key);return;
+  }
+ }
+ @SubscribeEvent public static void stop(ServerStoppedEvent event){active.clear();activeKey.clear();}
+}''')
+
+# Exodia attacks any living mob, not only players; plasma projectiles and radial shockwaves.
+p=java/'Exodia.java';s=p.read_text(encoding='utf-8')
+a=' boolean valid(Player p){return p!=null&&p.isAlive()&&!p.isCreative()&&!p.isSpectator()&&distanceTo(p)<100;}'
+assert a in s
+s=s.replace(a,''' boolean valid(LivingEntity e){return e!=null&&e!=this&&e.isAlive()&&distanceTo(e)<100&&(e instanceof Mob||e instanceof Player)&&(!(e instanceof Player p)||(!p.isCreative()&&!p.isSpectator()));}
+ Vec3 plasma=null,plasmaVelocity=Vec3.ZERO;int plasmaLife=0;
+ void burst(ServerLevel l,Vec3 at,float radius){
+  l.sendParticles(ParticleTypes.EXPLOSION_EMITTER,at.x,at.y,at.z,1,0,0,0,0);
+  l.sendParticles(ParticleTypes.ELECTRIC_SPARK,at.x,at.y,at.z,45,radius*.35,radius*.35,radius*.35,.18);
+  l.explode(this,at.x,at.y,at.z,radius,Level.ExplosionInteraction.MOB);
+ }
+ void tickPlasma(ServerLevel l){
+  if(plasma==null)return;
+  Vec3 end=plasma.add(plasmaVelocity);
+  var wall=l.clip(new net.minecraft.world.level.ClipContext(plasma,end,net.minecraft.world.level.ClipContext.Block.COLLIDER,net.minecraft.world.level.ClipContext.Fluid.NONE,this));
+  boolean impact=wall.getType()!=net.minecraft.world.phys.HitResult.Type.MISS;
+  Vec3 next=impact?wall.getLocation():end;
+  l.sendParticles(ParticleTypes.END_ROD,next.x,next.y,next.z,18,.44,.44,.44,.08);
+  l.sendParticles(ParticleTypes.ELECTRIC_SPARK,next.x,next.y,next.z,24,.60,.60,.60,.13);
+  l.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,next.x,next.y,next.z,13,.36,.36,.36,.04);
+  for(int i=0;i<12;i++){double a=i*Math.PI/6;l.sendParticles(ParticleTypes.FLAME,next.x+Math.cos(a)*.64,next.y+Math.sin(a)*.64,next.z,1,0,0,0,0);}
+  var hit=l.getEntitiesOfClass(LivingEntity.class,new net.minecraft.world.phys.AABB(plasma,next).inflate(1.4),this::valid);
+  if(impact||!hit.isEmpty()||--plasmaLife<=0){
+   for(LivingEntity e:l.getEntitiesOfClass(LivingEntity.class,new net.minecraft.world.phys.AABB(next,next).inflate(6),this::valid))
+    if(e.position().distanceTo(next)<6)e.hurt(damageSources().magic(),26+phase*7);
+   burst(l,next,4.5f+phase*.75f);plasma=null;
+  }else plasma=next;
+ }
+ void launchPlasma(ServerLevel l,Vec3 target){
+  plasma=position().add(0,5.8,0);plasmaVelocity=target.subtract(plasma).normalize().scale(1.15);plasma=plasma.add(plasmaVelocity.scale(2.0));plasmaLife=42;
+  playSound(SoundEvents.BLAZE_SHOOT,2,.55f);
+ }''',1)
+a=s.index('  Player t=summoner==null?null:l.getPlayerByUUID(summoner);')
+b=s.index('  if(!valid(t)){setDeltaMovement',a)
+s=s[:a]+'''  tickPlasma(l);
+  LivingEntity t=getTarget();
+  if(!valid(t)||tickCount%12==0){
+   t=l.getEntitiesOfClass(LivingEntity.class,getBoundingBox().inflate(80),this::valid).stream()
+    .min(Comparator.comparingDouble(this::distanceToSqr)).orElse(null);
+  }
+'''+s[b:]
+# Use all valid mobs for damage but keep warning text for players.
+s=s.replace('for(Player p:l.getEntitiesOfClass(Player.class,getBoundingBox().inflate(40),this::valid)){','for(LivingEntity p:l.getEntitiesOfClass(LivingEntity.class,getBoundingBox().inflate(40),this::valid)){',1)
+s=s.replace('for(Player p:l.getEntitiesOfClass(Player.class,getBoundingBox().inflate(45),this::valid)){','for(LivingEntity p:l.getEntitiesOfClass(LivingEntity.class,getBoundingBox().inflate(45),this::valid)){',1)
+s=s.replace('mode=cycle++%3;','mode=cycle++%4;',1)
+s=s.replace('charge=mode==0?38:mode==1?30:24;','charge=mode==0?38:mode==1?30:mode==3?20:24;',1)
+s=s.replace('l.broadcastEntityEvent(this,(byte)(90+mode));','l.broadcastEntityEvent(this,(byte)(90+(mode==3?0:mode)));',1)
+s=s.replace('mode==1?"Sigillo di distruzione: esci dal cerchio!":"Onda delle catene: allontanati!"','mode==1?"Sigillo di distruzione: esci dal cerchio!":mode==3?"Sfera di plasma!":"Onda delle catene: allontanati!"',1)
+s=s.replace(' void strike(ServerLevel l){\n  if(mode==0){',''' void strike(ServerLevel l){
+  if(mode==3){launchPlasma(l,aim.add(0,1,0));l.broadcastEntityEvent(this,(byte)94);return;}
+  if(mode==0){''',1)
+s=s.replace('   playSound(SoundEvents.WARDEN_SONIC_BOOM,3,.7f);','   burst(l,end,4.0f+phase*.5f);playSound(SoundEvents.WARDEN_SONIC_BOOM,3,.7f);',1)
+s=s.replace('   playSound(SoundEvents.GENERIC_EXPLODE,3,.7f);','''   if(mode==2){
+    for(int ring=1;ring<=3;ring++)for(int i=0;i<32;i++){
+     double a=i*Math.PI/16,r=radius*ring/3.0;
+     l.sendParticles(ParticleTypes.ELECTRIC_SPARK,aim.x+Math.cos(a)*r,aim.y+.65,aim.z+Math.sin(a)*r,2,.18,.18,.18,.10);
+    }
+    for(int i=0;i<4;i++){double a=i*Math.PI/2;burst(l,aim.add(Math.cos(a)*4,1,Math.sin(a)*4),3.6f+phase*.4f);}
+   }else burst(l,aim.add(0,.7,0),4.6f+phase*.5f);
+   playSound(SoundEvents.GENERIC_EXPLODE,3,.7f);''',1)
+p.write_text(s,encoding='utf-8')
+# Remove the former joke disconnect: spawning Exodia must leave the player in-game to fight.
+for n in ('ExodiaRitual.java','ExodiaEgg.java'):
+ p=java/n;s=p.read_text(encoding='utf-8')
+ s=s.replace('p.connection.disconnect(Component.literal("Hai vinto il duello.").withStyle(ChatFormatting.GOLD,ChatFormatting.BOLD));','')
+ # Actual victory is awarded by the existing death listener, not merely by using the egg.
+ s=s.replace('RitualQuests.award(p,"exodia");RitualQuests.complete(p,"exodia");','RitualQuests.summon(p,boss,"exodia");')
+ p.write_text(s,encoding='utf-8')
+print('Single visible quests; natural monuments in new regions; angular Giorno; hostile Exodia with plasma and terrain damage.')
