@@ -1963,7 +1963,7 @@ public class GeassExile{
   Order(DramaGuest g,ServerPlayer p){caster=g.getUUID();level=p.serverLevel();origin=g.position();last=p.position();}
  }
  static final Map<UUID,Order> orders=new HashMap<>();
- static boolean valid(ServerPlayer p){return p.isAlive()&&!p.isCreative()&&!p.isSpectator();}
+ static boolean valid(ServerPlayer p){return p.isAlive()&&!p.isSpectator();}
  @SubscribeEvent public static void defend(LivingAttackEvent e){
   if(!(e.getEntity() instanceof DramaGuest victim)||victim.kind()==0||!(victim.level() instanceof ServerLevel l)||!(e.getSource().getEntity() instanceof ServerPlayer p)||!valid(p))return;
   DramaGuest lelouch=victim.kind()==1?victim:victim.partner!=null&&l.getEntity(victim.partner) instanceof DramaGuest q&&q.kind()==1&&q.isAlive()?q:null;
