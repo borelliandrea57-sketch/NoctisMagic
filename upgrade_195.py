@@ -31,6 +31,27 @@ public final class GoldExperienceClient{
   // Faceted sections, never spherical primitives.
   void plate(Part p,int m,float... r){CinnabarClient.Model.angular(p,m,m,8,r[0],r[r.length-5],r);}
   void portrait(Part p,int m,int f,float... r){CinnabarClient.Model.angular(p,m,f,6.2f,r[0],r[r.length-5],r);}
+  // UVs are projected onto the actual helmet surface. Engraved spirals never float.
+  V domeV(float[] r,int k,int j,int n,boolean front){
+   double a=j*2*Math.PI/n;
+   float x=r[k+1]+r[k+3]*(float)Math.sin(a),z=r[k+2]-r[k+4]*(float)Math.cos(a);
+   float u=.5f+x/5.75f;
+   return new V(x,r[k],z,Math.max(.01f,Math.min(.99f,u)),Math.max(.01f,Math.min(.99f,(r[k]+8.65f)/4.06f)),(float)Math.sin(a),0,-(float)Math.cos(a));
+  }
+  void dome(Part p,float... r){
+   int n=24;
+   for(int k=0;k<r.length-5;k+=5)for(int j=0;j<n;j++){
+    boolean front=Math.cos((j+.5)*2*Math.PI/n)>0;
+    p.faces.add(new Q(domeV(r,k,j,n,front),domeV(r,k+5,j,n,front),domeV(r,k+5,j+1,n,front),domeV(r,k,j+1,n,front),front?7:13));
+   }
+   for(int k:new int[]{0,r.length-5}){
+    float ny=k==0?-1:1;V center=new V(r[k+1],r[k],r[k+2],.5f,.5f,0,ny,0);
+    for(int j=0;j<n;j++){
+     V a=domeV(r,k,j,n,false),b=domeV(r,k,j+1,n,false);
+     p.faces.add(k==0?new Q(center,a,b,center,3):new Q(center,b,a,center,2));
+    }
+   }
+  }
   void insignia(Part p,float x,float y,float z,float size){
    // Polygonal violet scarab with a narrow center seam and six raised dark spots.
    Part q=p.child(x,y,z);
@@ -84,33 +105,51 @@ public final class GoldExperienceClient{
      panel(torso,11,x,yy+.28f,-1.91f,X,Y+.28f,-1.69f,.14f);
     }
    }
-   // Neck and angular helmet with separate face mask and visor.
-   plate(torso,5,-1.4f,0,0,.88f,.91f,0,0,0,1.05f,1.02f);
-   portrait(head,2,6,-5.72f,0,.06f,1.18f,1.12f,-5.25f,0,.06f,2.07f,1.76f,-3.92f,0,0,2.22f,1.91f,-2.45f,0,-.09f,2.08f,1.76f,-1.03f,0,-.22f,1.57f,1.35f,-.12f,0,-.32f,.80f,.84f);
-   portrait(head,1,7,-8.50f,0,.34f,.25f,.43f,-8.10f,0,.19f,1.34f,1.23f,-7.25f,0,.11f,2.42f,2.06f,-6.10f,0,.02f,2.85f,2.48f,-5.28f,0,-.03f,2.77f,2.45f,-4.72f,0,.04f,2.23f,2.12f);
-   // Raised projecting gold forehead guard, separate from the dome.
-   portrait(head,3,1,-6.73f,0,-2.03f,.36f,.26f,-6.35f,0,-2.27f,.90f,.42f,-5.62f,0,-2.39f,1.28f,.53f,-4.65f,0,-2.37f,1.31f,.54f,-4.08f,0,-2.31f,.94f,.35f);
-   panel(head,5,0,-8.30f,-.70f,0,-6.60f,-2.41f,.22f);
-   panel(head,3,0,-8.24f,-.82f,0,-6.72f,-2.49f,.13f);
-   panel(head,5,-1.25f,-4.33f,-2.69f,1.25f,-4.33f,-2.69f,.48f);
-   // Central crest and visor frame; no human cartoon eyes.
-   panel(head,3,0,-6.42f,-2.69f,0,-4.55f,-2.91f,.45f);
-   panel(head,5,-2.03f,-4.39f,-1.62f,-.25f,-3.89f,-2.03f,.77f);
-   panel(head,5,2.03f,-4.39f,-1.62f,.25f,-3.89f,-2.03f,.77f);
+   // Sculpted rear armor: gold trapezius, ivory back muscle plates and dark spinal channel.
+   plate(torso,10,-.28f,0,.88f,1.72f,.73f,.72f,0,1.12f,3.12f,1.00f,2.52f,0,1.15f,2.95f,.88f,3.40f,0,1.10f,2.36f,.68f);
    for(int side:new int[]{-1,1}){
-    panel(head,4,side*.16f,-4.10f,-2.71f,side*1.77f,-4.43f,-2.18f,.36f);
-    panel(head,1,side*2.12f,-5.36f,-1.55f,side*2.17f,-2.74f,-.55f,1.03f);
-    panel(head,5,side*1.77f,-2.98f,-1.43f,side*.95f,-1.25f,-1.48f,.26f);
-    // Black spiral grooves on the helmet crown, made of connected engraved strips.
-    float ox=side*1.65f,oy=-6.78f;
-    for(int j=0;j<14;j++){
-     double a=j*.44,b=(j+1)*.44;float r=.07f+j*.043f,rr=r+.043f;
-     panel(head,5,ox+side*(float)Math.cos(a)*r,oy+(float)Math.sin(a)*r,-2.45f,ox+side*(float)Math.cos(b)*rr,oy+(float)Math.sin(b)*rr,-2.45f,.13f);
+    plate(torso,1,2.80f,side*1.82f,1.42f,1.06f,.54f,4.0f,side*1.41f,1.62f,1.12f,.53f,5.65f,side*.91f,1.32f,.81f,.42f,7.75f,side*.54f,1.15f,.32f,.30f);
+    panel(torso,3,side*2.55f,2.9f,1.78f,side*.62f,7.45f,1.52f,.24f);
+    panel(torso,5,side*.52f,3.4f,1.99f,side*.34f,8.0f,1.49f,.25f);
+    for(int j=0;j<3;j++){
+     float yy=.65f+j*.75f;float xx=side*(1.92f-j*.14f);
+     panel(torso,5,xx-.29f,yy,2.03f,xx+.29f,yy+.07f,2.03f,.15f);
     }
+    for(int j=0;j<5;j++){
+     float x=side*(.45f+j*.48f),X=side*(.93f+j*.48f);
+     float yy=9.13f+j*.35f,Y=9.13f+(j+1)*.35f;
+     panel(torso,8,x,yy,1.74f,X,Y,1.65f,.39f);
+    }
+    plate(torso,2,10.0f,side*1.24f,.85f,1.18f,.82f,11.18f,side*1.21f,1.04f,1.27f,.85f,12.02f,side*1.17f,.83f,.76f,.56f);
    }
-   panel(head,1,0,-3.45f,-1.92f,0,-2.55f,-2.15f,.45f);
-   panel(head,5,-.46f,-1.66f,-1.41f,.46f,-1.66f,-1.41f,.15f);
-   panel(head,4,0,-1.46f,-1.40f,0,-.94f,-1.23f,.39f);
+   for(int j=0;j<4;j++){
+    float y=4.0f+j*.90f;
+    panel(torso,2,-.23f,y,1.90f,.23f,y+.16f,1.90f,.25f);
+   }
+   // Helmet: one continuous rounded-faceted shell, curved crest and an armored nape.
+   plate(torso,5,-1.70f,0,0,.94f,.93f,0,0,0,1.14f,1.08f);
+   // Compact angular jaw with black side panels and a defined mouth, not a long human face.
+   portrait(head,5,6,-5.45f,0,.04f,1.55f,1.30f,-4.85f,0,-.06f,2.04f,1.70f,-3.97f,0,-.12f,1.92f,1.78f,-2.82f,0,-.16f,1.60f,1.52f,-2.03f,0,-.25f,1.13f,1.16f,-1.52f,0,-.30f,.62f,.75f);
+   dome(head,-8.65f,0,.19f,.16f,.20f,-8.46f,0,.12f,.99f,.86f,-8.0f,0,.06f,1.80f,1.62f,-7.38f,0,.03f,2.39f,2.06f,-6.56f,0,.04f,2.75f,2.36f,-5.73f,0,.08f,2.78f,2.41f,-5.06f,0,.13f,2.54f,2.27f,-4.59f,0,.21f,2.25f,2.08f);
+   // The forehead shield is a solid shaped insert with a dark rim, joining the dome.
+   portrait(head,5,5,-6.95f,0,-1.82f,.38f,.22f,-6.55f,0,-2.02f,.95f,.37f,-5.86f,0,-2.17f,1.27f,.43f,-4.88f,0,-2.16f,1.29f,.42f,-4.50f,0,-2.07f,1.06f,.28f);
+   portrait(head,3,14,-6.84f,0,-1.91f,.36f,.21f,-6.44f,0,-2.11f,.84f,.34f,-5.76f,0,-2.24f,1.12f,.42f,-4.88f,0,-2.24f,1.15f,.40f,-4.58f,0,-2.15f,.96f,.28f);
+   // Curved, narrow purple eye strip following the solid helmet's lower rim.
+   for(int side:new int[]{-1,1}){
+    panel(head,5,side*.14f,-4.47f,-2.37f,side*.98f,-4.55f,-2.19f,.48f);
+    panel(head,5,side*.98f,-4.55f,-2.19f,side*1.85f,-4.82f,-1.72f,.43f);
+    panel(head,4,side*.17f,-4.43f,-2.44f,side*.99f,-4.53f,-2.27f,.19f);
+    panel(head,4,side*.99f,-4.53f,-2.27f,side*1.84f,-4.79f,-1.80f,.18f);
+    // Gold cheek guards attach to jaw, exposing black panel only at the sides.
+    plate(head,1,-5.16f,side*1.90f,-.32f,.44f,1.01f,-4.30f,side*1.94f,-.28f,.43f,1.06f,-3.36f,side*1.65f,-.18f,.34f,.83f,-2.52f,side*1.17f,-.12f,.12f,.38f);
+    plate(head,2,-5.46f,side*1.51f,1.17f,.76f,.85f,-4.40f,side*1.47f,1.10f,.71f,.84f,-3.25f,side*1.09f,.91f,.54f,.64f,-2.12f,side*.60f,.65f,.23f,.34f);
+   }
+   plate(head,2,-5.08f,0,1.20f,1.42f,.94f,-4.35f,0,1.20f,1.40f,.94f,-3.43f,0,.99f,1.12f,.73f,-2.22f,0,.66f,.57f,.37f);
+   // Small projecting nose, dark sculpted lips and violet chin inset.
+   plate(head,3,-4.12f,0,-1.88f,.13f,.10f,-3.62f,0,-1.95f,.20f,.22f,-3.30f,0,-2.01f,.25f,.19f,-3.08f,0,-1.79f,.16f,.10f);
+   panel(head,5,-.36f,-2.62f,-1.53f,0,-2.70f,-1.69f,.17f);
+   panel(head,5,0,-2.70f,-1.69f,.36f,-2.62f,-1.53f,.17f);
+   plate(head,4,-2.36f,0,-1.15f,.28f,.19f,-2.12f,0,-1.26f,.34f,.22f,-1.86f,0,-1.08f,.18f,.14f);
    for(int i=0;i<2;i++){
     int s=i==0?-1:1;
     Part a=arms[i]=torso.child(s*3.62f,.64f,0);
@@ -125,10 +164,13 @@ public final class GoldExperienceClient{
     }
     panel(a,1,0,2.3f,-1.12f,0,5.55f,-.78f,1.26f);
     panel(a,5,s*.75f,2.55f,-.76f,s*.42f,5.60f,-.57f,.23f);
+    panel(a,1,0,2.35f,1.15f,0,5.65f,.81f,1.20f);
+    panel(a,5,s*.65f,2.55f,.85f,s*.40f,5.56f,.63f,.20f);
     Part f=fore[i]=a.child(0,5.85f,0);
     plate(f,2,-.42f,0,0,.80f,.82f,.64f,0,0,1.02f,1.04f,2.10f,0,0,.91f,.91f,3.65f,0,0,.60f,.65f,4.15f,0,0,.64f,.68f);
     panel(f,1,0,.44f,-1.04f,0,3.8f,-.69f,1.09f);
     panel(f,5,s*.64f,.48f,-.73f,s*.39f,3.65f,-.59f,.18f);
+    panel(f,1,0,.50f,1.02f,0,3.75f,.67f,1.03f);
     insignia(f,0,4.18f,-.90f,.63f);
     plate(f,0,4.08f,0,0,.64f,.66f,4.7f,0,-.10f,.88f,.62f,5.5f,0,-.22f,.78f,.54f,5.72f,0,-.25f,.52f,.42f);
     for(int j=0;j<3;j++)panel(f,5,-.38f+j*.38f,5.0f,-.78f,-.38f+j*.38f,5.53f,-.73f,.09f);
@@ -138,10 +180,13 @@ public final class GoldExperienceClient{
     panel(leg,5,-s*.65f,.56f,-1.27f,-s*.36f,5.65f,-.79f,.43f);
     insignia(leg,s*.79f,.65f,-1.48f,.60f);
     panel(leg,8,s*.90f,.80f,-1.58f,s*2.43f,3.0f,-.81f,.78f);
+    panel(leg,1,s*.18f,.60f,1.53f,0,5.70f,.93f,1.50f);
+    panel(leg,5,-s*.69f,1.10f,1.20f,-s*.37f,5.60f,.82f,.26f);
     Part shin=shins[i]=leg.child(0,6.1f,0);
     plate(shin,2,-.35f,0,0,.89f,.94f,.48f,0,0,1.04f,1.07f,2.15f,0,.08f,1.04f,1.09f,4.8f,0,0,.63f,.69f,6.15f,0,0,.57f,.66f);
     insignia(shin,0,.45f,-1.33f,.82f);
     panel(shin,1,0,1.13f,-1.1f,0,5.74f,-.73f,1.10f);
+    panel(shin,1,0,1.18f,1.13f,0,5.70f,.73f,1.07f);
     panel(shin,5,s*.69f,1.45f,-.83f,s*.36f,5.6f,-.58f,.22f);
     for(int j=0;j<3;j++)panel(shin,5,-.41f,2.4f+j*.77f,-1.02f,.12f,2.54f+j*.77f,-1.04f,.10f);
     plate(shin,1,5.83f,0,-.09f,.62f,.71f,6.46f,0,-.52f,.84f,1.36f,7.22f,0,-.62f,.88f,1.55f,7.48f,0,-.57f,.60f,1.30f);
@@ -225,7 +270,7 @@ public final class GoldExperienceClient{
   }
   @Override public void renderToBuffer(PoseStack p,VertexConsumer v,int light,int overlay,float r,float g,float b,float a){
    root.draw(p,v,LightTexture.pack(Math.max(10,LightTexture.block(light)),Math.max(10,LightTexture.sky(light))),overlay,r,g,b,a);
-   aura.draw(p,v,LightTexture.FULL_BRIGHT,overlay,1f,.92f,.65f,a*pulse);
+   // Gold sparks are handled on the server; no tall transparent ribbon outlines.
   }
  }
 }''',encoding='utf-8')
@@ -233,28 +278,40 @@ public final class GoldExperienceClient{
 im=Image.new('RGBA',(1024,512))
 def mix(a,b,t):
  t=max(0,min(1,t));return tuple(round(x+(y-x)*t) for x,y in zip(a,b))
-for m in range(12):
+for m in range(15):
  for y in range(128):
   v=max(0,min(1,(y-3)/121))
   for x in range(128):
    u=max(0,min(1,(x-3)/121));f=abs(u-.5)
    def g(cx,cy,sx,sy):return math.exp(-((u-cx)/sx)**2-((v-cy)/sy)**2)
    alpha=255
-   if m in (0,1,2,3,6,7,10):
-    base={0:(224,157,44),1:(255,229,156),2:(204,127,29),3:(255,246,200),6:(247,220,153),7:(248,218,135),10:(243,154,31)}[m]
+   if m in (0,1,2,3,6,7,10,12,13,14):
+    base={0:(224,157,44),1:(255,229,156),2:(204,127,29),3:(255,246,200),6:(247,220,153),7:(248,218,135),10:(243,154,31),12:(186,118,37),13:(245,220,144),14:(255,237,173)}[m]
     c=mix(base,(86,45,15),.25*f+.11*v)
     c=mix(c,(255,244,196),.48*g(.31,.31,.20,.46))
     c=mix(c,(255,247,213),.35*g(.17,.28,.043,.32))
     c=mix(c,(77,49,27),.25*max(0,math.sin(u*16+v*1.4))**10)
     if m==7:
-     # Helmet's curved dark-gold engraved channels.
+     # Real front-surface ornament: paired dark curls and curving crown seams.
      for side in (-1,1):
-      xx=.5+side*.22;dx=u-xx
-      if abs(v-(.30+.58*dx*dx+.12*side*dx))<.012:c=(91,55,25)
+      cx=.5+side*.235;cy=.46
+      dx=(u-cx)*side;dy=(v-cy)*.76
+      rad=math.hypot(dx,dy);ang=math.atan2(dy,dx)
+      if rad<.118 and min(abs(rad-(.014+.016*(ang+math.pi+k*2*math.pi))) for k in (0,1))<.009:c=(42,37,30)
+      seam=.5+side*(.06+.105*v+.065*math.sin(v*math.pi))
+      if abs(u-seam)<.010:c=(53,44,30)
+     if abs(u-.5)<.009 and v<.37:c=(46,38,29)
+     if abs(v-(.85-.13*abs(u-.5)))<.012:c=(53,43,29)
+    if m==13:
+     # The rear is not visible in the supplied illustration: coherent segmented nape pattern.
+     seam=.12+.16*math.sin(v*math.pi)
+     if abs(u-.5)<.012 or abs(abs(u-.5)-seam)<.010:c=(55,44,27)
+     if abs(v-.86)<.016:c=(71,49,25)
+    if m==14:
+     c=mix(c,(255,252,220),.40*g(.5,.45,.14,.38))
     if m==6:
-     # Narrow shadowed mouth and cheek planes. Visor is actual geometry.
-     c=mix(c,(104,68,38),.29*g(.50,.42,.28,.13))
-     if abs(u-.5)<.078 and abs(v-.78)<.013:c=(48,34,28)
+     c=mix(c,(99,62,34),.32*g(.50,.46,.28,.13))
+     if abs(u-.5)<.09 and abs(v-(.73-.015*abs(u-.5)/.09))<.017:c=(41,28,28)
    elif m==4:
     c=mix((48,16,77),(147,75,192),.38+.35*math.sin(u*math.pi)**2)
     c=mix(c,(236,183,255),.75*g(.28,.27,.13,.19))
