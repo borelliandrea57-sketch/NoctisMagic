@@ -1324,3 +1324,62 @@ edit('BakeryClient.java','    static class Renderer extends MobRenderer<BakeryCl
     static class Renderer extends MobRenderer<BakeryClerk,HumanoidModel<BakeryClerk>>{''')
 edit('BakeryClient.java','new HumanoidModel<>(c.bakeLayer(L))','new GestureModel(c.bakeLayer(L))')
 print('Recurring Phoenix and Miles objections, plus distinct satirical baker protest gesture.')
+
+
+# P is the dedicated pony power key, using the existing authenticated Cast packet.
+# A reserved negative ID cannot be confused with normal spells or the bat key.
+p=java/'Noctis.java';s=p.read_text(encoding='utf-8')
+a='if(id==-1){VampireLife.toggleBat(p);return;}'
+assert a in s
+s=s.replace(a,'''if(id==-201){
+            if(p.getVehicle() instanceof FriendshipPony pony&&pony.getControllingPassenger()==p)pony.power(p.serverLevel(),p);
+            return;
+        }'''+a,1)
+p.write_text(s,encoding='utf-8')
+write('PonyPowerKey.java','''package it.noctis.magic;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import org.lwjgl.glfw.GLFW;
+public class PonyPowerKey{
+ static final KeyMapping POWER=new KeyMapping("key.noctismagic.pony_power",InputConstants.Type.KEYSYM,GLFW.GLFW_KEY_P,"key.categories.noctismagic");
+ @Mod.EventBusSubscriber(modid=Noctis.ID,value=Dist.CLIENT,bus=Mod.EventBusSubscriber.Bus.MOD)
+ public static class Registration{
+  @SubscribeEvent public static void keys(RegisterKeyMappingsEvent e){e.register(POWER);}
+ }
+ @Mod.EventBusSubscriber(modid=Noctis.ID,value=Dist.CLIENT)
+ public static class Input{
+  @SubscribeEvent public static void tick(TickEvent.ClientTickEvent e){
+   if(e.phase!=TickEvent.Phase.END)return;
+   Minecraft mc=Minecraft.getInstance();
+   while(POWER.consumeClick()){
+    if(mc.player!=null&&mc.screen==null&&mc.player.getVehicle() instanceof FriendshipPony)Noctis.NET.sendToServer(new Noctis.Cast(-201));
+   }
+  }
+ }
+}''')
+# P replaces the previous blaze-rod shortcut for ponies only; dragon powers are unaffected.
+write('PonyEvents.java','''package it.noctis.magic;
+// Pony abilities now use the rebindable P key and the Noctis Cast packet.
+public class PonyEvents {}''')
+edit('FriendshipPony.java','if(s.is(Items.BLAZE_ROD)){if(level() instanceof ServerLevel l)power(l,p);return InteractionResult.sidedSuccess(level().isClientSide);}','')
+edit('FriendshipPony.java','if(!isTame()&&isFood(s)){','''if(!isTame()&&s.isEmpty()&&h==InteractionHand.MAIN_HAND){
+            if(p instanceof net.minecraft.server.level.ServerPlayer sp)sp.displayClientMessage(Component.translatable("message.noctismagic.pony_tame"),true);
+            return InteractionResult.sidedSuccess(level().isClientSide);
+        }
+        if(!isTame()&&isFood(s)){''')
+edit('FriendshipPony.java','l.broadcastEntityEvent(this,(byte)7);NpcDialogue.say','l.broadcastEntityEvent(this,(byte)7);p.displayClientMessage(Component.translatable("message.noctismagic.pony_tamed"),true);NpcDialogue.say')
+edit('FriendshipPony.java','p.startRiding(this);if(speech==0)','if(p.startRiding(this))p.displayClientMessage(Component.translatable("message.noctismagic.pony_ride",net.minecraft.network.chat.Component.keybind("key.noctismagic.pony_power")),true);if(speech==0)')
+for lang,it in [('it_it',True),('en_us',False)]:
+ p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
+ d['key.noctismagic.pony_power']='Potere della pony' if it else 'Pony power'
+ d['message.noctismagic.pony_tame']='Offrimi mele, carote o zucchero per diventare amici!' if it else 'Offer apples, carrots or sugar to become friends!'
+ d['message.noctismagic.pony_tamed']='Amicizia conquistata! Tasto destro a mano vuota per cavalcare.' if it else 'Friendship gained! Right-click with an empty hand to ride.'
+ d['message.noctismagic.pony_ride']='Premi %s per il potere speciale. Shift per scendere.' if it else 'Press %s to use the special power. Shift to dismount.'
+ j(p,d)
+print('Dedicated rebindable P pony power key, server ownership validation and localized taming/riding hints.')
