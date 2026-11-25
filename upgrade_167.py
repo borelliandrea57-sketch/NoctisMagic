@@ -3032,3 +3032,123 @@ for m,base in enumerate(bases):
    q=(y*W+(m%8)*128+x+(m//8)*128*W)*4;pix[q:q+4]=bytes((*c,255))
 png(assets/'textures/entity/giorno_sculpted.png',W,H,pix)
 print('Giorno Giovanna resculpted: angular face, layered swept blonde hair, rolls, braid, tailored purple suit and dedicated chest material.')
+
+
+# Defensive Geass lasts 60 seconds, not a fixed distance.
+edit('GeassExile.java','int ticks=2400,dir=-1,blocked;','int ticks=1200,dir=-1,blocked;')
+edit('GeassExile.java','if(!valid(p)||p.serverLevel()!=o.level||--o.ticks<=0){release(p,false);return;}','if(!valid(p)||p.serverLevel()!=o.level){release(p,false);return;}if(--o.ticks<=0){release(p,true);return;}')
+edit('GeassExile.java','if(o.walked>=200){release(p,true);return;}','// Continue the order until the full minute expires.')
+edit('GeassExile.java','if(best<0){o.blocked++;if(o.blocked>80){release(p,false);return;}best=16;}','if(best<0){o.blocked++;best=16;}')
+edit('GeassExile.java','Math.min(200,(int)o.walked)','(o.ticks+19)/20')
+for lang,it in [('it_it',True),('en_us',False)]:
+ p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
+ d['message.noctismagic.geass_progress']='Geass: %s secondi rimanenti' if it else 'Geass: %s seconds remaining'
+ j(p,d)
+# Lelouch: preserve C.C. and paired animations, rebuild the male costume and hair.
+p=java/'GeassSculptedClient.java';s=p.read_text(encoding='utf-8')
+a='            float w=cc?3.08f:3.02f;'
+assert a in s
+s=s.replace(a,a+'''
+            if(!cc){
+                body.loft(0,32,10.1f,0,0,2.62f,1.87f,11.95f,0,0,2.75f,1.88f,13.0f,0,0,2.9f,1.83f);
+                for(int side:new int[]{-1,1}){
+                    // Rigid upswept Zero collar, dark exterior and crimson lining, gold piping.
+                    Part collar=body.child(side*1.62f,-.35f,.80f);
+                    collar.loft(11,32,-7.0f,side*2.0f,1.0f,.04f,.05f,-5.6f,side*2.18f,.8f,.78f,.30f,-3.6f,side*1.63f,.55f,1.03f,.52f,-1.2f,side*.65f,.12f,1.15f,.65f,.55f,0,0,.65f,.4f);
+                    collar.blade(4,side*2.0f,-7.0f,.68f,side*2.52f,-4.6f,.30f,.22f);
+                    collar.blade(4,side*2.52f,-4.6f,.30f,side*.38f,-.2f,-.55f,.25f);
+                    collar.blade(10,side*1.73f,-5.8f,.23f,side*.42f,-.6f,-.56f,1.20f);
+                    body.blade(4,side*3.15f,1.2f,-1.28f,side*1.2f,3.1f,-1.92f,.85f);
+                    body.blade(4,side*1.2f,3.1f,-1.92f,0,3.6f,-1.97f,.48f);
+                    body.blade(12,side*2.65f,5.0f,-1.22f,side*1.75f,8.6f,-1.55f,.6f);
+                }
+            }''',1)
+# Replace only Lelouch's facial silhouette and hair geometry, retaining C.C. untouched.
+a=s.index('            head.loft(6,64,');b=s.index('            projectFace(head);',a)
+old=s[a:b]
+s=s[:a]+'            if(cc){\n'+old+'            }else head.loft(6,80,-7.8f,0,.2f,1.25f,1.5f,-7.2f,0,.1f,2.47f,2.35f,-5.6f,0,0,2.92f,2.70f,-4.2f,0,-.1f,2.84f,2.72f,-2.8f,0,-.13f,2.39f,2.30f,-1.25f,0,-.32f,1.48f,1.70f,-.35f,0,-.45f,.68f,1.0f,0,0,-.48f,.28f,.60f);\n'+s[b:]
+s=s.replace('            projectFace(head);','''            projectFace(head);
+            if(!cc){
+                head.loft(7,24,-4.8f,0,-2.55f,.15f,.10f,-3.9f,0,-2.75f,.27f,.21f,-3.05f,0,-3.13f,.41f,.34f,-2.78f,0,-2.94f,.27f,.16f);
+                for(int t:new int[]{-1,1}){
+                    head.blade(13,t*.75f,-4.52f,-2.64f,t*2.18f,-4.80f,-2.02f,.12f);
+                    head.blade(14,t*1.65f,-3.12f,-2.16f,t*2.20f,-2.51f,-1.62f,.15f);
+                }
+            }''',1)
+s=s.replace('for(int i=0;i<(cc?8:6);i++){','for(int i=0;i<(cc?8:0);i++){',1)
+a='            Part back=head.child(0,-6.3f,1.9f);hair.add(back);'
+assert a in s
+s=s.replace(a,'''            if(!cc){
+                // Thin layered swept strands, asymmetric tips across the forehead.
+                for(int i=0;i<11;i++){
+                    float t=i/10f,x=-2.8f+t*5.5f;
+                    Part q=head.child(x,-7.9f,-1.3f);
+                    float end=2.0f+(float)Math.sin(t*Math.PI)*2.15f;
+                    float dx=-1.7f+t*.6f;
+                    q.loft(8,24,-.60f,0,.75f,.55f,.63f,.35f,.15f,-.30f,.65f,.46f,1.65f,dx*.24f,-1.11f,.54f,.30f,2.7f,dx*.65f,-1.47f,.36f,.21f,end,dx,-1.22f,.035f,.045f);
+                    q.blade(15,.12f,.20f,-.74f,dx*.78f,end*.85f,-1.40f,.15f);
+                }
+                for(int i=0;i<7;i++){
+                    float t=i/6f;
+                    Part q=head.child(-2.5f+t*4.8f,-7.4f,.6f);
+                    q.loft(8,20,-.3f,0,0,.82f,.79f,.8f,-.28f,.3f,.84f,.72f,2.4f,-.85f,.55f,.55f,.4f,3.7f,-1.4f,.74f,.04f,.045f);
+                    q.blade(15,-.05f,.4f,-.50f,-1.2f,3.3f,.32f,.17f);
+                }
+            }
+'''+a,1)
+# More layered side locks and sharper taper.
+s=s.replace('cc?7:3.2f,s*.65f,-.15f,.69f,.72f,cc?16.8f:5.5f,s*.4f,.5f,.035f,.045f','cc?7:3.2f,s*.65f,-.15f,.69f,.72f,cc?16.8f:6.15f,s*.4f,.5f,.035f,.045f',1)
+a='                fore[i].oval(cc?0:7,0,4.98f,-.08f,.67f,.91f,.55f);'
+assert a in s
+s=s.replace(a,'''                if(cc)fore[i].oval(0,0,4.98f,-.08f,.67f,.91f,.55f);
+                else{
+                    fore[i].oval(12,0,4.78f,-.08f,.65f,.68f,.45f);
+                    for(int k=0;k<4;k++)fore[i].loft(12,12,4.98f,-.48f+k*.30f,-.13f,.15f,.20f,5.8f-(k==3?.18f:0),-.48f+k*.30f,-.18f,.13f,.14f,5.96f-(k==3?.18f:0),-.48f+k*.30f,-.18f,.04f,.05f);
+                    fore[i].oval(12,s*.65f,4.79f,-.21f,.22f,.48f,.22f);
+                    arms[i].blade(4,-s*.4f,.0f,-1.03f,s*.55f,1.1f,-1.18f,.26f);
+                    fore[i].blade(4,s*.62f,2.95f,-.65f,s*.68f,3.85f,-.59f,.34f);
+                }''',1)
+# Fix collar/cape shape by using separate dark exterior and red lining on Lelouch.
+s=s.replace('c.loft(5,18,0,0,0,cc?1.5f:2.7f,.32f,len*.24f,s*.6f,.4f,cc?2.0f:3.4f,.37f,len*.54f,s*1.25f,1.2f,cc?2.4f:4.1f,.4f,len*.80f,s*2.0f,2.0f,cc?1.7f:3.6f,.34f,len,s*2.7f,3.3f,.08f,.10f);','''if(cc)c.loft(5,18,0,0,0,1.5f,.32f,len*.24f,s*.6f,.4f,2.0f,.37f,len*.54f,s*1.25f,1.2f,2.4f,.4f,len*.80f,s*2.0f,2.0f,1.7f,.34f,len,s*2.7f,3.3f,.08f,.10f);
+                else c.loft(5,36,0,0,0,2.4f,.22f,len*.24f,s*.50f,.65f,3.15f,.28f,len*.54f,s*1.15f,1.55f,3.6f,.37f,len*.80f,s*1.65f,2.4f,3.65f,.32f,len,s*1.8f,3.0f,2.9f,.13f);''',1)
+s=s.replace('float s=cc?.94f:1.02f;p.scale(s,s,s);','if(cc)p.scale(.94f,.94f,.94f);else p.scale(1.12f,1.16f,1.10f);',1)
+p.write_text(s,encoding='utf-8')
+# New Lelouch-only atlas, C.C. unchanged.
+W,H=1024,512;pix=bytearray(W*H*4)
+pal=[(27,28,43),(165,115,44),(17,18,30),(224,224,238),(218,168,47),(27,25,44),(233,178,145),(233,178,145),(31,26,32),(140,135,166),(123,23,44),(27,24,40),(20,21,30),(39,24,37),(158,91,78),(100,78,80)]
+def clamp01(v):return max(0,min(1,v))
+for m,base in enumerate(pal):
+ for y in range(128):
+  for x in range(128):
+   u=clamp01((x-3)/121);v=clamp01((y-3)/121);f=abs(u-.5)
+   c=shade(base,.80+.24*math.sin(math.pi*u)+.08*math.sin(u*23+v*8)**2)
+   if m in (0,2,12):
+    c=mix(c,(68,70,112),.34*math.exp(-((u-.34+.07*math.sin(v*9))/.14)**2))
+    c=mix(c,(8,10,21),.32*math.sin(u*math.pi*3+v*3)**8)
+   if m in (5,11):
+    c=mix((115,22,43) if f<.24 else (23,22,35),(69,50,87),.19*math.sin(u*math.pi*7+v*3)**2)
+    if v>.966:c=(207,155,49)
+   if m==4:c=mix(base,(255,221,120),.36*math.sin(math.pi*u)**2)
+   if m==8:
+    wave=math.sin(u*math.pi*12+v*3)
+    c=mix(base,(113,88,84),.26*max(0,wave)**5+.18*math.exp(-((v-.33)/.20)**2))
+   if m==6:
+    c=mix(base,(142,79,75),.28*clamp01((f-.19)*4)+.13*v)
+    c=mix(c,(255,214,179),.30*math.exp(-((u-.49)/.11)**2))
+    for side in (-1,1):
+     dx=side*(u-(.5+side*.165))/.117
+     dy=(v-(.47-.044*dx))/.055
+     d=abs(dx)**1.7+abs(dy)**1.4
+     if d<1.2:c=(36,22,35)
+     if d<.80:c=(247,235,224)
+     if d<.78 and abs(dx+.06)<.46:c=mix((76,33,114),(186,81,193),clamp01((dy+.7)/1.4))
+     if d<.76 and abs(dx+.06)<.20:c=(26,18,40)
+     if d<.76 and (dx+.20)**2+(dy+.25)**2<.052:c=(255,250,240)
+     if abs(dx)<1.04 and abs(v-(.365-.049*dx))<.016:c=(38,27,34)
+     if abs(dx)<.9 and abs(v-(.398-.045*dx))<.006:c=(123,69,66)
+    if f<.04 and abs(v-.685)<.012:c=(157,87,77)
+    if f<.065 and abs(v-(.79-.021*(1-f/.065)))<.010:c=(106,47,56)
+    if f<.045 and abs(v-.81)<.009:c=(208,120,107)
+   off=((m//8*128+y)*W+m%8*128+x)*4;pix[off:off+4]=bytes((*c,255))
+png(assets/'textures/entity/lelouch_sculpted.png',W,H,pix)
+print('Lelouch rebuilt with angular face, sharp swept hair, layered Zero collar, dark uniform, crimson cape, gloves; Geass lasts one minute.')
