@@ -4126,3 +4126,202 @@ for cc in (True,False):
     off=((m//8*128+y)*W+m%8*128+x)*4;pix[off:off+4]=bytes((*c,255))
  png(assets/'textures/entity'/('cc_sculpted.png' if cc else 'lelouch_sculpted.png'),W,H,pix)
 print('Code Geass: new angular heads, fine layered hair, detailed C.C. outfit and light-green chat.')
+
+
+# Exodia: rebuilt from Egyptian giant / sealed monster reference, independent high-relief mesh.
+p=java/'ExodiaClient.java';s=p.read_text(encoding='utf-8')
+a=s.index('  M(){');b=s.index('  @Override public void setupAnim',a)
+s=s[:a]+'''  // Raised curved golden ornaments, with a continuous swept tube.
+  static void scroll(Part parent,int side,float x,float y,float z,float size){
+   Part p=parent.child(x,y,z);
+   for(int i=0;i<23;i++){
+    float t=i/22f,ang=(float)(t*Math.PI*2.0),rad=size*(1-t*.83f);
+    p.oval(1,side*rad*(float)Math.cos(ang),rad*(float)Math.sin(ang),0,.115f,.115f,.115f);
+   }
+  }
+  static void stripe(Part p,int tile,float x,float y,float z,float endX,float endY,float endZ,float width){
+   p.blade(tile,x,y,z,endX,endY,endZ,width);
+  }
+  static void shackle(Part p,float y,float w,float d){
+   p.loft(6,28,y-.64f,0,0,w*.94f,d*.94f,y-.49f,0,0,w,d,y+.48f,0,0,w,d,y+.64f,0,0,w*.94f,d*.94f);
+   for(float h:new float[]{y-.52f,y+.52f})p.loft(7,24,h-.10f,0,0,w*1.015f,d*1.015f,h+.10f,0,0,w*1.015f,d*1.015f);
+   for(int k=0;k<10;k++){
+    float t=k*(float)Math.PI/5;
+    p.oval(7,(w-.03f)*(float)Math.sin(t),y,(d-.03f)*(float)Math.cos(t),.23f,.23f,.23f);
+   }
+  }
+  M(){
+   // A squat, colossal physique: huge chest and back, narrow waist, separated abdominal muscles.
+   body.loft(0,36,-1.3f,0,0,3.40f,2.30f,-.55f,0,0,5.85f,3.25f,1.2f,0,-.12f,6.30f,3.60f,3.3f,0,-.13f,5.80f,3.43f,5.3f,0,0,4.65f,2.80f,7.8f,0,0,3.53f,2.20f,9.6f,0,0,3.62f,2.18f,11.0f,0,0,4.35f,2.62f);
+   for(int side:new int[]{-1,1}){
+    body.oval(0,side*2.74f,1.92f,-2.10f,2.88f,1.83f,1.78f);
+    stripe(body,2,side*.38f,3.65f,-3.45f,side*4.85f,3.30f,-2.31f,.26f);
+    for(int j=0;j<3;j++){
+     float y=4.32f+j*1.45f;
+     body.oval(0,side*1.47f,y,-2.52f+j*.17f,1.48f-j*.10f,.80f,.64f);
+     stripe(body,2,side*.16f,y+.72f,-3.06f+j*.16f,side*2.62f,y+.63f,-2.16f+j*.13f,.18f);
+     stripe(body,2,side*3.70f-j*.19f,4.0f+j*1.12f,-1.70f,side*2.75f-j*.14f,4.9f+j*1.12f,-2.10f,.30f);
+    }
+    // Iconic spirals above the chest; no blue shoulder gems.
+    scroll(body,side,side*2.48f,2.15f,-3.84f,.87f);
+    stripe(body,1,side*2.90f,2.78f,-3.53f,side*1.62f,5.08f,-3.04f,.27f);
+   }
+   body.oval(1,0,1.25f,-3.49f,.63f,.73f,.20f);
+   body.oval(3,0,1.25f,-3.65f,.39f,.46f,.12f);
+   body.blade(9,0,1.80f,-3.68f,0,5.75f,-3.07f,.95f);
+   body.blade(1,0,1.82f,-3.80f,0,2.82f,-3.48f,.24f);
+   body.loft(6,32,9.2f,0,0,3.72f,2.26f,10.13f,0,0,4.27f,2.55f,10.55f,0,0,4.30f,2.58f);
+   body.oval(1,0,10.04f,-2.60f,.77f,.70f,.26f);
+   body.oval(7,0,10.04f,-2.82f,.41f,.47f,.12f);
+   // Small deeply recessed demonic face, huge flared Egyptian nemes and two golden crown prongs.
+   head.y=-.50f;
+   head.loft(4,24,-6.78f,0,.2f,.80f,.86f,-6.02f,0,0,1.57f,1.46f,-4.76f,0,-.06f,1.72f,1.63f,-3.55f,0,-.18f,1.45f,1.36f,-2.35f,0,-.35f,1.0f,1.0f,-1.94f,0,-.37f,.60f,.63f);
+   head.loft(1,28,-8.1f,0,.26f,.55f,.61f,-7.65f,0,.12f,1.95f,1.75f,-6.65f,0,.06f,2.88f,2.32f,-5.90f,0,.13f,2.70f,2.12f);
+   for(int side:new int[]{-1,1}){
+    Part horn=head.child(side*.65f,-7.45f,-.13f);horn.rz=side*.25f;
+    horn.loft(1,14,-4.0f,side*.58f,.35f,.035f,.045f,-3.2f,side*.33f,.24f,.32f,.35f,-2.05f,side*.09f,.10f,.61f,.57f,-.75f,0,0,.75f,.72f,.35f,0,.04f,.80f,.74f);
+    // Upper headcloth wings, curled upward at the outside, purple-red/gold ribs.
+    Part upper=head.child(side*.56f,-6.08f,-1.59f);
+    upper.rz=-side*.70f;
+    upper.loft(8,16,-.42f,0,0,.52f,.28f,.55f,side*.48f,0,1.25f,.43f,1.60f,side*.88f,.18f,1.78f,.46f,2.92f,side*1.28f,.48f,1.45f,.38f,3.68f,side*1.55f,.75f,.09f,.11f);
+    for(int j=0;j<7;j++){
+     float t=j/6f;
+     stripe(upper,1,side*(.10f+1.26f*t),.02f+2.95f*t,-.40f+ .78f*t,side*(.97f+1.30f*t),.48f+2.82f*t,-.28f+.76f*t,.18f);
+    }
+    Part lower=head.child(side*1.10f,-4.67f,-1.31f);lower.rz=-side*.22f;
+    lower.loft(8,20,-.3f,0,0,.68f,.41f,.8f,side*.36f,.18f,1.27f,.53f,2.05f,side*.90f,.45f,1.29f,.47f,3.38f,side*1.50f,.69f,1.12f,.36f,4.33f,side*1.93f,.91f,.09f,.08f);
+    for(int j=0;j<7;j++){
+     float t=j/6f;
+     stripe(lower,1,side*(.02f+1.76f*t),-.05f+3.52f*t,-.46f+.78f*t,side*(.84f+1.65f*t),.45f+3.61f*t,-.29f+.72f*t,.18f);
+    }
+    // Recessed dark eye sockets, slanted eyes and angular gilded eyebrow ridges.
+    Part eye=head.child(side*.72f,-4.92f,-1.54f);eye.rz=-side*.23f;eye.ry=-side*.18f;
+    eye.oval(10,0,0,0,.58f,.36f,.21f);
+    eye.oval(12,0,.02f,-.17f,.38f,.15f,.085f);
+    stripe(head,1,side*.14f,-5.25f,-1.76f,side*1.34f,-5.57f,-1.16f,.36f);
+    stripe(head,1,side*.24f,-4.06f,-1.63f,side*1.36f,-4.49f,-1.30f,.37f);
+    stripe(head,1,side*.66f,-2.64f,-1.12f,side*1.45f,-4.05f,-1.31f,.38f);
+   }
+   head.blade(1,0,-6.96f,-2.07f,0,-4.10f,-1.89f,.62f);
+   head.blade(3,0,-6.31f,-2.28f,0,-5.44f,-2.13f,.40f);
+   head.oval(10,0,-3.58f,-1.53f,.94f,.65f,.21f);
+   for(int j=0;j<7;j++){
+    float x=-.72f+j*.24f;
+    head.loft(9,8,-4.05f,x,-1.69f,.12f,.10f,-3.77f,x,-1.76f,.10f,.10f,-3.63f,x,-1.75f,.035f,.05f);
+    head.loft(9,8,-3.48f,x,-1.72f,.03f,.04f,-3.35f,x,-1.74f,.105f,.095f,-3.18f,x,-1.68f,.11f,.09f);
+   }
+   head.loft(3,12,-2.94f,0,-1.08f,.30f,.30f,-2.42f,0,-1.25f,.36f,.35f,-1.48f,0,-1.32f,.24f,.24f);
+   for(int j=0;j<3;j++)head.loft(1,12,-2.80f+j*.36f,0,-1.23f,.36f-j*.035f,.34f,-2.70f+j*.36f,0,-1.24f,.35f-j*.035f,.33f);
+   for(int i=0;i<2;i++){
+    int side=i==0?-1:1;
+    arms[i]=body.child(side*5.96f,.20f,0);
+    // Huge domed pauldrons with broad upward flared rims, layered hammered bronze.
+    Part shoulder=arms[i].child(side*.75f,-.60f,0);shoulder.rz=-side*.15f;
+    shoulder.loft(1,40,-3.00f,side*.30f,.10f,.75f,.82f,-2.70f,side*.40f,.07f,2.32f,2.35f,-1.95f,side*.70f,0,3.36f,3.02f,-.75f,side*1.0f,0,4.24f,3.56f,.05f,side*1.17f,0,4.72f,3.78f,.45f,side*1.14f,0,4.36f,3.54f,.86f,side*.72f,0,2.80f,2.63f);
+    shoulder.loft(1,36,-.12f,side*1.18f,0,4.70f,3.77f,.21f,side*1.21f,0,4.83f,3.83f,.50f,side*1.14f,0,4.40f,3.55f);
+    shoulder.blade(1,side*3.23f,.05f,0,side*5.65f,-1.10f,.25f,2.02f);
+    for(int k=0;k<11;k++){
+     float angle=k*(float)Math.PI/10;
+     float x=side*1.17f+4.53f*(float)Math.cos(angle);
+     float z=-3.58f*(float)Math.sin(angle);
+     shoulder.blade(7,x,.17f,z,x*.89f,-.39f,z*.86f,.10f);
+    }
+    // Pronounced biceps, triceps and tendon relief.
+    arms[i].loft(0,32,-.5f,0,0,2.30f,2.25f,.65f,0,0,2.68f,2.56f,2.7f,0,0,2.49f,2.28f,4.0f,0,0,1.97f,1.94f,5.25f,0,0,1.72f,1.67f);
+    arms[i].oval(0,side*.04f,2.60f,-1.43f,1.93f,2.01f,1.25f);
+    arms[i].oval(0,side*.37f,2.17f,1.36f,1.81f,1.80f,1.16f);
+    stripe(arms[i],2,side*1.50f,1.08f,-1.31f,side*1.72f,4.35f,-.72f,.22f);
+    fore[i]=arms[i].child(0,5.1f,0);
+    fore[i].loft(0,28,-.25f,0,0,1.79f,1.70f,1.08f,0,0,2.24f,2.08f,2.22f,0,0,1.97f,1.85f,3.62f,0,0,1.63f,1.53f);
+    fore[i].oval(0,-side*.61f,1.6f,-1.03f,1.28f,1.5f,1.07f);
+    stripe(fore[i],2,side*.88f,.46f,-1.68f,side*.42f,2.81f,-1.62f,.18f);
+    shackle(fore[i],3.20f,2.02f,1.90f);
+    // Wide open hands, separated knuckles, bent individual fingers and thumb.
+    fore[i].oval(0,0,4.53f,-.12f,1.66f,1.30f,1.02f);
+    for(int j=0;j<4;j++){
+     float x=-1.15f+j*.76f;
+     float len=j==0?1.24f:j==3?1.34f:1.65f;
+     Part finger=fore[i].child(x,5.16f,-.25f);
+     finger.rz=(j-1.5f)*-.16f;finger.rx=-.22f;
+     finger.loft(0,12,-.15f,0,0,.38f,.40f,.50f,0,-.12f,.42f,.40f,len*.72f,0,-.35f,.33f,.30f,len,0,-.54f,.20f,.20f);
+     finger.oval(1,0,.34f,-.40f,.30f,.25f,.11f);
+    }
+    Part thumb=fore[i].child(-side*1.45f,4.35f,-.36f);thumb.rz=side*.62f;
+    thumb.loft(0,14,-.15f,0,0,.39f,.42f,.65f,0,-.20f,.51f,.44f,1.38f,0,-.48f,.32f,.30f,1.65f,0,-.55f,.17f,.20f);
+    // Massive hanging rusty chain; last link ends open.
+    Part prev=fore[i];for(int j=0;j<5;j++){
+     Part link=chains[i][j]=prev.child(j==0?side*1.90f:0,j==0?3.43f:1.53f,j==0?.55f:0);
+     link.ry=(j%2)*1.57f;
+     if(j<4)loop(link,5,.59f,.96f,.19f);
+     else{
+      for(int k=0;k<14;k++)for(int v=0;v<8;v++){
+       float t0=k*(float)Math.PI/9,t1=(k+1)*(float)Math.PI/9,b0=v*(float)Math.PI/4,b1=(v+1)*(float)Math.PI/4;
+       link.faces.add(new Q(ring(t0,b0,.59f,.96f,.19f,k/18f,v/8f),ring(t1,b0,.59f,.96f,.19f,(k+1)/18f,v/8f),ring(t1,b1,.59f,.96f,.19f,(k+1)/18f,(v+1)/8f),ring(t0,b1,.59f,.96f,.19f,k/18f,(v+1)/8f),5));
+      }
+     }
+     prev=link;
+    }
+    // Dark segmented Egyptian kilt, not long gold trousers.
+    skirts[i]=body.child(side*1.85f,10.3f,0);
+    for(int j=0;j<5;j++){
+     float ang=side*(.16f+j*.37f);
+     Part panel=skirts[i].child((float)Math.sin(ang)*1.60f,0,-(float)Math.cos(ang)*2.39f);
+     panel.ry=-ang;
+     panel.loft(11,12,-.12f,0,0,.72f,.27f,1.25f,side*.14f,.14f,.94f,.26f,3.30f,side*.56f,.39f,.87f,.23f,4.80f,side*.83f,.63f,.045f,.07f);
+     stripe(panel,7,0,.38f,-.28f,side*.60f,3.84f,.14f,.10f);
+    }
+    legs[i]=root.child(side*2.70f,11.3f,0);
+    legs[i].loft(0,28,-.48f,0,0,2.37f,2.29f,.9f,0,0,2.62f,2.48f,2.8f,0,0,2.31f,2.20f,5.25f,0,0,1.59f,1.57f);
+    legs[i].oval(0,side*.55f,2.12f,-1.34f,1.64f,2.14f,1.37f);
+    legs[i].oval(0,-side*.74f,2.81f,-.97f,1.31f,1.70f,1.11f);
+    stripe(legs[i],2,side*.08f,.75f,-2.38f,side*.56f,4.59f,-1.86f,.20f);
+    shin[i]=legs[i].child(0,5.12f,0);
+    shin[i].oval(0,0,.12f,-.91f,1.66f,1.41f,1.26f);
+    shin[i].loft(0,28,.28f,0,0,1.62f,1.60f,2.1f,0,.14f,1.91f,1.76f,4.0f,0,0,1.45f,1.41f,5.75f,0,0,1.45f,1.45f);
+    stripe(shin[i],2,0,1.01f,-1.52f,0,4.74f,-1.46f,.24f);
+    shackle(shin[i],5.10f,1.87f,1.80f);
+    shin[i].loft(0,28,5.75f,0,0,1.45f,1.41f,6.40f,0,-.54f,1.86f,2.35f,7.40f,0,-.72f,1.99f,2.54f);
+    for(int j=0;j<4;j++)shin[i].oval(0,-1.27f+j*.80f,6.95f,-2.66f,.44f,.48f,.62f);
+    for(int j=0;j<4;j++){Part link=shin[i].child(side*(1.85f+j*.80f),5.4f+j*.40f,.45f+j*.42f);link.rz=side*1.13f;link.ry=j%2*1.57f;loop(link,5,.55f,.83f,.17f);}
+   }
+   Part apron=body.child(0,10.25f,-2.52f);apron.loft(11,12,-.1f,0,0,1.30f,.26f,1.8f,0,.10f,1.48f,.24f,4.3f,0,.38f,1.12f,.21f,5.4f,0,.61f,.04f,.05f);
+   apron.blade(7,0,.25f,-.24f,0,4.3f,.23f,.15f);
+  }
+'''+s[b:]
+s=s.replace('arms[i].rz=-s*(.13f+hit*(mode==2?1.15f:.35f));','arms[i].rz=-s*(.34f+hit*(mode==2?.82f:.30f));',1)
+s=s.replace('fore[i].rx=-hit*(mode==0?.65f:.30f);','fore[i].rx=-.16f-hit*(mode==0?.65f:.30f);fore[i].ry=s*(.16f+hit*.20f);',1)
+s=s.replace('legs[i].rx=w*.38f;shin[i].rx=Math.max(0,-w)*.18f;','legs[i].rx=w*.38f;legs[i].rz=-s*.13f;shin[i].rx=Math.max(0,-w)*.18f;',1)
+p.write_text(s,encoding='utf-8')
+
+# Hammered bronze, patina, gold and purple headcloth, leather, rust and bone-white teeth.
+W,H=1024,512;pix=bytearray(W*H*4)
+pal=[(185,115,48),(224,164,72),(97,49,27),(29,109,132),(64,39,34),(78,40,31),(87,45,34),(145,90,48),(117,28,62),(232,219,184),(23,15,20),(60,40,34),(255,227,116)]
+for m,base in enumerate(pal):
+ for y in range(128):
+  v=sat2((y-3)/121)
+  for x in range(128):
+   u=sat2((x-3)/121)
+   grain=(math.sin(x*7.13+y*9.71)*math.cos(x*11.29-y*5.17)+1)*.5
+   c=shade(base,.78+.22*math.sin(u*math.pi)+.09*grain)
+   if m in (0,1,2,7):
+    c=mix(c,(255,224,151),(.46 if m==1 else .27)*math.exp(-((u-.33)/.13)**2))
+    c=mix(c,(91,40,22),.24*math.exp(-((u-.82)/.14)**2)+.10*v)
+    c=shade(c,.93+.10*grain)
+    scratch=math.sin(u*183+v*29+math.sin(v*17))
+    if scratch>.975 and math.sin(v*51+u*73)>.4:c=mix(c,(104,59,34),.37)
+    if m==1 and v<.045:c=mix(c,(255,221,133),.48)
+   if m==8:
+    rib=math.sin((u+.025*math.sin(v*5))*math.pi*16)
+    c=mix(c,(247,187,76),.91*max(0,rib)**4)
+    c=mix(c,(45,15,38),.30*max(0,-rib)**3)
+   if m in (5,6):
+    c=mix(c,(168,89,50),.29*grain+.18*math.exp(-((u-.28)/.12)**2))
+    c=mix(c,(31,23,23),.22*(1-grain))
+   if m==11:
+    c=mix(c,(113,83,67),.25*max(0,math.sin(u*math.pi*3+v*2))**4)
+    if v>.92:c=shade(c,.55)
+   if m==3:c=mix(c,(103,217,219),.37*math.exp(-((u-.33)/.15)**2))
+   if m==12:c=mix((255,178,52),(255,252,203),.40+.50*math.sin(math.pi*u))
+   off=((m//8*128+y)*W+m%8*128+x)*4;pix[off:off+4]=bytes((*c,255))
+png(assets/'textures/entity/exodia.png',W,H,pix)
+print('Exodia remade: massive anatomy, domed shoulders, striped nemes, horns, demonic teeth, open hands, dark kilt and broken chains.')
