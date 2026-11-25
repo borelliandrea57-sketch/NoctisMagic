@@ -162,7 +162,7 @@ for old,new in [('Blocks.DARK_OAK_PLANKS','Furniture.FAST_METAL_CLAD.get()'),('B
 # Preserve parking lines and existing seats, change interior floor and roof.
 sub+='''        for(int z=6;z<=24;z++)for(int x=2;x<=30;x++){
             Block floor=z>=19?Furniture.FAST_KITCHEN_TILE.get():
-                (x>=13&&x<=19?Furniture.FAST_TER RAZZO.get():(x==2||x==30||z==6||z==17?Furniture.FAST_PORCELAIN.get():Furniture.FAST_PARQUET.get()));
+                (x>=13&&x<=19?Furniture.FAST_TERRAZZO.get():(x==2||x==30||z==6||z==17?Furniture.FAST_PORCELAIN.get():Furniture.FAST_PARQUET.get()));
             p.put(x,0,z,floor);
         }
         p.box(0,8,4,32,8,26,Furniture.FAST_METAL_CLAD.get());
