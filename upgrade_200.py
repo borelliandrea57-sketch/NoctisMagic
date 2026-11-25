@@ -26,11 +26,11 @@ s=s.replace(a,'''void draw(PoseStack p,VertexConsumer buf,int light,int overlay,
         void drawStyled(PoseStack p,VertexConsumer buf,int light,int overlay,float red,float green,float blue,float alpha,int style){''',1)
 a='int l=(f.tile==12||f.tile==13)?(Math.max(light&65535,11<<4)|Math.max(light&0xffff0000,11<<20)):light;'
 assert a in s,a
-s=s.replace(a,'''int l=style==0&&(f.tile==12||f.tile==13)?(Math.max(light&65535,11<<4)|Math.max(light&0xffff0000,11<<20)):light;
+s=s.replace(a,'''int l=style==1&&f.tile==15?0x00F000F0:style==0&&(f.tile==12||f.tile==13)?(Math.max(light&65535,11<<4)|Math.max(light&0xffff0000,11<<20)):light;
                 boolean metal=ArcaneShading.metal(style,f.tile);''',1)
 a='buf.vertex(mat,v.x/16f,v.y/16f,v.z/16f).color(red,green,blue,alpha).uv(u,vv).overlayCoords(overlay).uv2(l).normal(norm,v.nx,v.ny,v.nz).endVertex();'
 assert a in s,a
-s=s.replace(a,'''float shade=ArcaneShading.shade(norm,v.nx,v.ny,v.nz,metal,style,alpha);
+s=s.replace(a,'''float shade=style==1&&f.tile==15?1f:ArcaneShading.shade(norm,v.nx,v.ny,v.nz,metal,style,alpha);
                     buf.vertex(mat,v.x/16f,v.y/16f,v.z/16f).color(red*shade,green*shade,blue*shade,alpha).uv(u,vv).overlayCoords(overlay).uv2(l).normal(norm,v.nx,v.ny,v.nz).endVertex();''',1)
 a='for(Part c:children)c.draw(p,buf,light,overlay,red,green,blue,alpha);'
 assert a in s,a
@@ -42,7 +42,7 @@ final class ArcaneShading{
  private ArcaneShading(){}
  static boolean metal(int style,int t){
   return switch(style){
-   case 1 -> t==0||t==1||t==2||t==3||t==4||t==7||t==8;
+   case 1 -> t==0||t==1||t==2||t==3||t==7||t==8||t==10||t==11||t==12||t==13||t==14;
    case 2 -> t==0||t==1||t==2||t==4;
    case 3 -> t==4;
    default -> false;
