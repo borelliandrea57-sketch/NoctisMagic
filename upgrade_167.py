@@ -3374,3 +3374,142 @@ for m,base in enumerate(pal):
    q=((m//8*128+y)*W+m%8*128+x)*4;pix[q:q+4]=bytes((*c,255))
 png(assets/'textures/entity/guts_sculpted.png',W,H,pix)
 print('Guts revised: shorter irregular hair, scarred angular face, asymmetric armor, prosthetic arm and much wider Dragon Slayer.')
+
+
+# Griffith White Falcon: dedicated sculptural revision with plated feathers, flowing curls and cape.
+p=java/'GriffithClient.java';s=p.read_text(encoding='utf-8')
+s=s.replace('import it.noctis.magic.SculptedGuestsClient.Part;','import it.noctis.magic.SculptedGuestsClient.Part;\nimport it.noctis.magic.SculptedGuestsClient.V;\nimport it.noctis.magic.SculptedGuestsClient.Q;',1)
+s=s.replace('    static class M extends EntityModel<Griffith>{','''    static float clamp(float x){return Math.max(.025f,Math.min(.975f,x));}
+    static V face(V v,boolean front){return new V(v.x(),v.y(),v.z(),front?clamp(.5f+v.x()/6.7f):.025f,clamp((v.y()+7.65f)/7.65f),v.nx(),v.ny(),v.nz());}
+    static void project(Part p){
+        for(int i=0;i<p.faces.size();i++){Q q=p.faces.get(i);if(q.tile()!=4)continue;boolean f=q.a().nz()+q.b().nz()+q.c().nz()+q.d().nz()<-.05f;
+            p.faces.set(i,new Q(face(q.a(),f),face(q.b(),f),face(q.c(),f),face(q.d(),f),4));}
+    }
+    static void feather(Part p,int material,float x,float y,float z,float angle,float length,float width){
+        Part q=p.child(x,y,z);q.rz=angle;
+        q.loft(material,16,-.15f,0,0,width*.42f,.15f,length*.24f,0,-.10f,width*.58f,.23f,length*.64f,0,-.19f,width*.39f,.16f,length,0,-.31f,.035f,.035f);
+        q.blade(10,0,.08f,-.23f,0,length*.84f,-.44f,width*.13f);
+    }
+    static void wave(Part q,float length,float width,float phase,float drift,float depth){
+        float[] a=new float[65];
+        for(int j=0;j<13;j++){float t=j/12f,amp=(float)Math.sin(t*Math.PI*.93);
+            a[j*5]=length*t;
+            a[j*5+1]=drift*t+amp*.78f*(float)Math.sin(t*13+phase);
+            a[j*5+2]=depth*t+amp*.32f*(float)Math.cos(t*13+phase);
+            float r=j==12?.035f:width*(.76f+.22f*(float)Math.sin(t*Math.PI))*(1-.30f*t);
+            a[j*5+3]=r;a[j*5+4]=r*.83f;
+        }
+        q.loft(6,24,a);
+    }
+    static class M extends EntityModel<Griffith>{''',1)
+s=s.replace('final Part[] arm=new Part[2],fore=new Part[2],leg=new Part[2],shin=new Part[2];','final Part[] arm=new Part[2],fore=new Part[2],leg=new Part[2],shin=new Part[2],cape=new Part[3];',1)
+a=s.index('            // Delicate face:');b=s.index('                arm[i]=body.child',a)
+s=s[:a]+'''            for(int side:new int[]{-1,1}){
+                body.blade(10,side*3.28f,.55f,-1.90f,side*.35f,2.65f,-2.70f,.22f);
+                for(int j=0;j<5;j++){
+                    feather(body,0,side*(.58f+j*.55f),2.30f+j*.16f,-2.40f+j*.12f,-side*(.66f+j*.07f),1.45f-j*.065f,.55f);
+                    feather(body,0,side*(2.15f+j*.23f),9.95f+j*.28f,-1.62f,-side*.28f,2.7f-j*.11f,.64f);
+                }
+                body.oval(9,side*2.04f,.82f,-2.08f,.55f,.59f,.24f);
+                feather(body,9,side*2.13f,.70f,-2.25f,side*2.7f,2.55f,.68f);
+                body.blade(9,side*1.92f,3.8f,-2.20f,side*.45f,4.92f,-2.22f,.5f);
+            }
+            for(int j=0;j<3;j++){
+                Part c=cape[j]=body.child((j-1)*2.05f,.12f,2.12f);
+                c.loft(11,32,0,0,0,1.52f,.17f,5,(j-1)*.40f,.5f,1.85f,.24f,12,(j-1)*1.0f,1.5f,2.12f,.26f,20.7f,(j-1)*1.65f,2.7f,2.02f,.20f,23,(j-1)*1.75f,3.1f,1.6f,.10f);
+            }
+            head.loft(4,80,-7.65f,0,.12f,1.4f,1.6f,-7.1f,0,.04f,2.55f,2.36f,-5.55f,0,0,3.02f,2.73f,-4.0f,0,-.08f,2.89f,2.60f,-2.45f,0,-.2f,2.32f,2.13f,-1.05f,0,-.32f,1.37f,1.53f,-.15f,0,-.39f,.38f,.66f);
+            project(head);
+            head.loft(5,24,-4.8f,0,-2.48f,.13f,.10f,-3.85f,0,-2.66f,.24f,.20f,-3.0f,0,-2.97f,.38f,.32f,-2.75f,0,-2.75f,.24f,.15f);
+            head.oval(12,0,-1.94f,-1.88f,.43f,.11f,.11f);
+            for(int side:new int[]{-1,1}){
+                head.oval(5,side*2.88f,-3.45f,.1f,.36f,.76f,.49f);
+                head.blade(13,side*.66f,-4.30f,-2.60f,side*2.02f,-4.58f,-1.93f,.11f);
+            }
+            head.loft(6,40,-9.45f,0,.2f,.65f,.70f,-9.0f,0,.1f,2.5f,2.4f,-7.7f,0,.2f,3.56f,3.15f,-6.12f,0,.38f,3.48f,3.05f);
+            for(int j=0;j<11;j++){
+                float x=-3.0f+j*.57f;Part q=head.child(x,-8.5f+(float)Math.sin(j*.84f)*.35f,-1.87f);
+                wave(q,2.6f+(j%4)*.47f,.48f+(j%3)*.075f,j*1.09f,(j-5)*.10f,-.61f);
+                curls.add(q);
+            }
+            Part back=head.child(0,-6.8f,1.9f);
+            back.loft(6,32,-.7f,0,0,2.9f,1.8f,1.4f,0,.5f,3.5f,1.65f,4.6f,0,1.15f,3.6f,1.65f,8.2f,0,1.55f,3.55f,1.45f,14f,0,1.7f,3.2f,1.05f,18f,0,1.6f,1.5f,.25f);
+            for(int j=0;j<13;j++){
+                Part q=head.child(-3.15f+j*.52f,-6.55f,2.53f);curls.add(q);
+                wave(q,13.8f+(j%5)*.80f,.63f+(j%3)*.09f,j*1.32f,(j-6)*.14f,1.25f);
+            }
+            for(int i=0;i<2;i++){
+                int s=i==0?-1:1;
+                for(int j=0;j<5;j++){
+                    Part q=head.child(s*(2.52f+j*.18f),-6.22f+j*.28f,-.60f+j*.61f);curls.add(q);
+                    wave(q,13.5f+j*.67f,.56f+(j%3)*.10f,j*1.43f+i*.91f,s*(.18f+j*.20f),-1.35f+j*.28f);
+                }
+'''+s[b:]
+s=s.replace('                arm[i]=body.child(s*4.05f,.35f,0);','''                arm[i]=body.child(s*4.23f,.28f,0);
+                for(int j=0;j<5;j++){
+                    float x=s*(.62f+j*.30f),y=-.75f+j*.56f;
+                    feather(arm[i],0,x,y,-1.85f+j*.06f,-s*(.25f+j*.12f),2.1f-j*.13f,.79f);
+                    feather(arm[i],0,x,y+.55f,1.95f,s*.20f,1.85f,.73f);
+                }
+                if(i==1){
+                    Part wing=arm[i].child(s*1.1f,-.40f,.36f);
+                    for(int j=0;j<7;j++)feather(wing,0,s*(.32f+j*.28f),.30f+j*.30f,.03f-j*.11f,s*(2.28f+j*.105f),5.15f-j*.31f,.72f);
+                    for(int j=0;j<6;j++)feather(wing,1,s*(.15f+j*.23f),.32f+j*.32f,-.34f,s*(1.58f+j*.17f),2.25f,.51f);
+                }''',1)
+s=s.replace('                fore[i].oval(0,0,5.12f,-.15f,.91f,1.03f,.69f);','''                for(int j=0;j<5;j++){
+                    feather(fore[i],0,s*(.80f-j*.11f),.6f+j*.53f,-1.24f,-s*.38f,1.30f,.54f);
+                    feather(fore[i],1,-s*(.78f-j*.10f),.65f+j*.53f,-1.19f,s*.34f,1.22f,.42f);
+                }
+                feather(fore[i],0,s*1.04f,.72f,.12f,s*2.62f,3.3f,.75f);
+                fore[i].oval(0,0,5.12f,-.15f,.91f,.82f,.54f);''',1)
+s=s.replace('                for(int j=0;j<3;j++)fore[i].oval(0,-.45f+j*.45f,5.72f,-.36f,.22f,.52f,.26f);','''                for(int j=0;j<4;j++){
+                    float x=-.54f+j*.36f;
+                    fore[i].loft(0,16,5.33f,x,-.24f,.18f,.23f,5.95f,x,-.31f,.17f,.19f,6.25f,x,-.41f,.075f,.10f);
+                    fore[i].oval(1,x,5.66f,-.42f,.18f,.16f,.09f);
+                }
+                fore[i].oval(0,s*.83f,5.11f,-.22f,.23f,.54f,.26f);''',1)
+s=s.replace('                shin[i].oval(0,0,0,-.4f,1.28f,1.1f,1.10f);','''                for(int j=0;j<5;j++)for(int side:new int[]{-1,1})feather(leg[i],0,side*(.53f+j*.11f),.1f+j*.74f,-1.49f+j*.045f,-side*.27f,1.44f,.67f);
+                shin[i].oval(0,0,0,-.4f,1.28f,1.1f,1.10f);
+                shin[i].blade(10,0,.35f,-1.42f,0,5.7f,-1.1f,.20f);''',1)
+s=s.replace('            helm.blade(0,0,-2.2f,-1.65f,0,1.65f,-3.0f,.85f);','''            helm.blade(0,0,-2.2f,-1.65f,0,1.65f,-3.0f,.85f);
+            for(int side:new int[]{-1,1})for(int j=0;j<5;j++)feather(helm,0,side*(1.40f+j*.13f),-1.8f+j*.52f,.16f,side*(2.46f+j*.12f),2.55f-j*.26f,.53f);
+            helm.blade(10,0,-3.2f,-1.35f,0,.75f,-2.55f,.21f);''',1)
+s=s.replace('arm[i].rz=-s*.13f;','arm[i].rz=s*.055f;',1)
+s=s.replace('            if(e.eclipsed()){','            for(int j=0;j<3;j++){cape[j].rx=.11f+amount*.29f+hit*.20f+(float)Math.sin(age*.11f+j*.6f)*.08f;cape[j].rz=(j-1)*.06f;}\n            if(e.eclipsed()){',1)
+s=s.replace('        @Override public ResourceLocation getTextureLocation(Griffith e)','        @Override protected void scale(Griffith e,PoseStack p,float partial){p.scale(1.10f,1.15f,1.10f);}\n        @Override public ResourceLocation getTextureLocation(Griffith e)',1)
+p.write_text(s,encoding='utf-8')
+W,H=1024,512;pix=bytearray(W*H*4)
+pal=[(201,214,231),(145,163,190),(69,58,51),(172,185,201),(244,217,195),(244,217,195),(231,232,246),(92,103,126),(28,35,50),(199,166,91),(106,130,167),(224,232,245),(181,112,108),(88,75,96)]
+for m,base in enumerate(pal):
+ for y in range(128):
+  for x in range(128):
+   u=sat2((x-3)/121);v=sat2((y-3)/121);f=abs(u-.5)
+   c=shade(base,.84+.16*math.sin(u*math.pi))
+   if m in (0,1,3,10):
+    c=mix(c,(255,255,255),.52*math.exp(-((u-.29)/.13)**2))
+    c=mix(c,(82,101,149),.40*math.exp(-((u-.78)/.13)**2))
+    if v<.035 or v>.955:c=mix(c,(70,91,133),.34)
+    if m==0:c=mix(c,(113,133,173),.13*math.sin(u*math.pi*6)**8)
+   if m==6:
+    waveval=math.sin(u*math.pi*12+v*2+math.sin(v*8)*.9)
+    c=mix(c,(145,156,201),.37*max(0,-waveval)**3)
+    c=mix(c,(255,255,255),.45*max(0,waveval)**2)
+   if m==9:c=mix(c,(255,229,156),.48*math.sin(u*math.pi)**2)
+   if m==11:c=mix(c,(117,141,195),.45*math.sin(u*math.pi*4+v*2)**8)
+   if m==4:
+    c=mix(base,(163,113,130),.27*sat2((f-.18)*4)+.09*v)
+    c=mix(c,(255,239,224),.27*math.exp(-((u-.48)/.12)**2))
+    for side in (-1,1):
+     dx=side*(u-(.5+side*.173))/.119;dy=(v-(.47-.025*dx))/.043
+     d=abs(dx)**1.8+abs(dy)**1.5
+     if d<1.17:c=(78,66,93)
+     if d<.78:c=(248,245,241)
+     if d<.76 and abs(dx+.04)<.47:c=mix((66,104,160),(164,207,237),sat2((dy+.7)/1.4))
+     if d<.74 and abs(dx+.04)<.17:c=(33,47,79)
+     if d<.72 and (dx+.17)**2+(dy+.22)**2<.055:c=(255,255,255)
+     if abs(dx)<1 and abs(v-(.382-.025*dx))<.010:c=(150,142,161)
+    if f<.068 and abs(v-(.755-.012*(1-f/.068)))<.009:c=(139,80,91)
+    if f<.048 and abs(v-.775)<.011:c=(224,159,148)
+   q=((m//8*128+y)*W+m%8*128+x)*4;pix[q:q+4]=bytes((*c,255))
+png(assets/'textures/entity/griffith_sculpted.png',W,H,pix)
+print('Griffith White Falcon revision: individually sculpted armor feathers, shoulder wing, animated cape and hair, angular face and steel atlas.')
