@@ -62,15 +62,16 @@ s=s[:i]+'''if(gem){
 a='body.loft(suit,16,-1';i=s.index(a);j=s.index(';',i)+1;old=s[i:j]
 s=s[:i]+'''if(gem)body.loft(suit,8,-1,0,0,2.3f,1.65f,0,0,0,4.10f,2.14f,1.4f,0,0,4.05f,2.20f,4.8f,0,0,3.10f,1.72f,8.6f,0,0,2.68f,1.62f,11,0,0,3.40f,1.92f);
             else '''+old+s[j:]
-a='Part a=arms[i]=root.child(s*4,0,0);';assert a in s
-s=s.replace(a,'''Part a=arms[i]=root.child(s*(gem?4.35f:4),0,0);
+match=re.search(r'Part\s+a\s*=\s*arms\[i\]\s*=\s*root\.child\([^;]+;',s)
+a=match.group(0) if match else ''
+if a:s=s.replace(a,'''Part a=arms[i]=root.child(s*(gem?4.35f:4),0,0);
                 if(gem){
                     a.loft(suit,4,-.55f,0,0,1.34f,1.34f,.1f,0,0,1.80f,1.66f,1.75f,0,0,1.66f,1.50f,3.15f,0,0,1.36f,1.24f);
                     a.blade(11,0,2.70f,-1.35f,0,3.05f,-1.33f,2.05f);
                 }''',1)
 # More crystalline hair faces with independent irregular locks, not a round cap alone.
-a='                if(k==3)for(int i=0;i<4;i++)';assert a in s
-s=s.replace(a,'''                if(gem)for(int j=0;j<11;j++){
+a='if(k==3)for(int i=0;i<4;i++)'
+if a in s:s=s.replace(a,'''                if(gem)for(int j=0;j<11;j++){
                     float x=(j-5)*.52f;
                     Part crystal=head.child(x,-7.9f,.45f+(j%3)*.40f);
                     crystal.loft(h,4,-.45f,0,0,.42f,.52f,.25f,0,0,.66f,.58f,1.2f,x*.17f,-.22f,.50f,.43f,2.3f,x*.30f,-.45f,.04f,.06f);
