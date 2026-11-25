@@ -2498,3 +2498,219 @@ for lang,it in [('it_it',True),('en_us',False)]:
  d['message.noctismagic.time_arrived']='Il tempo ha ceduto. L’eclissi e arrivata.' if it else 'Time has yielded. The eclipse has arrived.'
  j(p,d)
 print('Exclusive server-validated time acceleration spell, advancing one dawn without skipping the eclipse.')
+
+
+# Nonsexual pain vocalizations for the adult NPCs, and an absurd secret dinosaur miniboss.
+write('NpcPain.java','''package it.noctis.magic;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraftforge.event.entity.living.LivingAttackEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+@Mod.EventBusSubscriber(modid=Noctis.ID)
+public class NpcPain{
+ @SubscribeEvent(priority=EventPriority.HIGHEST) public static void hurt(LivingAttackEvent e){
+  var m=e.getEntity();
+  if(!(m.level() instanceof ServerLevel l)||e.getAmount()<=0||m.getType()!=Noctis.WAIFU.get()&&!(m instanceof CabaretHealer)&&!(m instanceof DramaGuest g&&g.kind()==2))return;
+  var tag=m.getPersistentData();if(tag.getLong("NoctisPainUntil")>l.getGameTime())return;
+  tag.putLong("NoctisPainUntil",l.getGameTime()+12);
+  l.playSound(null,m.blockPosition(),SoundEvents.PLAYER_HURT,SoundSource.NEUTRAL,.85f,1.35f+m.getRandom().nextFloat()*.25f);
+ }
+}''')
+edit('Noctis.java','public static final RegistryObject<Item> CATHEDRAL_EGG=','''public static final RegistryObject<Item> OLD_BOOK=ITEMS.register("old_book",()->new Item(new Item.Properties().stacksTo(1).rarity(net.minecraft.world.item.Rarity.RARE)));
+    public static final RegistryObject<EntityType<MustacheRex>> MUSTACHE_REX=ENTITIES.register("mustache_rex",()->EntityType.Builder.<MustacheRex>of(MustacheRex::new,MobCategory.MONSTER).sized(3.2f,4.8f).clientTrackingRange(12).build(ID+":mustache_rex"));
+    public static final RegistryObject<Item> MUSTACHE_REX_EGG=ITEMS.register("mustache_rex_spawn_egg",()->new ForgeSpawnEggItem(MUSTACHE_REX,0x635139,0x30241c,new Item.Properties()));
+    public static final RegistryObject<Item> CATHEDRAL_EGG=''')
+edit('Noctis.java','e.put(SCRAP_THIEF.get(),ScrapThief.attributes().build());','e.put(MUSTACHE_REX.get(),MustacheRex.attributes().build());e.put(SCRAP_THIEF.get(),ScrapThief.attributes().build());')
+edit('Noctis.java','e.accept(CATHEDRAL_EGG.get());','e.accept(CATHEDRAL_EGG.get());e.accept(OLD_BOOK.get());e.accept(MUSTACHE_REX_EGG.get());')
+edit('BakeryClerk.java','ItemStack s=p.getItemInHand(h);if(!s.isEmpty()&&!s.is(Items.GOLD_NUGGET))return InteractionResult.PASS;','''ItemStack s=p.getItemInHand(h);
+        if(!stalin()&&s.is(Noctis.OLD_BOOK.get())){
+            if(level() instanceof ServerLevel l&&p instanceof net.minecraft.server.level.ServerPlayer sp)RexRitual.begin(this,sp,s);
+            return InteractionResult.sidedSuccess(level().isClientSide);
+        }
+        if(!s.isEmpty()&&!s.is(Items.GOLD_NUGGET))return InteractionResult.PASS;''')
+edit('BakeryClerk.java','public float bakerGesture(){','''public int rexTransform=0;
+    public float rexGrowth(){return rexTransform<=0?0:1-rexTransform/80f;}
+    public float bakerGesture(){''')
+edit('BakeryClerk.java','super.tick();if(bakerGesture>0)','super.tick();if(rexTransform>0)rexTransform--;if(level() instanceof ServerLevel l&&RexRitual.tick(this,l))return;if(bakerGesture>0)')
+edit('BakeryClerk.java','public void handleEntityEvent(byte id){','public void handleEntityEvent(byte id){if(id==112){rexTransform=80;return;}if(id==113){rexTransform=0;return;}')
+edit('BakeryClient.java','@Override public ResourceLocation getTextureLocation(BakeryClerk e)','''@Override protected void scale(BakeryClerk e,com.mojang.blaze3d.vertex.PoseStack p,float partial){
+            float g=e.rexGrowth();if(g>0){float sh=(float)Math.sin(g*65)*.055f;p.scale(1+g*.85f+sh,1+g*1.25f,1+g*.85f-sh);p.mulPose(com.mojang.math.Axis.ZP.rotation((float)Math.sin(g*51)*.09f));}
+        }
+        @Override public ResourceLocation getTextureLocation(BakeryClerk e)''')
+write('RexRitual.java','''package it.noctis.magic;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.*;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.loot.*;
+import net.minecraft.world.level.storage.loot.entries.LootItem;
+import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
+import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
+import net.minecraftforge.event.LootTableLoadEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+@Mod.EventBusSubscriber(modid=Noctis.ID)
+public class RexRitual{
+ @SubscribeEvent public static void loot(LootTableLoadEvent e){
+  if(!e.getName().getPath().startsWith("chests/"))return;
+  e.getTable().addPool(LootPool.lootPool().name("noctis_old_book").setRolls(ConstantValue.exactly(1)).when(LootItemRandomChanceCondition.randomChance(.035f)).add(LootItem.lootTableItem(Noctis.OLD_BOOK.get())).build());
+ }
+ static void begin(BakeryClerk m,ServerPlayer p,ItemStack book){
+  if(m.getPersistentData().getInt("RexTicks")>0)return;
+  ServerLevel l=p.serverLevel();BlockPos dest=null;
+  MustacheRex probe=Noctis.MUSTACHE_REX.get().create(l);if(probe==null)return;
+  for(int i=0;i<64;i++){
+   BlockPos q=Eclipse.spot(p,5,20);if(q==null)continue;
+   probe.moveTo(q.getX()+.5,q.getY(),q.getZ()+.5);
+   if(l.noCollision(probe)&&!l.containsAnyLiquid(probe.getBoundingBox())){dest=q;break;}
+  }
+  probe.discard();
+  if(dest==null){p.displayClientMessage(Component.literal("Serve un'area aperta per la trasformazione."),true);return;}
+  if(!p.getAbilities().instabuild)book.shrink(1);
+  var tag=m.getPersistentData();tag.putInt("RexTicks",80);tag.putLong("RexDestination",dest.asLong());tag.putUUID("RexSummoner",p.getUUID());
+  m.rexTransform=80;m.getNavigation().stop();l.broadcastEntityEvent(m,(byte)112);
+  m.say(l,"Quel libro? ...Oh no. NON DI NUOVO!");m.playSound(SoundEvents.WARDEN_ROAR,1,.9f);
+ }
+ static boolean tick(BakeryClerk m,ServerLevel l){
+  var tag=m.getPersistentData();int t=tag.getInt("RexTicks");if(t<=0)return false;
+  m.getNavigation().stop();tag.putInt("RexTicks",--t);
+  if(t%5==0){l.sendParticles(ParticleTypes.POOF,m.getX(),m.getY()+1.1,m.getZ(),12,.5,.8,.5,.05);l.sendParticles(ParticleTypes.SMOKE,m.getX(),m.getY()+.8,m.getZ(),18,.6,.7,.6,.03);}
+  if(t==40)m.playSound(SoundEvents.RAVAGER_ROAR,1,.65f);
+  if(t==0){
+   BlockPos q=BlockPos.of(tag.getLong("RexDestination"));MustacheRex rex=Noctis.MUSTACHE_REX.get().create(l);
+   if(rex!=null&&l.hasChunkAt(q)){
+    rex.moveTo(q.getX()+.5,q.getY(),q.getZ()+.5,m.getYRot(),0);
+    if(l.noCollision(rex)&&!l.containsAnyLiquid(rex.getBoundingBox())&&l.addFreshEntity(rex)){
+     rex.setPersistenceRequired();rex.playSound(SoundEvents.RAVAGER_ROAR,2,.55f);
+     if(tag.hasUUID("RexSummoner")&&l.getPlayerByUUID(tag.getUUID("RexSummoner")) instanceof ServerPlayer p&&!p.isCreative())rex.setTarget(p);
+     l.sendParticles(ParticleTypes.POOF,rex.getX(),rex.getY()+2,rex.getZ(),85,1.5,1.7,1.5,.1);
+     m.discard();return true;
+    }
+   }
+   m.spawnAtLocation(Noctis.OLD_BOOK.get());m.rexTransform=0;l.broadcastEntityEvent(m,(byte)113);
+  }
+  return true;
+ }
+}''')
+write('MustacheRex.java','''package it.noctis.magic;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.*;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.BossEvent;
+import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.attributes.*;
+import net.minecraft.world.entity.ai.goal.*;
+import net.minecraft.world.entity.ai.goal.target.*;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.effect.*;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+public class MustacheRex extends Monster{
+ final ServerBossEvent bar=new ServerBossEvent(Component.literal("Baffosauro Rex"),BossEvent.BossBarColor.YELLOW,BossEvent.BossBarOverlay.NOTCHED_10);
+ int cooldown=80,windup,pose;
+ public MustacheRex(EntityType<? extends Monster> t,Level l){super(t,l);setMaxUpStep(1.5f);}
+ public static AttributeSupplier.Builder attributes(){return Monster.createMonsterAttributes().add(Attributes.MAX_HEALTH,350).add(Attributes.ATTACK_DAMAGE,25).add(Attributes.ARMOR,12).add(Attributes.MOVEMENT_SPEED,.27).add(Attributes.FOLLOW_RANGE,40).add(Attributes.KNOCKBACK_RESISTANCE,.85);}
+ @Override protected void registerGoals(){
+  goalSelector.addGoal(0,new FloatGoal(this));goalSelector.addGoal(1,new MeleeAttackGoal(this,1.15,true));
+  goalSelector.addGoal(2,new WaterAvoidingRandomStrollGoal(this,.75));goalSelector.addGoal(3,new LookAtPlayerGoal(this,Player.class,12));
+  targetSelector.addGoal(1,new HurtByTargetGoal(this));targetSelector.addGoal(2,new NearestAttackableTargetGoal<>(this,Player.class,true));
+ }
+ @Override public void startSeenByPlayer(ServerPlayer p){super.startSeenByPlayer(p);bar.addPlayer(p);}
+ @Override public void stopSeenByPlayer(ServerPlayer p){super.stopSeenByPlayer(p);bar.removePlayer(p);}
+ @Override public void remove(RemovalReason reason){bar.removeAllPlayers();super.remove(reason);}
+ @Override public boolean removeWhenFarAway(double d){return false;}
+ @Override public void tick(){
+  super.tick();if(pose>0)pose--;if(cooldown>0)cooldown--;
+  if(!(level() instanceof ServerLevel l))return;bar.setProgress(getHealth()/getMaxHealth());
+  if(windup>0){getNavigation().stop();if(--windup==0){
+   for(Player p:l.getEntitiesOfClass(Player.class,getBoundingBox().inflate(5),p->!p.isCreative()&&!p.isSpectator()&&hasLineOfSight(p))){
+    p.hurt(damageSources().mobAttack(this),20);p.knockback(1.5,getX()-p.getX(),getZ()-p.getZ());p.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN,65,1));}
+   l.sendParticles(ParticleTypes.POOF,getX(),getY()+.25,getZ(),60,2,.1,2,.06);playSound(SoundEvents.RAVAGER_ROAR,1.8f,.6f);
+  }return;}
+  if(cooldown==0&&getTarget()!=null&&distanceTo(getTarget())<8){cooldown=110;windup=24;l.broadcastEntityEvent(this,(byte)114);playSound(SoundEvents.RAVAGER_ATTACK,1.2f,.6f);}
+ }
+ @Override public boolean doHurtTarget(Entity e){boolean hit=super.doHurtTarget(e);if(hit&&level() instanceof ServerLevel l)l.broadcastEntityEvent(this,(byte)115);return hit;}
+ @Override public void handleEntityEvent(byte id){if(id==114||id==115){pose=id==114?30:15;return;}super.handleEntityEvent(id);}
+ public float motion(){return pose<=0?0:(float)Math.sin(Math.PI*pose/32f);}
+ @Override protected void dropCustomDeathLoot(net.minecraft.world.damagesource.DamageSource s,int looting,boolean hit){super.dropCustomDeathLoot(s,looting,hit);spawnAtLocation(Items.BONE,10);spawnAtLocation(Items.BREAD,8);spawnAtLocation(Items.EMERALD,4);}
+}''')
+write('MustacheRexClient.java','''package it.noctis.magic;
+import com.mojang.blaze3d.vertex.*;
+import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.renderer.entity.*;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import it.noctis.magic.SculptedGuestsClient.Part;
+@Mod.EventBusSubscriber(modid=Noctis.ID,value=Dist.CLIENT,bus=Mod.EventBusSubscriber.Bus.MOD)
+public class MustacheRexClient{
+ @SubscribeEvent public static void renderers(EntityRenderersEvent.RegisterRenderers e){e.registerEntityRenderer(Noctis.MUSTACHE_REX.get(),R::new);}
+ static class M extends EntityModel<MustacheRex>{
+  final Part root=new Part(0,0,0),body=root.child(0,1,0),neck=body.child(0,-2,-4),head=neck.child(0,-5,-2),jaw=head.child(0,1,-2);
+  final Part[] legs=new Part[2],feet=new Part[2],arms=new Part[2],tail=new Part[7],mustache=new Part[2];
+  M(){
+   Part torso=body.child(0,0,0);torso.rx=1.25f;
+   torso.loft(0,24,-7,0,0,1.2f,1.2f,-4,0,0,4.0f,4.0f,1,0,0,4.9f,4.4f,6,0,0,3.7f,3.3f,9,0,0,1.3f,1.4f);
+   neck.loft(0,20,-6,0,0,2.4f,2.6f,-3,0,0,2.8f,2.7f,1,0,0,3.2f,3.4f);
+   head.loft(0,24,-4,0,-1.4f,3.3f,3.2f,-2,0,-2,4.3f,5.5f,0,0,-2.8f,4,5.8f,1,0,-2.6f,3.3f,5);
+   jaw.loft(1,20,0,0,-1.0f,3.2f,4.7f,1.5f,0,-1.3f,3.0f,4.5f,2.2f,0,-1.1f,2.0f,3.8f);
+   for(int i=0;i<2;i++){
+    int s=i==0?-1:1;
+    head.oval(3,s*3.3f,-1.8f,-3.4f,.55f,.75f,1.0f);
+    head.blade(0,s*2,-3.0f,-3.7f,s*4,-2.0f,-4.5f,1.5f);
+    mustache[i]=head.child(s*.55f,-.2f,-8.1f);
+    mustache[i].loft(2,16,-.9f,s*.55f,0,.75f,.45f,-.45f,s*1.2f,0,1.4f,.65f,.1f,s*2.3f,.1f,1.7f,.6f,.65f,s*2.7f,.25f,1.1f,.4f,1.0f,s*3.4f,.3f,.25f,.12f);
+    mustache[i].blade(2,s*2.4f,.2f,0,s*4.8f,-.9f,.35f,1.35f);
+    for(int j=0;j<6;j++){float z=-6.0f+j*1.2f;head.blade(4,s*(2.7f+j*.08f),.75f,z,s*(2.6f+j*.08f),2.0f,z,.65f);}
+    Part leg=legs[i]=body.child(s*3.3f,3,1);
+    leg.loft(0,20,-1,0,0,2.1f,2.1f,3,0,.4f,2.6f,2.5f,6,0,.8f,1.5f,1.4f,9,0,0,1.1f,1.0f);
+    Part foot=feet[i]=leg.child(0,8.5f,0);foot.loft(0,16,0,0,0,1.2f,1.2f,5,0,-1,1.4f,2.8f,6,0,-1.2f,1.3f,2.5f);
+    for(int j=0;j<3;j++)foot.blade(4,-1+j,5,-2.3f,-1+j,6.0f,-4,.65f);
+    Part arm=arms[i]=body.child(s*2.8f,0,-3);arm.loft(0,14,0,0,0,.8f,.8f,2,0,-.6f,.6f,.6f,4,0,-1.3f,.45f,.5f);
+    for(int j=0;j<2;j++)arm.blade(4,-.25f+j*.5f,4,-1.3f,-.3f+j*.6f,4.8f,-2.8f,.4f);
+   }
+   Part p=body;
+   for(int i=0;i<7;i++){Part t=tail[i]=p.child(0,i==0?2:0,i==0?6:3.1f);Part mesh=t.child(0,0,0);mesh.rx=1.5708f;float r=2.6f-i*.33f;mesh.loft(0,16,0,0,0,r,r,3.3f,0,0,Math.max(.08f,r-.35f),Math.max(.08f,r-.35f));p=t;}
+  }
+  @Override public void setupAnim(MustacheRex e,float limb,float amount,float age,float yaw,float pitch){
+   float h=e.motion();body.y=1+(float)Math.sin(limb)*amount*.5f;body.rx=-h*.16f;neck.rx=-h*.25f;head.ry=yaw*.012f;head.rx=pitch*.01f-h*.25f;jaw.rx=.08f+h*.75f;
+   for(int i=0;i<2;i++){float w=(float)Math.cos(limb*.65+i*Math.PI)*amount;legs[i].rx=w*.55f;feet[i].rx=-w*.30f;arms[i].rx=-.6f+w*.12f;mustache[i].rz=(float)Math.sin(age*.19+i)*.06f;}
+   for(int i=0;i<7;i++)tail[i].ry=(float)Math.sin(age*.14-i*.65)*(.10f+amount*.16f);
+  }
+  @Override public void renderToBuffer(PoseStack p,VertexConsumer b,int l,int o,float r,float g,float bl,float a){root.draw(p,b,l,o,r,g,bl,a);}
+ }
+ static class R extends MobRenderer<MustacheRex,M>{
+  R(EntityRendererProvider.Context c){super(c,new M(),1.25f);}
+  @Override protected void scale(MustacheRex e,PoseStack p,float partial){p.scale(2.9f,2.9f,2.9f);}
+  @Override public ResourceLocation getTextureLocation(MustacheRex e){return new ResourceLocation(Noctis.ID,"textures/entity/mustache_rex.png");}
+ }
+}''')
+W,H=1024,512;pix=bytearray(W*H*4)
+for m,base in enumerate([(102,113,70),(154,143,97),(47,28,18),(230,170,43),(231,222,184)]):
+ for y in range(128):
+  for x in range(128):
+   u=x/127;v=y/127;g=.72+.25*math.sin(u*math.pi)**2+.09*math.sin(x*1.2+y*.8)**2
+   c=shade(base,g)
+   if m==0:c=shade(c,.76+.24*abs(math.sin(u*32+math.sin(v*33)) * math.cos(v*34)))
+   if m==2:c=shade(c,.7+.3*math.sin(u*74+v*3)**2)
+   if m==3 and abs(u-.5)<.13:c=(16,12,8)
+   off=(y*W+m*128+x)*4;pix[off:off+4]=bytes((*c,255))
+png(assets/'textures/entity/mustache_rex.png',W,H,pix)
+j(assets/'models/item/mustache_rex_spawn_egg.json',{'parent':'minecraft:item/template_spawn_egg'})
+j(assets/'models/item/old_book.json',{'parent':'minecraft:item/generated','textures':{'layer0':'minecraft:item/book'}})
+for lang,it in [('it_it',True),('en_us',False)]:
+ p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
+ d['entity.noctismagic.mustache_rex']='Baffosauro Rex'
+ d['item.noctismagic.mustache_rex_spawn_egg']='Uovo generatore: Baffosauro Rex' if it else 'Mustache Rex Spawn Egg'
+ d['item.noctismagic.old_book']='Mein Kampf (libro maledetto)' if it else 'Mein Kampf (cursed book)'
+ j(p,d)
+print('NPC pain sounds and absurd nonpolitical mustached dinosaur boss, secret loot book and animated transformation.')
