@@ -6892,3 +6892,130 @@ for name,cloth,metal in [('rose',(150,24,57),(235,181,95)),('noir',(40,20,57),(1
    off=(y*W+x)*4;pix[off:off+4]=bytes((*c,255))
  png(p,W,H,pix)
 print('Rosalie, Lilith and Selene: distinct stage accessories, fitted costumes and preserved animations.')
+
+
+# Bayonetta: angular adult face, confident cat-eye gaze, sculpted couture and Scarborough Fair.
+p=java/'WitchHunterClient.java';s=p.read_text(encoding='utf-8')
+def bay(a,b):
+ global s
+ assert a in s,a
+ s=s.replace(a,b,1)
+a=s.index('   if(witch)head.loft(5,48,');b=s.index('\n   else VoxelPortrait.head',a)
+s=s[:a]+'''   if(witch)VoxelPortrait.head(head,5,6,6.35f,7.8f,
+      -7.8f,2.34f,2.17f,.10f,.43f,-7.24f,2.82f,2.49f,.05f,.49f,
+      -5.1f,2.94f,2.64f,0,.53f,-3.0f,2.72f,2.49f,-.07f,.50f,
+      -1.25f,2.20f,2.07f,-.13f,.48f,-.15f,1.65f,1.52f,-.19f,.38f);'''+s[b:]
+bay('   if(witch)head.loft(6,20,-3.8f,0,-2.55f,.22f,.17f,-2.6f,0,-2.93f,.39f,.46f,-2.04f,0,-2.82f,.32f,.24f);','''   if(witch){
+    head.loft(6,8,-4.55f,0,-2.53f,.11f,.075f,-3.50f,0,-2.69f,.18f,.13f,-2.72f,0,-2.89f,.27f,.20f,-2.48f,0,-2.66f,.17f,.10f);
+    head.loft(6,8,-.45f,0,.06f,.77f,.81f,.85f,0,.06f,.97f,.95f,1.45f,0,.06f,1.08f,1.02f);
+   }''')
+# Glasses follow the flat frontal face. Upper outer corners rise sharply; open lenses.
+a=s.index('    // Iconic tall swept black beehive');b=s.index('   }else{\n    Part nape',a)
+s=s[:a]+'''    // Swept beehive with layered strands and distinct red ribbon, not a pointed hat.
+    Part up=head.child(0,-7.9f,.55f);
+    up.loft(7,12,-5.65f,0,.88f,.31f,.42f,-5.30f,.07f,.76f,1.06f,1.02f,-4.45f,.16f,.55f,1.72f,1.43f,-3.0f,.14f,.32f,2.03f,1.83f,-1.20f,.08f,.15f,2.52f,2.20f,.30f,0,.1f,2.91f,2.49f);
+    up.loft(2,12,-4.54f,.08f,.57f,1.75f,1.48f,-4.21f,.10f,.53f,1.84f,1.56f);
+    for(int j=0;j<12;j++){
+     float x=-2.62f+j*.47f;
+     Part q=head.child(x,-8.05f+(j%3)*.13f,-1.97f);locks.add(q);
+     float len=1.95f+j*.145f;
+     q.loft(7,8,-.42f,0,.47f,.42f,.52f,.45f,.28f,-.43f,.61f,.50f,1.25f,.68f,-.75f,.54f,.37f,len,.87f,-.51f,.035f,.055f);
+    }
+    // Open cat-eye frames, with real pointed rims and slim arms.
+    float[][] rim={{.31f,-4.23f},{.58f,-4.51f},{1.27f,-4.67f},{1.98f,-4.82f},{2.57f,-5.06f},{2.40f,-4.49f},{2.13f,-4.00f},{1.73f,-3.79f},{1.19f,-3.75f},{.72f,-3.88f}};
+    for(int side:new int[]{-1,1}){
+     for(int j=0;j<rim.length;j++){
+      float[] A=rim[j],B=rim[(j+1)%rim.length];
+      head.blade(3,side*A[0],A[1],-2.81f,side*B[0],B[1],-2.81f,j<5?.19f:.13f);
+     }
+     head.oval(8,side*2.38f,-4.78f,-2.88f,.14f,.13f,.085f);
+     head.blade(3,side*2.46f,-4.82f,-2.71f,side*2.96f,-4.10f,.31f,.17f);
+     Part ear=head.child(side*2.87f,-2.82f,.15f);charms.add(ear);
+     loop(ear,4,.17f,.47f,.070f);ear.oval(4,0,.88f,0,.12f,.45f,.10f);
+    }
+    head.blade(3,-.34f,-4.24f,-2.83f,.34f,-4.24f,-2.83f,.12f);
+'''+s[b:]
+bay('body.loft(0,40,-1,','body.loft(0,12,-1,')
+bay('arms[i].loft(0,witch?26:12,','arms[i].loft(0,12,')
+bay('fore[i].loft(witch?1:0,witch?24:12,','fore[i].loft(witch?1:0,12,')
+bay('legs[i].loft(witch?0:1,witch?26:10,','legs[i].loft(witch?0:1,12,')
+bay('shins[i].loft(witch?0:1,witch?24:10,','shins[i].loft(witch?0:1,12,')
+a='    // Gold medallion, red jewel, engraved border; gold seam lines and sleeve decorations.'
+bay(a,a+'''
+    // Bodysuit seams, golden ornamental closures and embroidered rear panel.
+    for(int side:new int[]{-1,1}){
+     body.blade(9,side*1.83f,.58f,-1.51f,side*1.25f,2.86f,-1.97f,.17f);
+     body.blade(9,side*1.31f,4.30f,-1.39f,side*1.00f,7.83f,-1.16f,.20f);
+     body.blade(4,side*1.63f,1.10f,1.56f,side*.62f,5.44f,1.36f,.12f);
+     for(int j=0;j<5;j++)body.oval(4,side*.38f,5.18f+j*.48f,-1.48f+j*.05f,.08f,.10f,.07f);
+    }''')
+bay('guns[i]=witch?gun(2):dantePistol(i==0);','guns[i]=witch?witchPistol():dantePistol(i==0);')
+a=' static Part dantePistol(boolean ivory){'
+bay(a,''' static Part witchPistol(){
+  Part p=new Part(0,5.1f,-.42f);p.rx=-1.4f;
+  p.loft(2,8,-.8f,0,0,.43f,.55f,.65f,0,0,.45f,.57f,1.48f,0,0,.40f,.49f);
+  Part guard=p.child(0,.55f,-.67f);guard.ry=(float)Math.PI/2;loop(guard,4,.46f,.63f,.09f);
+  Part top=p.child(0,1.02f,-.32f);top.rx=(float)Math.PI/2;
+  top.loft(2,8,-.68f,0,0,.55f,.59f,0,0,0,.66f,.70f,3.45f,0,0,.59f,.62f,4.1f,0,0,.53f,.56f);
+  top.loft(4,12,3.66f,0,0,.61f,.65f,4.03f,0,0,.58f,.61f);
+  top.oval(3,0,4.12f,0,.24f,.06f,.24f);
+  for(int side:new int[]{-1,1}){
+   top.blade(4,side*.58f,.28f,-.36f,side*.56f,3.38f,-.37f,.14f);
+   top.oval(4,side*.66f,1.60f,0,.08f,.46f,.31f);
+   top.oval(8,side*.73f,1.60f,0,.075f,.24f,.17f);
+  }
+  return p;
+ }
+'''+a)
+a='     Part heel=shins[i].child(0,6.15f,.88f);'
+bay(a,'''     Part footGun=witchPistol();footGun.x=0;footGun.y=6.5f;footGun.z=.82f;footGun.rx=1.57f;footGun.rz=(float)Math.PI;
+     shins[i].children.add(footGun);
+'''+a)
+p.write_text(s,encoding='utf-8')
+
+# Repaint only Bayonetta; planar UV portrait aligns with the new open frames.
+p=assets/'textures/entity/bayonetta_sculpted.png';W,H,pix=read_rgba(p)
+def witch_face(u,v):
+ x=(u-.5)*6.35;y=v*7.8-7.8;f=abs(x)
+ def g(cx,cy,sx,sy):return math.exp(-((x-cx)/sx)**2-((y-cy)/sy)**2)
+ c=mix((240,203,181),(146,91,94),.23*sat2((f-1.10)/1.45)+.06*v)
+ c=mix(c,(255,228,210),.23*g(0,-4.4,.81,1.5))
+ for side in (-1,1):
+  dx=(x-side*1.33)/.76;out=side*dx;ey=-4.23-.17*out;dy=(y-ey)/.24
+  d=abs(dx)**1.7+abs(dy)**1.45
+  c=mix(c,(107,67,103),.38*g(side*1.34,-4.53,.89,.35))
+  if d<1.23:c=(35,20,34)
+  if d<.78:c=(238,231,226)
+  if d<.77 and abs(dx+.035)<.39:
+   c=mix((62,79,88),(154,191,195),sat2((dy+.7)/1.4))
+   if abs(dx+.035)<.15:c=(21,18,29)
+   if (dx+.15)**2+(dy+.21)**2<.045:c=(255,253,247)
+  if abs(dx)<1.09 and abs(y-(ey-.24))<.060:c=(27,17,29)
+  if .85<out<1.27 and abs(y-(ey-.16-(out-.85)*.36))<.07:c=(28,16,29)
+  if abs(dx)<1.05 and abs(y-(-5.05-.15*out+.10*out*out))<.055:c=(51,32,42)
+  c=mix(c,(173,97,101),.22*g(side*1.68,-2.97,.57,.31))
+ if f<.11 and abs(y+2.49)<.05:c=mix(c,(157,92,87),.65)
+ if f<.60:
+  lip=-1.70-.12*(f/.60)+.065*x
+  if abs(y-lip)<.095:c=(106,24,51)
+  if f<.48 and abs(y-lip-.13)<.075:c=(167,42,69)
+  if f<.25 and abs(y-lip-.14)<.027:c=(213,89,112)
+ if (x-.58)**2+(y+1.19)**2<.006:c=(64,35,42)
+ return c
+for y in range(128):
+ for x in range(128):
+  u=sat2((x-3)/121);v=sat2((y-3)/121)
+  vals=[witch_face(sat2((x+dx-3)/121),sat2((y+dy-3)/121)) for dx,dy in ((-.26,-.26),(.26,-.26),(-.26,.26),(.26,.26))]
+  c=tuple(round(sum(z[k] for z in vals)/4) for k in range(3))
+  off=(y*W+5*128+x)*4;pix[off:off+4]=bytes((*c,255))
+  for tile in (0,7,9):
+   off=((tile//8*128+y)*W+tile%8*128+x)*4
+   if tile==7:
+    wave=math.sin(u*math.pi*32+v*6+.60*math.sin(v*9))
+    c=mix((12,13,23),(70,72,95),.20+.39*max(0,wave)**6)
+   elif tile==9:c=mix((33,33,48),(98,98,118),.27+.28*math.sin(math.pi*u)**4)
+   else:
+    c=tuple(pix[off:off+3]);c=mix(c,(93,90,117),.14*max(0,math.sin(u*math.pi*6+v*3))**4)
+   pix[off:off+4]=bytes((*c,255))
+png(p,W,H,pix)
+print('Bayonetta: adult angular Minecraft portrait, cat-eye glasses, confident expression, refined hair, gold couture and four ornamental Scarborough Fair replicas.')
