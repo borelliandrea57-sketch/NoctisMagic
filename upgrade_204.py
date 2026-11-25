@@ -58,7 +58,7 @@ edit(f,'overlay,r,g,b,a*.88f*opacity,2);','overlay,r,g,b,a*opacity,2);')
 edit('JojoMob.java','l.sendParticles(ZIP_BLUE,at.x,at.y+1.3,at.z,7,.44,.70,.44,.01);','')
 edit('JojoMob.java','for(int i=0;i<=22;i++){\n            double y=.12+i*.13,spread=.09+.65*Math.sin(Math.PI*i/22)*open;','for(int i=0;i<=28;i++){\n            double y=.10+i*.14,spread=.13+.92*Math.sin(Math.PI*i/28)*open;')
 # Johnny: independent registry, existing world-compatible mob and a custom seated renderer.
-edit('Noctis.java','public static final RegistryObject<EntityType<Kakyoin>> KAKYOIN=','''public static final RegistryObject<EntityType<JohnnyJoestar>> JOHNNY=ENTITIES.register("johnny_joestar",()->EntityType.Builder.<JohnnyJoestar>of(JohnnyJoestar::new,MobCategory.CREATURE).sized(1.22f,1.86f).clientTrackingRange(10).build(ID+":johnny_joestar"));
+edit('Noctis.java','public static final RegistryObject<EntityType<Kakyoin>> KAKYOIN=','''public static final RegistryObject<EntityType<JohnnyJoestar>> JOHNNY=ENTITIES.register("johnny_joestar",()->EntityType.Builder.<JohnnyJoestar>of(JohnnyJoestar::new,MobCategory.CREATURE).sized(1.42f,2.16f).clientTrackingRange(10).build(ID+":johnny_joestar"));
     public static final RegistryObject<Item> JOHNNY_EGG=ITEMS.register("johnny_joestar_spawn_egg",()->new ForgeSpawnEggItem(JOHNNY,0xeee7dc,0x394cba,new Item.Properties()));
     public static final RegistryObject<EntityType<Kakyoin>> KAKYOIN=''')
 edit('Noctis.java','e.put(KAKYOIN.get(),Kakyoin.attributes().build());','e.put(JOHNNY.get(),JohnnyJoestar.attributes().build());e.put(KAKYOIN.get(),Kakyoin.attributes().build());')
@@ -107,7 +107,8 @@ import it.noctis.magic.SculptedGuestsClient.V;
 public final class JohnnyClient{
  @SubscribeEvent public static void register(EntityRenderersEvent.RegisterRenderers e){e.registerEntityRenderer(Noctis.JOHNNY.get(),Renderer::new);}
  static class Renderer extends MobRenderer<JohnnyJoestar,Model>{
-  Renderer(EntityRendererProvider.Context c){super(c,new Model(),.60f);}
+  Renderer(EntityRendererProvider.Context c){super(c,new Model(),.69f);}
+  @Override protected void scale(JohnnyJoestar e,PoseStack p,float partial){p.scale(1.16f,1.16f,1.16f);}
   @Override public ResourceLocation getTextureLocation(JohnnyJoestar e){return new ResourceLocation(Noctis.ID,"textures/entity/johnny_wheelchair.png");}
  }
  static class Model extends EntityModel<JohnnyJoestar>{
@@ -148,7 +149,8 @@ public final class JohnnyClient{
    }
    for(int i=0;i<2;i++){
     int s=i==0?-1:1;
-    Part wh=wheel[i]=chair.child(s*4.4f,16.5f,1.15f);
+    Part wh=wheel[i]=chair.child(s*5.12f,16.5f,1.15f);
+    bar(chair,6,s*3.34f,16.5f,1.15f,s*5.12f,16.5f,1.15f,.48f);
     ring(wh,5,0,7.05f,.86f,28);ring(wh,6,0,6.62f,.27f,28);ring(wh,6,s*.44f,6.13f,.25f,28);
     for(int j=0;j<14;j++){
      double a=j*2*Math.PI/14;
@@ -160,18 +162,21 @@ public final class JohnnyClient{
     for(int j=0;j<4;j++){double a=j*Math.PI/2;bar(cast,6,0,0,0,0,(float)Math.cos(a),(float)Math.sin(a),.24f);}
    }
    // Seated torso, white sailor shirt, blue trim, pink stripes.
-   facet(body,0,0,5.6f,-.4f,0,0,1.77f,1.12f,.7f,0,0,2.83f,1.63f,3.2f,0,0,2.53f,1.51f,6.8f,0,0,1.96f,1.42f,8.5f,0,0,2.12f,1.55f);
-   facet(body,2,2,3.5f,-.45f,0,-1.10f,1.55f,.48f,.45f,0,-1.28f,1.45f,.44f,1.45f,0,-1.43f,.94f,.24f,2.15f,0,-1.48f,.08f,.05f);
+   facet(body,0,0,7.6f,-.4f,0,0,2.35f,1.35f,.65f,0,0,3.60f,1.95f,1.85f,0,0,3.48f,2.10f,3.4f,0,0,3.13f,1.83f,5.4f,0,0,2.63f,1.65f,6.8f,0,0,2.34f,1.55f,8.5f,0,0,2.48f,1.69f);
+   facet(body,2,2,4.4f,-.45f,0,-1.28f,1.94f,.47f,.45f,0,-1.60f,1.81f,.43f,1.45f,0,-1.91f,1.14f,.24f,2.15f,0,-2.04f,.08f,.05f);
    for(int side:new int[]{-1,1}){
-    bar(body,1,side*.15f,2.63f,-1.71f,side*2.03f,1.90f,-1.50f,.89f);
-    bar(body,14,side*.14f,3.88f,-1.70f,side*2.05f,3.32f,-1.51f,.29f);
-    bar(body,14,side*.22f,6.15f,-1.49f,side*1.58f,5.84f,-1.41f,.26f);
+    // Full pectoral planes under the sailor shirt, followed by shaped fabric folds.
+    facet(body,0,0,7.6f,.45f,side*1.77f,-1.55f,1.43f,.33f,1.45f,side*1.73f,-1.94f,1.48f,.39f,2.48f,side*1.56f,-1.97f,1.25f,.31f,3.0f,side*1.43f,-1.74f,.82f,.16f);
+    bar(body,1,side*.15f,2.72f,-2.24f,side*2.77f,1.95f,-1.94f,.89f);
+    bar(body,14,side*.14f,3.88f,-1.90f,side*2.70f,3.32f,-1.77f,.29f);
+    bar(body,14,side*.22f,6.15f,-1.65f,side*2.05f,5.84f,-1.52f,.26f);
+    bar(body,14,side*.28f,7.42f,-1.63f,side*1.89f,7.16f,-1.55f,.20f);
    }
-   tube(body,2,-1.65f,0,0,.82f,.78f,0,0,0,1.03f,.95f);
+   tube(body,2,-1.65f,0,0,1.06f,.92f,0,0,0,1.32f,1.12f);
    for(int s:new int[]{-1,1}){
-    bar(body,1,s*2.08f,.1f,-1.17f,s*.08f,3.15f,-1.60f,.45f);
-    bar(body,9,s*1.95f,.65f,-1.20f,s*.08f,3.68f,-1.51f,.22f);
-    bar(body,1,s*.42f,5.2f,-1.42f,s*1.66f,5.8f,-1.30f,.26f);
+    bar(body,1,s*2.76f,.1f,-1.30f,s*.08f,3.15f,-2.18f,.47f);
+    bar(body,9,s*2.58f,.65f,-1.65f,s*.08f,3.68f,-1.88f,.22f);
+    bar(body,1,s*.42f,5.2f,-1.65f,s*2.06f,5.8f,-1.49f,.26f);
     // Bent thighs, shins and boots remain seated during movement.
     tube(chair,1,10.2f,s*1.28f,.4f,1.10f,1.22f,11.5f,s*1.30f,-1.4f,1.16f,2.7f,13.0f,s*1.40f,-3.70f,1.03f,1.08f);
     tube(chair,1,12.4f,s*1.40f,-4.20f,.95f,.91f,15.2f,s*1.40f,-4.35f,.88f,.91f,19.9f,s*1.41f,-4.64f,.69f,.76f);
@@ -216,17 +221,17 @@ public final class JohnnyClient{
    }
    for(int i=0;i<2;i++){
     int s=i==0?-1:1;
-    Part a=arms[i]=body.child(s*2.60f,.9f,0);
-    tube(a,0,-.5f,0,0,.83f,.84f,.65f,0,0,1.05f,1.03f,2.1f,0,0,.93f,.88f);
-    tube(a,9,1.86f,0,0,.94f,.91f,2.45f,0,0,.89f,.87f);
-    facet(a,11,11,2.4f,-.24f,0,-.66f,.54f,.31f,.16f,0,-.84f,1.02f,.39f,.76f,0,-.93f,.92f,.40f,1.42f,0,-.86f,.46f,.28f,1.66f,0,-.78f,.08f,.07f);
-    bar(a,12,-.43f,.26f,-1.18f,.40f,.26f,-1.18f,.14f);
-    tube(a,2,2.42f,0,0,.72f,.73f,4.1f,0,0,.60f,.64f);
+    Part a=arms[i]=body.child(s*3.32f,.82f,0);
+    tube(a,0,-.65f,0,0,1.11f,1.08f,.35f,s*.12f,0,1.46f,1.35f,1.15f,s*.08f,0,1.39f,1.32f,2.1f,0,0,1.18f,1.10f);
+    tube(a,9,1.86f,0,0,1.21f,1.13f,2.45f,0,0,1.13f,1.06f);
+    facet(a,11,11,3.0f,-.32f,0,-.86f,.67f,.37f,.16f,0,-1.12f,1.23f,.42f,.86f,0,-1.15f,1.13f,.43f,1.55f,0,-1.04f,.57f,.30f,1.85f,0,-.89f,.09f,.07f);
+    bar(a,12,-.52f,.26f,-1.53f,.49f,.26f,-1.53f,.18f);
+    tube(a,2,2.42f,0,0,1.02f,.99f,3.08f,0,-.10f,1.06f,1.10f,3.65f,0,-.03f,.91f,.95f,4.1f,0,0,.77f,.80f);
     Part f=fore[i]=a.child(0,4.0f,0);
-    tube(f,2,-.2f,0,0,.64f,.66f,2.6f,0,0,.49f,.50f,3.2f,0,0,.46f,.46f);
-    for(int j=0;j<5;j++)tube(f,j%2==0?0:9,.03f+j*.56f,0,0,.70f-j*.03f,.72f-j*.03f,.56f+j*.56f,0,0,.70f-j*.03f,.72f-j*.03f);
-    bar(f,1,.47f,.12f,-.48f,.38f,2.79f,-.42f,.34f);
-    tube(f,2,3.05f,0,0,.52f,.46f,3.95f,0,-.12f,.64f,.44f,4.34f,0,-.16f,.38f,.30f);
+    tube(f,2,-.2f,0,0,.80f,.82f,.62f,0,0,.94f,.91f,1.7f,0,0,.82f,.82f,2.6f,0,0,.65f,.65f,3.2f,0,0,.60f,.60f);
+    for(int j=0;j<5;j++)tube(f,j%2==0?0:9,.03f+j*.56f,0,0,.95f-j*.065f,.94f-j*.060f,.56f+j*.56f,0,0,.95f-j*.065f,.94f-j*.060f);
+    bar(f,1,.65f,.12f,-.77f,.48f,2.79f,-.58f,.39f);
+    tube(f,2,3.05f,0,0,.68f,.60f,3.95f,0,-.12f,.83f,.58f,4.34f,0,-.16f,.49f,.39f);
    }
   }
   @Override public void setupAnim(JohnnyJoestar e,float limb,float amount,float age,float yaw,float pitch){
@@ -237,8 +242,8 @@ public final class JohnnyClient{
    for(int i=0;i<2;i++){
     int s=i==0?-1:1;
     wheel[i].rx=-limb*.53f;caster[i].rx=-limb*2.4f;
-    arms[i].rz=-s*(.31f+.09f*move);arms[i].rx=.14f+move*(.35f+.44f*push);
-    fore[i].rx=-.45f-move*(.52f+.45f*reach);fore[i].rz=-s*.09f;
+    arms[i].rz=-s*(.25f+.11f*move);arms[i].rx=.14f+move*(.35f+.44f*push);
+    fore[i].rx=-.45f-move*(.52f+.45f*reach);fore[i].rz=-s*.08f;
    }
   }
   @Override public void renderToBuffer(PoseStack p,VertexConsumer v,int light,int overlay,float r,float g,float b,float a){root.drawStyled(p,v,light,overlay,r,g,b,a,4);}
