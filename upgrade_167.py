@@ -3237,7 +3237,7 @@ s=s.replace('leg[i].rx=w*.65f;knee[i].rx=Math.max(0,-w)*.46f;','if(i==0)elbow[i]
 s=s.replace('  @Override public ResourceLocation getTextureLocation(Joker e)','  @Override protected void scale(Joker e,PoseStack p,float partial){p.scale(1.08f,1.10f,1.08f);}\n  @Override public ResourceLocation getTextureLocation(Joker e)',1)
 p.write_text(s,encoding='utf-8')
 W,H=1024,512;pix=bytearray(W*H*4)
-pal=[(24,23,30),(235,190,162),(70,65,79),(37,33,43),(183,12,35),(17,16,22),(150,146,158),(235,190,162),(236,235,230),(30,24,28),(185,190,200),(14,12,19),(105,78,73),(149,73,73),(65,60,75),(104,8,26)]
+pal=[(24,23,30),(235,190,162),(70,65,79),(37,33,43),(183,12,35),(17,16,22),(150,146,158),(235,190,162),(247,246,241),(17,17,24),(185,190,200),(14,12,19),(105,78,73),(149,73,73),(65,60,75),(104,8,26)]
 def sat2(v):return max(0,min(1,v))
 for m,base in enumerate(pal):
  for y in range(128):
@@ -3254,12 +3254,12 @@ for m,base in enumerate(pal):
     c=mix(c,(75,5,20),.30*(1-math.sin(u*math.pi)))
    if m==9:
     wave=math.sin(u*math.pi*14+v*3)
-    c=mix(c,(121,91,83),.32*max(0,wave)**5+.12*math.exp(-((v-.25)/.17)**2))
+    c=mix(c,(75,73,91),.27*max(0,wave)**5+.09*math.exp(-((v-.25)/.17)**2))
    if m==7:
     c=mix(base,(155,86,78),.28*sat2((f-.19)*4)+.15*v)
     c=mix(c,(255,222,189),.30*math.exp(-((u-.5)/.14)**2))
     for side in (-1,1):
-     dx=side*(u-(.5+side*.173))/.119;dy=(v-(.48-.024*dx))/.049
+     dx=side*(u-(.5+side*.179))/.105;dy=(v-(.48-.018*dx))/.043
      d=abs(dx)**1.8+abs(dy)**1.45
      if d<1.17:c=(37,22,32)
      if d<.80:c=(245,235,223)
@@ -3812,3 +3812,110 @@ print('One new mob per exact NoctisMagic entity type within a two-chunk radius; 
 edit('CharacterSpawnLimit.java','if(key==null||!Noctis.ID.equals(key.getNamespace()))return;','''if(key==null||!Noctis.ID.equals(key.getNamespace()))return;
   if(incoming instanceof Demon||incoming instanceof GothicHorror)return;''')
 print('Spawn density exceptions: both Nether demon forms, Crimson Lady, Iron Midwife and Skull Stalker. All original spawn rules remain intact.')
+
+
+# Post-build-source correction: Phantom Thief design and Leon combat, also during daylight.
+p=java/'JokerDetailedClient.java';s=p.read_text(encoding='utf-8')
+def change(a,b):
+ global s
+ assert a in s,a
+ s=s.replace(a,b,1)
+change('v.x()/6.4f','v.x()/5.8f')
+change('float x=side*(1.12f+dx*(.77f+.53f*r));','float x=side*(1.04f+dx*(.64f+.68f*r));')
+change('float y=-3.98f+dy*(.34f+.29f*r)-.16f*dx-.38f*r*Math.max(0,dx);','float y=-3.97f+dy*(.32f+.49f*r)-.13f*dx-.58f*r*Math.max(0,dx);')
+change('-2.78f+.145f*x*x+z','-3.10f+.13f*x*x+z')
+change('head.loft(7,80,-7.65f,0,.12f,1.35f,1.5f,-7.1f,0,.04f,2.50f,2.34f,-5.4f,0,0,2.94f,2.72f,-4.0f,0,-.1f,2.85f,2.58f,-2.65f,0,-.2f,2.40f,2.24f,-1.25f,0,-.3f,1.48f,1.68f,-.2f,0,-.4f,.42f,.7f);','head.loft(7,48,-7.65f,0,.12f,1.25f,1.45f,-7.1f,0,.04f,2.15f,2.24f,-5.4f,0,0,2.56f,2.60f,-4.0f,0,-.1f,2.48f,2.47f,-2.65f,0,-.2f,2.05f,2.16f,-1.25f,0,-.3f,1.36f,1.55f,-.2f,0,-.4f,.52f,.72f);')
+change('head.oval(1,side*2.77f,-3.54f,.05f,.35f,.77f,.52f);','head.oval(1,side*2.46f,-3.54f,.05f,.30f,.65f,.43f);')
+change('head.blade(8,-.50f,-4.12f,-2.79f,.50f,-4.12f,-2.79f,.26f);','head.blade(8,-.58f,-4.08f,-3.13f,.58f,-4.08f,-3.13f,.39f);')
+a=s.index('   head.loft(9,40,-9.05f');b=s.index('   for(int i=0;i<2;i++){int s=i==0?-1:1;',a)
+s=s[:a]+'''   // Shorter, asymmetric black hair with bent tufts instead of a tall round crown.
+   head.loft(9,24,-8.52f,-.15f,.35f,1.05f,1.0f,-8.22f,0,.22f,2.28f,2.12f,-7.48f,0,.20f,2.84f,2.72f,-6.18f,0,.24f,2.88f,2.80f);
+   head.loft(9,24,-7.55f,0,1.0f,2.55f,2.0f,-5.7f,0,1.32f,2.65f,1.73f,-3.2f,0,1.65f,2.20f,1.16f,-1.8f,0,1.50f,1.22f,.20f);
+   for(int j=0;j<8;j++){
+    float x=-2.35f+j*.65f;float dx=(j<4?-.80f:.55f)+(j%3)*.18f;
+    curl(head,x,-7.92f+(float)Math.sin(j*1.23)*.35f,-1.78f,dx,2.05f+(j%4)*.41f,-.68f,.58f+(j%3)*.10f);
+   }
+   for(int j=0;j<6;j++){
+    Part q=head.child(-2.05f+j*.83f,-8.05f+(float)Math.cos(j*1.7)*.33f,.1f);
+    q.rz=(j-2.5f)*.16f;
+    q.loft(9,12,-.82f,(j%2==0?-.6f:.45f),.1f,.04f,.06f,-.35f,-.25f,.05f,.52f,.66f,.45f,0,0,.79f,.80f,1.7f,.18f,-.65f,.43f,.40f,2.35f,.48f,-1.15f,.03f,.03f);
+   }
+   for(int side:new int[]{-1,1}){
+    for(int j=0;j<3;j++){
+     Part q=head.child(side*(2.12f+j*.12f),-6.91f+j*.69f,.05f+j*.40f);q.rz=-side*(.23f+j*.12f);
+     curl(q,0,0,0,side*(.40f+j*.13f),1.65f+(j%2)*.30f,.38f,.52f);
+    }
+   }
+'''+s[b:]
+change('body.blade(3,s*1.5f,-1.0f,-.7f,s*3.6f,-3.0f,1.15f,2.9f);','body.blade(3,s*1.5f,-1.0f,-.7f,s*3.05f,-2.85f,.70f,2.35f);')
+change('p.scale(1.08f,1.10f,1.08f)','p.scale(1.12f,1.16f,1.08f)')
+p.write_text(s,encoding='utf-8')
+
+p=java/'CrossoverGuest.java';s=p.read_text(encoding='utf-8')
+a=s.index('            if(l.isDay()||l.dimension()!=Level.OVERWORLD)')
+b=s.index('        }else{',a)
+s=s[:a]+'''            if(tickCount%5==0||!validEnemy(getTarget())){
+                LivingEntity current=getTarget();
+                if(!validEnemy(current)||!hasLineOfSight(current)||distanceTo(current)>24){
+                    LivingEntity next=l.getEntitiesOfClass(Mob.class,getBoundingBox().inflate(36),m->validEnemy(m)).stream()
+                        .min(java.util.Comparator.comparingDouble((Mob m)->distanceToSqr(m)+(hasLineOfSight(m)?0:1600))).orElse(null);
+                    setTarget(next);
+                }
+            }
+            LivingEntity t=getTarget();
+            if(validEnemy(t)){
+                double range=distanceTo(t);boolean sight=hasLineOfSight(t);
+                getLookControl().setLookAt(t,45,45);
+                if(sight&&range<=24){
+                    getNavigation().stop();
+                    double dx=t.getX()-getX(),dz=t.getZ()-getZ();
+                    float yaw=(float)(Math.atan2(dz,dx)*180/Math.PI)-90f;
+                    setYRot(yaw);yBodyRot=yaw;setYHeadRot(yaw);
+                    if(tickCount%4==0)l.broadcastEntityEvent(this,(byte)105);
+                    if(cooldown<=0){
+                        cooldown=16;l.broadcastEntityEvent(this,(byte)104);
+                        Vec3 b=t.getBoundingBox().getCenter(),dir=b.subtract(getEyePosition()).normalize();
+                        Vec3 a=getEyePosition().add(dir.scale(.78)).add(0,-.28,0);
+                        l.sendParticles(ParticleTypes.FLAME,a.x,a.y,a.z,5,.06,.06,.06,.018);
+                        l.sendParticles(ParticleTypes.SMOKE,a.x,a.y,a.z,4,.06,.06,.06,.01);
+                        for(int i=1;i<=18;i++){Vec3 q=a.lerp(b,i/18.0);l.sendParticles(ParticleTypes.CRIT,q.x,q.y,q.z,1,.012,.012,.012,0);}
+                        t.hurt(damageSources().mobAttack(this),22);
+                        playSound(SoundEvents.FIREWORK_ROCKET_BLAST,.85f,1.65f);
+                    }
+                }else if(tickCount%5==0)getNavigation().moveTo(t,1.20);
+            }
+'''+s[b:]
+change('    @Override public InteractionResult mobInteract(Player p,InteractionHand h){','''    private boolean validEnemy(LivingEntity e){
+        if(!(e instanceof net.minecraft.world.entity.monster.Enemy)||!e.isAlive()||e==this||isAlliedTo(e)||distanceToSqr(e)>42*42)return false;
+        if(e instanceof net.minecraft.world.entity.TamableAnimal pet&&pet.isTame())return false;
+        if(e instanceof net.minecraft.world.entity.monster.ZombifiedPiglin pig)return pig.getTarget()==this;
+        return true;
+    }
+    @Override public InteractionResult mobInteract(Player p,InteractionHand h){''')
+change('l.isDay()?"Di giorno mi prendo una pausa.":"Resta lontano dagli zombie."','"Resta dietro di me. Tengo d’occhio i mostri."')
+# Preserve both distinct client states; an aiming refresh must not reset the shot recoil.
+p.write_text(s,encoding='utf-8')
+
+p=java/'LeonSculptedClient.java';s=p.read_text(encoding='utf-8')
+a=s.index('            head.loft(7,32,');b=s.index('\n            head.loft(3,16,',a)
+s=s[:a]+'''            head.loft(7,28,-7.6f,0,.12f,1.3f,1.65f,-7.0f,0,.06f,2.28f,2.34f,-5.4f,0,0,2.78f,2.65f,-3.55f,0,-.08f,2.77f,2.54f,-1.9f,0,-.17f,2.48f,2.23f,-.82f,0,-.24f,1.86f,1.58f,-.25f,0,-.25f,1.12f,1.04f);'''+s[b:]
+change('s*3.12f,-3.25f,.1f,.40f,.83f,.56f','s*2.72f,-3.25f,.1f,.33f,.68f,.46f')
+a=s.index('            head.loft(8,24,');b=s.index('            for(int i=0;i<2;i++){int s=i==0?-1:1;',a)
+s=s[:a]+'''            head.loft(8,24,-8.42f,.35f,.10f,.78f,.76f,-8.05f,.15f,.15f,2.22f,2.18f,-7.32f,0,.25f,2.94f,2.79f,-6.15f,0,.35f,2.92f,2.72f);
+            Part back=head.child(0,-6.8f,1.7f);
+            back.loft(8,20,-.75f,0,0,2.45f,1.42f,1.1f,0,.3f,2.67f,1.42f,3.8f,0,.6f,2.40f,1.15f,5.0f,0,.5f,1.3f,.24f);
+            for(int j=0;j<8;j++){
+                float x=-2.20f+j*.59f;Part lock=head.child(x,-7.88f+.08f*j,-1.73f);hair.add(lock);
+                float end=j<5?4.25f-j*.30f:2.15f+(j%2)*.25f;
+                lock.loft(j<5?9:8,14,-.45f,0,.65f,.58f,.63f,.5f,-.35f,-.35f,.78f,.69f,1.50f,-.80f,-.92f,.73f,.53f,end*.76f,-1.06f,-.75f,.41f,.30f,end,-1.15f,-.45f,.035f,.06f);
+            }
+'''+s[b:]
+change('s*2.92f,-6.2f,.2f','s*2.55f,-6.2f,.2f')
+change('1.18f,1.15f,1.15f','1.22f,1.19f,1.16f')
+change('if(pose>.10f){if(!fore[1].children.contains(weapon))fore[1].children.add(weapon);}\n            else fore[1].children.remove(weapon);','if(!fore[1].children.contains(weapon))fore[1].children.add(weapon);\n            if(pose<=.10f){arms[1].rx=-.35f;fore[1].rx=-.27f;}')
+change('fore[i].rx=-pose*(i==0?.78f:.15f);','fore[i].rx=-pose*(i==0?.78f:.15f)-(i==1?a*.14f:0);')
+change('slide.loft(11,16,-.7f,0,0,.53f,.62f,0,0,0,.57f,.63f,3.4f,0,0,.50f,.55f);','''slide.loft(11,8,-.7f,0,0,.53f,.62f,0,0,0,.57f,.63f,3.4f,0,0,.50f,.55f);
+            slide.loft(5,8,3.35f,0,0,.37f,.39f,3.85f,0,0,.37f,.39f);
+            slide.blade(5,0,.15f,-.57f,0,2.95f,-.57f,.37f);''')
+p.write_text(s,encoding='utf-8')
+print('Corrective patch: angular Phantom mask and hair; Leon active during daylight, hostile targeting, firing and visible pistol.')
