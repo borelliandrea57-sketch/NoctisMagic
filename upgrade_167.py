@@ -733,3 +733,134 @@ s=s.replace(a,a+'''
             }''',1)
 p.write_text(s,encoding='utf-8')
 print('Lelouch and C.C. spontaneous paired kiss/hug animations with cooldown and safety checks.')
+
+
+# Adult cabaret performers: three non-explicit theatrical poses, manual and occasional idle.
+edit('CabaretHealer.java','private int greeting;','''private int greeting,stagePose,stageTime,stageCooldown=200;
+    public int stagePose(){return stageTime>0?stagePose:0;}
+    private void startStagePose(ServerLevel l){
+        stagePose=stagePose%3+1;stageTime=110;stageCooldown=600+random.nextInt(800);
+        getNavigation().stop();l.broadcastEntityEvent(this,(byte)(100+stagePose));
+    }''')
+edit('CabaretHealer.java','if(h==InteractionHand.MAIN_HAND&&s.isEmpty()){','''if(h==InteractionHand.MAIN_HAND&&s.isEmpty()){
+                if(p.isShiftKeyDown()){
+                    if(level() instanceof ServerLevel l)startStagePose(l);
+                    return InteractionResult.sidedSuccess(level().isClientSide);
+                }''')
+edit('CabaretHealer.java','if(id==81){greeting=30;return;}','if(id>=101&&id<=103){stagePose=id-100;stageTime=110;return;}if(id==104){stageTime=0;return;}if(id==81){greeting=30;return;}')
+edit('CabaretHealer.java','if(greeting>0)greeting--;','''if(greeting>0)greeting--;
+        if(stageTime>0)stageTime--;if(stageCooldown>0)stageCooldown--;
+        if(level() instanceof ServerLevel l){
+            if(stageTime>0){
+                if(hurtTime>0||isInWater()||!onGround()){stageTime=0;l.broadcastEntityEvent(this,(byte)104);}
+                else{getNavigation().stop();setDeltaMovement(0,getDeltaMovement().y,0);}
+            }else if(stageCooldown==0&&greeting==0&&onGround()&&!isInWater()&&hurtTime==0&&getDeltaMovement().horizontalDistanceSqr()<.0025&&random.nextInt(80)==0){startStagePose(l);}
+        }''')
+edit('CabaretClient.java','body.zRot=(float)Math.sin(limb*.7)*amount*.045f;','body.zRot=(float)Math.sin(limb*.7)*amount*.045f;body.xRot=0;body.yRot=0;')
+edit('CabaretClient.java','legs[i].xRot=step*.7f;locks[i].zRot','legs[i].xRot=step*.7f;legs[i].zRot=0;legs[i].yRot=0;arms[i].yRot=0;locks[i].zRot')
+edit('CabaretClient.java','locks[i].xRot=-amount*.12f;\n            }','''locks[i].xRot=-amount*.12f;
+            }
+            int pose=e.stagePose();
+            if(pose>0){
+                float sway=(float)Math.sin(age*.07f)*.035f;
+                head.zRot=pose==2?-.14f:.12f;head.yRot=yaw*.008f;body.zRot=pose==2?-.12f:.10f;
+                for(int i=0;i<2;i++){legs[i].xRot=0;arms[i].xRot=0;}
+                if(pose==1){ // hand at hip and playful wave
+                    arms[0].zRot=.55f;arms[0].xRot=-.32f;arms[1].xRot=-1.25f+sway;arms[1].zRot=-.38f;
+                    legs[0].zRot=.13f;legs[1].zRot=-.08f;
+                }else if(pose==2){ // cabaret flourish and crossed-foot stance
+                    body.yRot=.22f;arms[0].xRot=-2.20f;arms[0].zRot=.35f;arms[1].zRot=-.49f;
+                    legs[0].yRot=.16f;legs[0].xRot=-.14f;legs[1].zRot=.10f;
+                }else{ // two-arm stage flourish
+                    body.yRot=-.18f;head.xRot=-.10f;arms[0].zRot=1.03f+sway;arms[1].zRot=-1.03f-sway;
+                    arms[0].xRot=-.44f;arms[1].xRot=-.44f;legs[1].xRot=-.22f;
+                }
+            }''')
+# Separate rounded dress geometry and strongly contrasting tailored materials for adult Waifu.
+edit('GlamourClient.java','e.registerEntityRenderer(Noctis.WAIFU.get(),c->new LadyRenderer(c,0,"waifu"));','')
+write('WaifuTailoredClient.java','''package it.noctis.magic;
+import com.mojang.blaze3d.vertex.*;
+import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.renderer.entity.*;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import it.noctis.magic.SculptedGuestsClient.Part;
+@Mod.EventBusSubscriber(modid=Noctis.ID,value=Dist.CLIENT,bus=Mod.EventBusSubscriber.Bus.MOD)
+public class WaifuTailoredClient{
+ @SubscribeEvent public static void renderers(EntityRenderersEvent.RegisterRenderers e){e.registerEntityRenderer(Noctis.WAIFU.get(),R::new);}
+ static class M extends EntityModel<Admirer>{
+  final Part root=new Part(0,0,0),body=root.child(0,0,0),head=root.child(0,-1,0);
+  final Part[] arms=new Part[2],fore=new Part[2],legs=new Part[2],knees=new Part[2],locks=new Part[2],ribbons=new Part[2];
+  M(){
+   // Neck and shoulders use a distinct warm skin material; the opaque bodice is a raised outer shell.
+   body.loft(0,24,-1.15f,0,0,.95f,1.0f,.15f,0,0,2.6f,1.38f,1.6f,0,0,2.85f,1.65f);
+   body.loft(1,32,.65f,0,0,2.83f,1.72f,2.0f,0,0,3.05f,2.10f,4.8f,0,0,2.75f,1.77f,6.7f,0,0,1.91f,1.48f,8.25f,0,0,2.15f,1.64f,10,0,0,3.60f,2.5f,12.5f,0,.28f,4.2f,2.9f);
+   // Sculpted, fully clothed hourglass volumes, not skin-colored geometry.
+   for(int side:new int[]{-1,1}){
+    body.oval(1,side*1.97f,2.9f,-1.42f,2.20f,2.34f,2.14f);
+    body.oval(1,side*2.05f,10.9f,1.40f,2.55f,2.15f,2.08f);
+    body.blade(2,side*2.50f,1.1f,-1.49f,side*1.25f,-.45f,-.95f,.34f);
+   }
+   body.loft(2,32,6.6f,0,0,1.98f,1.56f,7.0f,0,0,2.01f,1.58f,7.45f,0,0,2.03f,1.6f);
+   body.loft(3,32,10.4f,0,.4f,3.85f,3.03f,12.3f,0,.46f,4.45f,3.15f,14.4f,0,.45f,4.72f,3.20f);
+   body.loft(2,32,14.0f,0,.45f,4.68f,3.20f,14.4f,0,.45f,4.75f,3.26f);
+   body.oval(4,0,7.03f,-1.62f,.45f,.40f,.24f);
+   head.loft(5,40,-7.4f,0,.1f,1.45f,1.5f,-6.6f,0,0,2.72f,2.5f,-5.1f,0,0,3.12f,2.75f,-3.4f,0,-.06f,3.08f,2.65f,-1.7f,0,-.15f,2.4f,2.1f,-.5f,0,-.21f,1.45f,1.45f,0,0,-.24f,.58f,.68f);
+   head.loft(6,24,-8.65f,0,.1f,.45f,.60f,-8.35f,0,.1f,2.38f,2.2f,-7.4f,0,.15f,3.37f,3.0f,-6.1f,0,.25f,3.45f,3.03f);
+   Part hair=head.child(0,-6.6f,1.9f);hair.loft(6,24,-.6f,0,0,2.8f,1.7f,4,0,.5f,3.4f,1.6f,9,0,1.3f,3.5f,1.45f,15,0,1.8f,2.4f,.55f);
+   for(int j=0;j<6;j++){Part p=head.child(-2.65f+j*1.03f,-7.5f,-2.2f);p.loft(6,12,-.4f,0,0,.75f,.65f,1.1f,-.27f,-.3f,.82f,.56f,2.8f+(j%2)*.45f,-.62f,-.35f,.035f,.05f);}
+   for(int i=0;i<2;i++){
+    int s=i==0?-1:1;
+    locks[i]=head.child(s*2.8f,-5.9f,.1f);locks[i].loft(6,16,-.5f,0,0,.78f,1.10f,2,s*.4f,-.3f,.9f,1.07f,8,s*.6f,.15f,.76f,.9f,14,s*.45f,.65f,.05f,.07f);
+    arms[i]=root.child(s*3.55f,.7f,0);arms[i].loft(0,20,-.8f,0,0,.82f,.96f,.8f,0,0,1.15f,1.15f,4.5f,0,0,.72f,.76f);
+    fore[i]=arms[i].child(0,4.45f,0);fore[i].loft(0,18,0,0,0,.74f,.77f,2,0,0,.80f,.80f,4,0,0,.55f,.58f);
+    fore[i].loft(3,20,2.4f,0,0,.78f,.78f,3.8f,0,0,.66f,.67f);fore[i].oval(0,0,4.8f,0,.63f,.86f,.54f);
+    legs[i]=root.child(s*1.76f,12.4f,0);legs[i].loft(3,20,0,0,0,1.65f,1.55f,3.2f,0,0,1.27f,1.27f,5.5f,0,0,.91f,.96f);
+    knees[i]=legs[i].child(0,5.4f,0);knees[i].loft(3,20,0,0,0,.94f,.95f,3.6f,0,0,.69f,.77f,4.9f,0,0,.67f,.72f);
+    knees[i].loft(7,20,3.3f,0,0,.76f,.82f,5.0f,0,-.42f,1.05f,1.45f,6.05f,0,-.45f,1.08f,1.5f);
+    ribbons[i]=body.child(s*2.8f,7.1f,1.55f);ribbons[i].blade(2,0,0,0,s*1.4f,7.0f,1.3f,.92f);
+   }
+  }
+  @Override public void setupAnim(Admirer e,float limb,float amount,float age,float yaw,float pitch){
+   boolean sit=e.isInSittingPose();body.zRotUnusedDummy();
+  }
+  @Override public void renderToBuffer(PoseStack p,VertexConsumer v,int light,int overlay,float r,float g,float b,float a){root.draw(p,v,light,overlay,r,g,b,a);}
+ }
+ static class R extends MobRenderer<Admirer,M>{
+  R(EntityRendererProvider.Context c){super(c,new M(),.46f);}
+  @Override public ResourceLocation getTextureLocation(Admirer e){return new ResourceLocation(Noctis.ID,"textures/entity/waifu_tailored.png");}
+ }
+}'''.replace('body.zRotUnusedDummy();','''body.rz=(float)Math.sin(limb*.7f)*amount*.035f;body.rx=sit?-.06f:0;head.ry=yaw*.01745f;head.rx=pitch*.015f;
+   for(int i=0;i<2;i++){int side=i==0?-1:1;float step=(float)Math.cos(limb*.666f+i*Math.PI)*amount;
+    arms[i].rx=-step*.52f;arms[i].rz=-side*.12f;fore[i].rx=-.10f-Math.max(0,step)*.28f;
+    legs[i].rx=sit?-1.35f:step*.61f;knees[i].rx=sit?.12f:Math.max(0,-step)*.34f;
+    locks[i].rx=amount*.15f+(float)Math.sin(age*.13f+i)*.035f;ribbons[i].rx=amount*.30f+(float)Math.sin(age*.12f+i)*.06f;
+   }'''))
+W,H=1024,512;pix=bytearray(W*H*4)
+pal=[(235,190,165),(99,22,75),(231,137,190),(59,24,57),(220,183,122),(235,190,165),(59,28,59),(27,19,31)]
+for m,b in enumerate(pal):
+ for yy in range(128):
+  v=sat((yy-3)/121)
+  for xx in range(128):
+   u=sat((xx-3)/121);f=abs(u-.5);grain=.5+.5*math.sin(u*97+v*13)*math.sin(v*82)
+   c=shade(b,.86+.14*math.cos((u-.5)*math.pi*2)**2)
+   if m in (1,3,7):
+    c=mix(c,(177,66,129),.20*math.exp(-((u-.30)/.12)**2)+.075*grain)
+    if f<.009:c=mix(c,(234,130,183),.45)
+   if m==2:c=mix(c,(252,201,225),.32*math.sin(u*math.pi)**2)
+   if m==6:c=mix(c,(135,64,116),.34*math.exp(-(((u*8+v*.55)%1-.30)/.12)**2))
+   if m==5:
+    for ex in (.405,.595):
+     dx=(u-ex)/.060;dy=(v-.52)/.096;d=dx*dx+dy*dy
+     if d<1:c=(44,24,43)
+     if d<.77:c=(251,242,239)
+     if abs(dx)<.40 and d<.78:c=(145,55,160)
+     if abs(dx)<.16 and abs(dy)<.69:c=(36,16,38)
+     if (dx+.15)**2+(dy+.22)**2<.065:c=(255,255,255)
+    if f<.055 and abs(v-.84)<.013:c=(157,53,87)
+   off=(((m//8)*128+yy)*W+(m%8)*128+xx)*4;pix[off:off+4]=bytes((*c,255))
+png(assets/'textures/entity/waifu_tailored.png',W,H,pix)
+print('Cabaret stage poses and separate fully clothed Waifu mesh with contrasting dress and skin.')
