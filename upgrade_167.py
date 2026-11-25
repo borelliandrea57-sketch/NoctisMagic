@@ -1699,3 +1699,131 @@ for lang,it in [('it_it',True),('en_us',False)]:
  d['item.noctismagic.ossuary_crawler_spawn_egg']='Uovo generatore: Ossario Strisciante' if it else 'Crawling Ossuary Spawn Egg'
  j(p,d)
 print('Neutral retaliatory Xenomorph and new six-legged Crawling Ossuary horror.')
+
+
+# Jotaro's wearable black cap, gold emblem and decorative chain.
+edit('Noctis.java','public static final RegistryObject<Item> CATHEDRAL_EGG=','''public static final RegistryObject<Item> JOTARO_CAP=ITEMS.register("jotaro_cap",()->new JotaroCap());
+    public static final RegistryObject<Item> CATHEDRAL_EGG=''')
+edit('Noctis.java','e.accept(CATHEDRAL_EGG.get());','e.accept(CATHEDRAL_EGG.get());e.accept(JOTARO_CAP.get());')
+edit('JojoMob.java','    @Override public void handleEntityEvent(byte id){','''    @Override protected void dropCustomDeathLoot(net.minecraft.world.damagesource.DamageSource source,int looting,boolean hit){
+        super.dropCustomDeathLoot(source,looting,hit);
+        if(variant()==0)spawnAtLocation(Noctis.JOTARO_CAP.get());
+    }
+    @Override public void handleEntityEvent(byte id){''')
+write('JotaroCap.java','''package it.noctis.magic;
+import net.minecraft.world.item.*;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.effect.*;
+import net.minecraft.world.level.Level;
+import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import java.util.List;
+import java.util.function.Consumer;
+public class JotaroCap extends ArmorItem{
+ static final ArmorMaterial MATERIAL=new ArmorMaterial(){
+  public int getDurabilityForType(ArmorItem.Type t){return (switch(t){case HELMET->11;case CHESTPLATE->16;case LEGGINGS->15;case BOOTS->13;})*55;}
+  public int getDefenseForType(ArmorItem.Type t){return t==ArmorItem.Type.HELMET?7:0;}
+  public int getEnchantmentValue(){return 22;}
+  public SoundEvent getEquipSound(){return SoundEvents.ARMOR_EQUIP_NETHERITE;}
+  public Ingredient getRepairIngredient(){return Ingredient.of(Items.GOLD_INGOT);}
+  public String getName(){return "noctismagic:jotaro_cap";}
+  public float getToughness(){return 4f;}
+  public float getKnockbackResistance(){return .15f;}
+ };
+ public JotaroCap(){super(MATERIAL,ArmorItem.Type.HELMET,new Item.Properties().rarity(Rarity.EPIC).fireResistant());}
+ @Override public void onArmorTick(ItemStack stack,Level level,Player p){
+  if(level.isClientSide||p.tickCount%10!=0||p.getItemBySlot(EquipmentSlot.HEAD)!=stack)return;
+  MobEffectInstance effect=p.getEffect(MobEffects.DAMAGE_BOOST);
+  if(effect==null||effect.getAmplifier()<1||(effect.getAmplifier()==1&&effect.getDuration()<30))p.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST,60,1,true,false,true));
+ }
+ @Override public void appendHoverText(ItemStack stack,Level level,List<Component> text,TooltipFlag flag){
+  super.appendHoverText(stack,level,text,flag);
+  text.add(Component.translatable("item.noctismagic.jotaro_cap.desc").withStyle(net.minecraft.ChatFormatting.GOLD));
+ }
+ @Override public void initializeClient(Consumer<IClientItemExtensions> consumer){JotaroCapClient.register(consumer);}
+}''')
+# Cap model uses vanilla armor rendering, with real projecting visor and independent gold links.
+write('JotaroCapClient.java','''package it.noctis.magic;
+import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.model.geom.*;
+import net.minecraft.client.model.geom.builders.*;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import java.util.function.Consumer;
+public final class JotaroCapClient{
+ static HumanoidModel<LivingEntity> create(){
+  MeshDefinition mesh=HumanoidModel.createMesh(CubeDeformation.NONE,0);
+  PartDefinition root=mesh.getRoot();
+  PartDefinition head=root.addOrReplaceChild("head",CubeListBuilder.create()
+   .texOffs(0,0).addBox(-4.55f,-9.8f,-4.35f,9.1f,3.5f,8.7f)
+   .texOffs(0,16).addBox(-4.3f,-10.2f,-4.0f,8.6f,1.0f,8.0f)
+   .texOffs(0,28).addBox(-4.4f,-6.9f,-7.0f,8.8f,.65f,4.0f)
+   .texOffs(0,40).addBox(-4.6f,-6.7f,-4.4f,9.2f,.6f,8.8f),PartPose.ZERO);
+  root.addOrReplaceChild("hat",CubeListBuilder.create(),PartPose.ZERO);
+  head.addOrReplaceChild("emblem",CubeListBuilder.create().texOffs(48,0).addBox(-2.9f,-8.9f,-4.6f,1.65f,1.65f,.35f)
+   .texOffs(56,0).addBox(.8f,-8.85f,-4.60f,2f,1.45f,.35f)
+   .texOffs(56,5).addBox(1.05f,-9.15f,-4.61f,.30f,.55f,.35f),PartPose.ZERO);
+  for(int i=0;i<5;i++){
+   PartDefinition link=head.addOrReplaceChild("chain"+i,CubeListBuilder.create()
+    .texOffs(64,0).addBox(-.45f,-.6f,-.16f,.90f,.20f,.32f)
+    .texOffs(64,4).addBox(-.45f,.4f,-.16f,.90f,.20f,.32f)
+    .texOffs(64,8).addBox(-.45f,-.4f,-.16f,.20f,.8f,.32f)
+    .texOffs(64,12).addBox(.25f,-.4f,-.16f,.20f,.8f,.32f),
+    PartPose.offsetAndRotation(4.62f+i*.08f,-6.75f+i*.87f,-1.8f+i*.20f,0,i%2==0?.15f:1.25f,-.12f));
+  }
+  return new HumanoidModel<>(LayerDefinition.create(mesh,128,128).bakeRoot());
+ }
+ public static void register(Consumer<IClientItemExtensions> consumer){
+  consumer.accept(new IClientItemExtensions(){
+   private HumanoidModel<LivingEntity> cap;
+   @Override public HumanoidModel<?> getHumanoidArmorModel(LivingEntity entity,ItemStack stack,EquipmentSlot slot,HumanoidModel<?> original){
+    if(cap==null)cap=create();
+    cap.head.copyFrom(original.head);cap.hat.copyFrom(original.hat);
+    cap.head.visible=true;cap.hat.visible=false;cap.body.visible=false;cap.rightArm.visible=false;cap.leftArm.visible=false;cap.rightLeg.visible=false;cap.leftLeg.visible=false;
+    cap.young=original.young;cap.riding=original.riding;cap.crouching=original.crouching;
+    return cap;
+   }
+  });
+ }
+}''')
+W=128;H=128;pix=bytearray(W*H*4)
+for y in range(H):
+ for x in range(W):
+  if x<40 and y<52:
+   c=(27+int(9*math.sin(x*.33)**2),28+int(8*math.sin(x*.33)**2),38+int(11*math.sin(x*.33)**2))
+   if 39<=y<=50:c=(34,34,44)
+  elif 48<=x<82 and y<18:c=(int(190+48*math.sin(x*.75)**2),int(132+58*math.sin(x*.75)**2),int(37+43*math.sin(x*.75)**2))
+  else:c=(24,24,33)
+  off=(y*W+x)*4;pix[off:off+4]=bytes((*c,255))
+png(assets/'textures/models/armor/jotaro_cap_layer_1.png',W,H,pix)
+# Inventory icon, dark peaked cap and gold chain.
+W=64;H=64;pix=bytearray(W*H*4)
+for y in range(H):
+ for x in range(W):
+  c=None
+  if 10<=x<=51 and 14<=y<=36 and ((x-31)/22)**2+((y-28)/19)**2<1:
+   c=shade((33,34,46),.82+.30*(1-y/64))
+  if 5<=x<=51 and 33<=y<=40 and ((x-29)/25)**2+((y-36)/5)**2<1:c=(27,28,40)
+  if 13<=x<=49 and 31<=y<=34:c=(67,62,61)
+  if 17<=x<=23 and 23<=y<=29:c=(231,180,65)
+  if 34<=x<=41 and 23<=y<=28:c=(207,155,45)
+  for n in range(5):
+   dx=(x-(49+n*.4))/3.0;dy=(y-(36+n*4.0))/3.0;d=dx*dx+dy*dy
+   if .32<d<1.15:c=(242,190,70) if dx<0 else (164,111,30)
+  if c is not None:
+   off=(y*W+x)*4;pix[off:off+4]=bytes((*c,255))
+png(assets/'textures/item/jotaro_cap.png',W,H,pix)
+j(assets/'models/item/jotaro_cap.json',{'parent':'minecraft:item/generated','textures':{'layer0':'noctismagic:item/jotaro_cap'}})
+for lang,it in [('it_it',True),('en_us',False)]:
+ p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
+ d['item.noctismagic.jotaro_cap']='Cappello di Jotaro' if it else "Jotaro's Cap"
+ d['item.noctismagic.jotaro_cap.desc']='Forza II mentre indossato.' if it else 'Strength II while worn.'
+ j(p,d)
+print('Jotaro guaranteed wearable epic cap with gold chain, 7 armor and Strength II.')
