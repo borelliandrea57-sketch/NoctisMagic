@@ -173,6 +173,53 @@ public final class GoldExperienceClient{
     legs[i].rx=(i==0?-.18f:.22f)+(float)Math.sin(age*.13f+i)*.045f;
     legs[i].rz=s*-.08f;shins[i].rx=i==0?.24f:.47f;
    }
+   // Reset every optional joint before evaluating a pose; attack poses retain priority.
+   torso.rx=0;torso.rz=0;
+   for(int i=0;i<2;i++){arms[i].ry=0;fore[i].ry=0;legs[i].ry=0;shins[i].rz=0;}
+   if(hit<.015f&&amount<.12f&&e.hurtTime==0){
+    float clock=age+(e.getId()%97)*17f;
+    int cycle=(int)(clock/160f),pose=Math.floorMod(cycle,4);
+    float local=clock-cycle*160f;
+    // A short flourish, long hold and eased release, followed by a normal idle.
+    float t=Math.max(0,Math.min(1,Math.min((local-22f)/16f,(137f-local)/16f)));
+    t=t*t*(3f-2f*t);
+    float[] base={torso.rx,torso.ry,torso.rz,head.rz,arms[0].rx,arms[0].rz,fore[0].rx,fore[0].rz,arms[1].rx,arms[1].rz,fore[1].rx,fore[1].rz,legs[0].rx,legs[0].rz,legs[1].rx,legs[1].rz,shins[0].rx,shins[1].rx};
+    if(pose==0){
+     // Classic hand at the hip, opposite arm lowered, tilted helmet and bent knee.
+     torso.rz=.14f*t;torso.ry+=.25f*t;head.rz-=.10f*t;
+     arms[0].rz=.68f*t+.28f*(1-t);arms[0].rx=-.20f*t;
+     fore[0].rz=-1.16f*t;fore[0].rx=-.46f*t;
+     arms[1].rx=.10f*t;arms[1].rz=-.14f-.10f*t;fore[1].rx=-.26f;
+     legs[0].rz=.20f*t;legs[1].rx=.25f*t;shins[1].rx=.45f*t;
+    }else if(pose==1){
+     // Stand's raised hand near the face, with the other hand angled across the waist.
+     torso.ry-=.32f*t;torso.rz=-.10f*t;head.rz+=.16f*t;
+     arms[1].rx=-1.12f*t-.17f*(1-t);arms[1].rz=-.52f*t-.22f;
+     fore[1].rx=-1.52f*t-.30f*(1-t);fore[1].rz=.65f*t;
+     arms[0].rz=.45f*t+.22f;fore[0].rz=-.83f*t;fore[0].rx=-.68f*t;
+     legs[1].rz=-.18f*t;
+    }else if(pose==2){
+     // Wide asymmetric arm extension and contrapposto.
+     torso.rz=.13f*t;torso.rx=-.08f*t;head.rz=-.12f*t;
+     arms[1].rz=-1.14f*t-.20f;arms[1].rx=-.24f*t;fore[1].rx=-.42f*t;
+     arms[0].rz=.62f*t+.20f;fore[0].rz=-1.02f*t;fore[0].rx=-.50f*t;
+     legs[0].rz=.16f*t;legs[1].rx=.33f*t;shins[1].rx=.40f*t;
+    }else{
+     // Guard stance with one fist before the chest and the other near the shoulder.
+     torso.ry+=.38f*t;head.rz+=.10f*t;
+     arms[0].rx=-.93f*t-.20f;fore[0].rx=-1.32f*t;fore[0].rz=-.45f*t;
+     arms[1].rx=-.65f*t-.15f;arms[1].rz=-.61f*t-.18f;fore[1].rx=-1.05f*t;
+     legs[0].rx=-.26f*t;legs[1].rx=.27f*t;
+    }
+    torso.rx=base[0]+(torso.rx-base[0])*t;torso.ry=base[1]+(torso.ry-base[1])*t;torso.rz=base[2]+(torso.rz-base[2])*t;head.rz=base[3]+(head.rz-base[3])*t;
+    for(int i=0;i<2;i++){
+     int j=4+i*4,k=12+i*2;
+     arms[i].rx=base[j]+(arms[i].rx-base[j])*t;arms[i].rz=base[j+1]+(arms[i].rz-base[j+1])*t;
+     fore[i].rx=base[j+2]+(fore[i].rx-base[j+2])*t;fore[i].rz=base[j+3]+(fore[i].rz-base[j+3])*t;
+     legs[i].rx=base[k]+(legs[i].rx-base[k])*t;legs[i].rz=base[k+1]+(legs[i].rz-base[k+1])*t;
+     shins[i].rx=base[16+i]+(shins[i].rx-base[16+i])*t;
+    }
+   }
    aura.y=root.y; aura.ry=age*.025f;
    for(int i=0;i<wisps.length;i++){wisps[i].y=(float)Math.sin(age*.16f+i)*1.45f;wisps[i].ry=(float)Math.sin(age*.09f+i)*.10f;}
   }

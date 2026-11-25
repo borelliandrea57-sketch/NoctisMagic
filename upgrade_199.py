@@ -183,7 +183,7 @@ def cathedral(s):
     }
 '''+s[a:]
 edit('GothicEgg.java',cathedral)
-# Magic HUD at top left, compact typography, arcane diamond and separate XP stripe.
+# Compact magic HUD at bottom right, adaptive to the vanilla hotbar.
 def hud(s):
  a=s.index('    @SubscribeEvent public static void overlay(RegisterGuiOverlaysEvent');b=s.index('    @Mod.EventBusSubscriber',a)
  return s[:a]+'''    @SubscribeEvent public static void overlay(RegisterGuiOverlaysEvent e){
@@ -195,30 +195,42 @@ def hud(s):
             boolean ready=mana>=spell.cost&&lv>=spell.level&&cd==0;
             if(displayMana<0||lastLevel!=lv){displayMana=mana;lastLevel=lv;}
             displayMana+=(mana-displayMana)*.13f;
-            int x=32,y=17,bw=Math.max(96,Math.min(145,w/3-38)),right=x+bw;
+            // Low-profile bottom-right HUD; on narrow windows move above vanilla health/food.
+            int width=Math.min(146,Math.max(110,w/3)),height=29;
+            boolean beside=w/2+96+width+6<=w;
+            if(!beside&&mc.screen instanceof net.minecraft.client.gui.screens.ChatScreen)return;
+            int left=beside?w-width-6:Math.max(3,(w-width)/2);
+            int top=Math.max(3,h-(beside?height+7:height+53));
+            int x=left+19,right=left+width-5,bw=right-x;
             int fill=limit(Math.round(bw*displayMana/max),0,bw);
-            g.fillGradient(8,7,right+9,73,0xE21B142B,0xB0080714);
-            g.fill(8,7,right+9,8,0xFFCAA568);g.fill(8,72,right+9,73,0xFF8A6A45);
-            g.fill(8,8,9,72,0xFF8A6A45);g.fill(right+8,8,right+9,72,0xFF8A6A45);
-            diamond(g,19,25,10,0xFFB99B60);diamond(g,19,25,8,0xFF3A235B);diamond(g,19,25,5,ready?0xFFC2A4FF:0xFF806394);
-            float pulse=(float)Math.sin(mc.player.tickCount*.15);diamond(g,19,25,2+(pulse>0?1:0),0xFFF7E9FF);
-            g.drawString(mc.font,"MANA",x,y-5,0xFFEAD9FF);
-            String num=mana+" / "+max;g.drawString(mc.font,num,right-mc.font.width(num),y-5,0xFFEAD9FF);
-            g.fill(x-1,y+6,right+1,y+18,0xFF967247);g.fill(x,y+7,right,y+17,0xFF1A1232);
+            g.fillGradient(left,top,left+width,top+height,0xB51B142B,0x78080714);
+            g.fill(left,top,left+width,top+1,0xAA987648);
+            g.fill(left,top+height-1,left+width,top+height,0xAA987648);
+            diamond(g,left+9,top+11,6,0xFFB99B60);
+            diamond(g,left+9,top+11,4,ready?0xFFC2A4FF:0xFF806394);
+            diamond(g,left+9,top+11,2,0xFFF7E9FF);
+            String num=mana+"/"+max;
+            g.drawString(mc.font,"MP "+num,x,top+3,0xFFEAD9FF);
+            String level="Lv "+lv;
+            if(mc.font.width("MP "+num)+mc.font.width(level)+3<=bw)
+                g.drawString(mc.font,level,right-mc.font.width(level),top+3,0xFFFFD98D);
+            g.fill(x,top+13,right,top+18,0xFF201731);
             if(fill>0){
-              g.fillGradient(x,y+7,x+fill,y+17,0xFFD5B5FF,0xFF5035A3);
-              g.fill(x,y+7,x+fill,y+8,0xFFF0DEFF);
-              for(int i=7;i<fill;i+=10)g.fill(x+i,y+9,x+i+1,y+16,0x307EF2FF);
+                g.fillGradient(x,top+13,x+fill,top+18,0xFFD5B5FF,0xFF5035A3);
+                g.fill(x,top+13,x+fill,top+14,0xFFE7D4FF);
             }
             int exp=lv==10?bw:limit(bw*Noctis.View.xp/Math.max(1,Noctis.needed(lv)),0,bw);
-            g.fill(x,y+20,right,y+22,0xFF332838);g.fill(x,y+20,x+exp,y+22,0xFFE2B969);
-            g.drawString(mc.font,"Lv "+lv,12,40,0xFFFFD98D);
-            String label=mc.font.plainSubstrByWidth(spell.label,bw-2);
-            g.drawString(mc.font,label,x+6,42,ready?0xFFF1E5FF:0xFFC3B2D1);
+            g.fill(x,top+19,right,top+20,0xFF332838);
+            if(exp>0)g.fill(x,top+19,x+exp,top+20,0xFFE2B969);
+            String state=cd>0?String.format(java.util.Locale.ROOT,"%.1fs",cd/20f):lv<spell.level?"Lv "+spell.level:mana<spell.cost?"MP!":spell.cost+"MP";
             String keys=CAST.getTranslatedKeyMessage().getString()+"/"+MENU.getTranslatedKeyMessage().getString();
-            String state=cd>0?String.format(java.util.Locale.ROOT,"%.1fs",cd/20f):lv<spell.level?"Lv "+spell.level:mana<spell.cost?"Mana!":spell.cost+" MP";
-            g.drawString(mc.font,keys,x,55,0xFFB6A7CB);
-            g.drawString(mc.font,state,right-mc.font.width(state),55,ready?0xFFA9EACF:0xFFFFA68E);
+            // Prefer the spell name; show the controls in the same line only when they fit.
+            int avail=width-10-mc.font.width(state)-4;
+            String label=mc.font.plainSubstrByWidth(spell.label,Math.max(1,avail));
+            String detail=keys+" "+spell.label;
+            if(mc.font.width(detail)<=avail)label=detail;
+            g.drawString(mc.font,label,left+5,top+20,ready?0xFFF1E5FF:0xFFC3B2D1);
+            g.drawString(mc.font,state,right-mc.font.width(state),top+20,ready?0xFFA9EACF:0xFFFFA68E);
         });
     }
 '''+s[b:]
