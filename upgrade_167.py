@@ -4514,3 +4514,146 @@ for n in ('ExodiaRitual.java','ExodiaEgg.java'):
  s=s.replace('RitualQuests.award(p,"exodia");RitualQuests.complete(p,"exodia");','RitualQuests.summon(p,boss,"exodia");')
  p.write_text(s,encoding='utf-8')
 print('Single visible quests; natural monuments in new regions; angular Giorno; hostile Exodia with plasma and terrain damage.')
+
+
+# Inventory texture pass: named seeds/fruits and individually sculpted-looking Exodia fragments.
+# Pure Python RGBA sprite rasterizer; no extra graphics dependency.
+class Icon64:
+ def __init__(self):
+  self.n=64;self.p=bytearray(64*64*4)
+ def put(self,x,y,c):
+  if 0<=x<64 and 0<=y<64:
+   i=(y*64+x)*4;self.p[i:i+4]=bytes((*[max(0,min(255,round(v))) for v in c],255))
+ def rect(self,x,y,w,h,c):
+  for yy in range(y,y+h):
+   for xx in range(x,x+w):self.put(xx,yy,c)
+ def ell(self,cx,cy,rx,ry,base,angle=0,lit=True):
+  co=math.cos(angle);si=math.sin(angle);r=math.ceil(max(rx,ry))+1
+  for y in range(max(0,int(cy-r)),min(64,int(cy+r+1))):
+   for x in range(max(0,int(cx-r)),min(64,int(cx+r+1))):
+    dx=x+.5-cx;dy=y+.5-cy;u=(co*dx+si*dy)/rx;v=(-si*dx+co*dy)/ry
+    d=u*u+v*v
+    if d>1:continue
+    if not lit:c=base
+    elif d>.89:c=shade(base,.48)
+    else:
+     c=shade(base,.74+.24*math.sqrt(max(0,1-d))+.17*math.exp(-((u+.37)**2+(v+.42)**2)/.25)-.14*max(0,u+v)/2)
+     if (x*17+y*31)%23==0:c=mix(c,(245,214,159),.10)
+    self.put(x,y,c)
+ def poly(self,points,c):
+  for y in range(max(0,math.floor(min(q[1] for q in points))),min(64,math.ceil(max(q[1] for q in points))+1)):
+   for x in range(max(0,math.floor(min(q[0] for q in points))),min(64,math.ceil(max(q[0] for q in points))+1)):
+    inside=False
+    for i,(a,b) in enumerate(points):
+     d,e=points[i-1]
+     if (b>y+.5)!=(e>y+.5) and x+.5<(d-a)*(y+.5-b)/(e-b)+a:inside=not inside
+    if inside:self.put(x,y,c)
+ def line(self,x,y,X,Y,r,c):
+  n=max(1,math.ceil(math.hypot(X-x,Y-y)*2))
+  for i in range(n+1):
+   t=i/n;self.ell(x+(X-x)*t,y+(Y-y)*t,r,r,c,lit=False)
+ def label(self,word,y,scale=2,col=(255,247,222)):
+  glyph={'A':('010','101','111','101','101'),'C':('111','100','100','100','111'),'F':('111','100','110','100','100'),'L':('100','100','100','100','111'),'N':('101','111','111','111','101'),'O':('111','101','101','101','111'),'S':('111','100','111','001','111'),'U':('101','101','101','101','111'),'V':('101','101','101','101','010')}
+  width=(len(word)*4-1)*scale;x0=(64-width)//2
+  for i,ch in enumerate(word):
+   for yy,row in enumerate(glyph[ch]):
+    for xx,bit in enumerate(row):
+     if bit=='1':self.rect(x0+i*4*scale+xx*scale,y+yy*scale,scale,scale,col)
+ def save(self,name):png(assets/'textures/item'/f'{name}.png',64,64,self.p)
+
+for name,color in [('vaffanculo',(226,44,47)),('suca',(153,71,225))]:
+ for fruit in (False,True):
+  im=Icon64();long=name=='vaffanculo'
+  # Use an ivory inscription on the object itself; long word wraps at a syllable.
+  label_y=38 if long else 44
+  if fruit:
+   im.ell(32,30,24,25,(45,24,41))
+   im.ell(27,29,18,24,color,-.12)
+   im.ell(38,30,17,23,color,.18)
+   im.line(31,13,34,3,2,(85,64,34))
+   im.ell(42,8,10,4,(76,170,49),-.42)
+   im.line(36,10,48,5,0.9,(157,222,82))
+   im.ell(19,18,5,8,mix(color,(255,237,205),.36),.30)
+  else:
+   # Seed packet with large matching seeds pictured on its face.
+   im.poly([(7,4),(57,4),(60,10),(56,59),(8,59),(4,10)],(48,29,38))
+   im.poly([(9,7),(55,7),(57,11),(53,56),(11,56),(7,11)],shade(color,.61))
+   im.rect(9,9,46,3,mix(color,(255,226,171),.46))
+   im.rect(12,14,40,22,(251,218,162))
+   im.ell(24,26,7,10,color,.48);im.ell(39,24,6,9,color,-.42)
+   im.line(23,20,21,26,1,mix(color,(255,246,192),.48))
+   im.line(40,19,42,24,1,mix(color,(255,246,192),.48))
+  # Dark high-contrast lettering field, stays inside the fruit/packet silhouette.
+  im.rect(6 if long else 12,label_y-2,52 if long else 40,24 if long else 14,(47,20,31) if long else (42,22,68))
+  if long:
+   im.label('VAFFAN',label_y,2);im.label('CULO',label_y+12,2)
+  else:im.label('SUCA',label_y,2)
+  im.save(name+('_fruit' if fruit else '_seeds'))
+
+# All five relics: matching ornate bronze frames, individual anatomical shapes,
+# gold shading, purple-and-gold nemes, muscle contours and rusted chain shackles.
+gold=(221,155,64);bright=(255,216,128);skin=(192,119,53);dark=(84,40,25);rust=(117,64,45);violet=(116,32,77)
+def link_icon(im,x,y,ang):
+ im.ell(x,y,3.8,5.4,(53,30,26),ang)
+ im.ell(x,y,2.9,4.6,rust,ang)
+ im.ell(x,y,1.5,2.9,(31,22,35),ang,False)
+def cuff_icon(im,x,y):
+ im.ell(x,y,10,4.8,(61,31,26))
+ im.ell(x,y-1,9.2,3.6,rust)
+ im.line(x-8,y-3,x+8,y-3,1.1,(189,119,75))
+ for d in (-6,-2,2,6):im.ell(x+d,y-1,1.3,1.3,(205,147,93))
+for k,id in enumerate(('head','left_arm','right_arm','left_leg','right_leg')):
+ im=Icon64()
+ # Rounded chamfered plaque; dark field allows gold silhouettes to read at GUI scale.
+ outer=[(9,2),(55,2),(62,9),(62,55),(55,62),(9,62),(2,55),(2,9)]
+ im.poly(outer,(52,30,29));im.poly([(10,4),(54,4),(60,10),(60,54),(54,60),(10,60),(4,54),(4,10)],gold)
+ im.poly([(11,8),(53,8),(56,11),(56,53),(53,56),(11,56),(8,53),(8,11)],(50,29,45))
+ for x in (7,57):
+  for y in (7,57):im.ell(x,y,2.1,2.1,bright)
+ im.line(12,6,51,6,.9,bright)
+ if k==0:
+  # Horns, fan-shaped striped Egyptian headdress, recessed eyes, teeth and blue beard.
+  for s in (-1,1):
+   im.poly([(32+s*5,21),(32+s*8,8),(32+s*13,4),(32+s*13,15),(32+s*10,24)],dark)
+   im.poly([(32+s*6,21),(32+s*9,9),(32+s*12,6),(32+s*11,16),(32+s*9,23)],gold)
+   im.poly([(32+s*5,20),(32+s*18,15),(32+s*24,24),(32+s*18,45),(32+s*7,40)],gold)
+   im.poly([(32+s*5,23),(32+s*16,18),(32+s*21,25),(32+s*16,42),(32+s*7,37)],violet)
+   for j in range(5):
+    im.line(32+s*(7+j*2.5),22-j*.6,32+s*(7+j*2.0),37+j*.7,1.05,bright)
+  im.ell(32,31,10,13,skin)
+  im.poly([(22,25),(32,21),(42,25),(39,39),(32,46),(25,39)],dark)
+  im.poly([(23,26),(31,29),(29,33),(24,30)],(255,237,138))
+  im.poly([(41,26),(33,29),(35,33),(40,30)],(255,237,138))
+  im.line(32,24,32,34,1.5,gold)
+  im.ell(32,37,7,3,(28,17,23),lit=False)
+  for i in range(6):im.rect(26+i*2,35,1,3,(247,230,191))
+  im.poly([(29,42),(35,42),(34,50),(30,50)],(37,121,142))
+  for y in (44,47,50):im.line(30,y,34,y,.8,gold)
+ else:
+  # Left/right pieces deliberately mirror one another but have different silhouettes.
+  s=-1 if k in (1,3) else 1
+  if k in (1,2):
+   im.ell(32+s*5,16,14,9,gold,-s*.30)
+   im.line(32+s*17,17,32-s*6,22,1.3,bright)
+   im.ell(32+s*5,28,8,12,skin,s*.24)
+   im.ell(32+s*7,27,4.6,8.5,gold,s*.25)
+   im.ell(32-s*1,37,7.0,11,skin,-s*.30)
+   im.line(32+s*2,34,32+s*3,41,1.2,dark)
+   cuff_icon(im,32-s*3,43)
+   im.ell(32-s*4,49,7.0,4.7,skin)
+   for j in range(4):im.ell(27-s*3+j*3.0,52,1.8,3.2,gold,.12*(j-1))
+   im.ell(32-s*10,48,2.4,3.7,skin,-.55*s)
+   link_icon(im,32+s*10,48,.30);link_icon(im,32+s*12,55,-.50)
+  else:
+   im.ell(32+s*4,20,10,13,skin,s*.19)
+   im.ell(32+s*6,17,5.0,9,gold,s*.16)
+   im.ell(32,31,6.9,6.0,skin)
+   im.line(27,30,33,34,1.1,dark)
+   im.ell(32-s*2,39,7.2,11,skin,-s*.17)
+   im.ell(31-s*3,37,3.6,7.7,gold,-s*.17)
+   cuff_icon(im,32-s*3,45)
+   im.ell(32-s*7,52,12,5.5,skin,s*.08)
+   for j in range(4):im.ell(23-s*4+j*4,52.5,2.3,2.5,gold)
+   link_icon(im,32+s*9,48,.65);link_icon(im,32+s*14,54,1.12)
+ im.save('exodia_'+id)
+print('Inventory textures: 64px labeled Vaffanculo/Suca seeds and fruits, five shaded Egyptian Exodia relics.')
