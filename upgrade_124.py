@@ -43,7 +43,7 @@ public class SpiderHero extends Monster{
         if(t==null&&tickCount%10==0){
             // His corrupted spider-sense identifies movement, not faces; crouching quietly avoids detection.
             t=l.getEntitiesOfClass(Player.class,getBoundingBox().inflate(18),p->p.isAlive()&&!p.isCreative()&&!p.isSpectator()&&(!p.isShiftKeyDown()||p.distanceTo(this)<2.5)).stream().min(java.util.Comparator.comparingDouble(this::distanceToSqr)).orElse(null);
-            if(t!=null){setTarget(t);if(speech==0){speech=160;say(l,"Il mio senso di ragno non sbaglia mai! ...Aspetta, chi sei?");}}
+            if(t!=null){setTarget(t);if(speech==0){speech=160;say(l,"Non vedo niente, ma il mio senso di ragno mi segnala un nemico! ...Aspetta, chi sei?");}}
         }
         entityData.set(CLIMBING,horizontalCollision&&t!=null);
         if(t==null)return;
