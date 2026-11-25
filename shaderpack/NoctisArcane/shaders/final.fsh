@@ -1,5 +1,5 @@
 #version 120
-// Noctis Arcane 2.0 - lightweight depth-aware cinematic finishing.
+// Noctis Arcane 2.1 - lightweight depth-aware cinematic finishing.
 #define BLOOM 1 // [0 1]
 #define CONTACT_AO 1 // [0 1]
 #define ATMOSPHERE 1 // [0 1]
@@ -117,6 +117,10 @@ void main(){
     vec3 glow=bloom(uv,px);
     c+=glow*BLOOM_STRENGTH*(1.0-.35*c);
 #endif
+    // Soft highlight shoulder, preserving bright cloth and hair without a hard clip.
+    c=max(c,vec3(0.0));
+    vec3 excess=max(c-vec3(.88),vec3(0.0));
+    c-=excess*.32;
     // Keep underwater contrast without overbrightening the vanilla water tint.
     if(isEyeInWater==1)c=mix(c,c*vec3(.86,1.00,1.05),.23);
     gl_FragColor=vec4(clamp(c,0.0,1.0),1.0);

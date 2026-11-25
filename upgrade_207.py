@@ -29,13 +29,14 @@ s=s.replace('GEASS("Geass - Controllo mentale",5,45)','GEASS("Geass - Controllo 
 anchor='public static final RegistryObject<Item> PIZZA=ITEMS.register'
 assert anchor in s
 s=s.replace(anchor,'''public static final RegistryObject<net.minecraft.world.level.block.Block> TOMATO_CROP=VampireLife.BLOCKS.register("tomato_crop",()->new TomatoCrop(net.minecraft.world.level.block.state.BlockBehaviour.Properties.copy(net.minecraft.world.level.block.Blocks.CARROTS)));
-    public static final RegistryObject<Item> TOMATO=ITEMS.register("tomato",()->new net.minecraft.world.item.ItemNameBlockItem(TOMATO_CROP.get(),new Item.Properties().food(new net.minecraft.world.food.FoodProperties.Builder().nutrition(2).saturationMod(.3f).build())));
+    public static final RegistryObject<Item> TOMATO=ITEMS.register("tomato",()->new Item(new Item.Properties().food(new net.minecraft.world.food.FoodProperties.Builder().nutrition(2).saturationMod(.3f).build())));
+    public static final RegistryObject<Item> TOMATO_SEEDS=ITEMS.register("tomato_seeds",()->new net.minecraft.world.item.ItemNameBlockItem(TOMATO_CROP.get(),new Item.Properties()));
     '''+anchor,1)
 anchor='e.accept(PIZZA.get());'
 assert anchor in s
 s=s.replace('if(e.getTabKey()==CreativeModeTabs.FOOD_AND_DRINKS)e.accept(PIZZA.get());','if(e.getTabKey()==CreativeModeTabs.FOOD_AND_DRINKS){e.accept(PIZZA.get());e.accept(TOMATO.get());}',1)
 # Also list in Natural Blocks so the planting item is easy to find.
-s=s.replace('if(e.getTabKey()==CreativeModeTabs.NATURAL_BLOCKS)','if(e.getTabKey()==CreativeModeTabs.NATURAL_BLOCKS)e.accept(TOMATO.get());if(e.getTabKey()==CreativeModeTabs.NATURAL_BLOCKS)',1)
+s=s.replace('if(e.getTabKey()==CreativeModeTabs.NATURAL_BLOCKS)','if(e.getTabKey()==CreativeModeTabs.NATURAL_BLOCKS)e.accept(TOMATO_SEEDS.get());if(e.getTabKey()==CreativeModeTabs.NATURAL_BLOCKS)',1)
 p.write_text(s,encoding='utf-8')
 (java/'TomatoCrop.java').write_text('''package it.noctis.magic;
 import net.minecraft.world.level.block.CropBlock;
@@ -43,7 +44,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.ItemLike;
 public final class TomatoCrop extends CropBlock {
  public TomatoCrop(BlockBehaviour.Properties p){super(p);}
- @Override protected ItemLike getBaseSeedId(){return Noctis.TOMATO.get();}
+ @Override protected ItemLike getBaseSeedId(){return Noctis.TOMATO_SEEDS.get();}
 }''',encoding='utf-8')
 (java/'TomatoHarvest.java').write_text('''package it.noctis.magic;
 import net.minecraft.server.level.ServerLevel;
@@ -61,7 +62,7 @@ public final class TomatoHarvest {
  public static void grass(BlockEvent.BreakEvent e){
   if(!(e.getLevel() instanceof ServerLevel l)||e.getPlayer().isCreative()||!l.getGameRules().getBoolean(GameRules.RULE_DOBLOCKDROPS))return;
   if((e.getState().is(Blocks.GRASS)||e.getState().is(Blocks.TALL_GRASS))&&l.random.nextInt(8)==0)
-   Block.popResource(l,e.getPos(),new ItemStack(Noctis.TOMATO.get()));
+   Block.popResource(l,e.getPos(),new ItemStack(Noctis.TOMATO_SEEDS.get()));
  }
 }''',encoding='utf-8')
 # Direct offering to Lelouch grants the spell; C.C. can still accept her own pizza.
@@ -112,7 +113,7 @@ s=s[:a]+'''
 '''+s[a:]
 # Migrate previously earned pizza flags via existing dialogue without requiring a second payment.
 s=s.replace('Noctis.data(sp).putBoolean("GeassLearned",true);say(l,"Il tuo gesto non mi e\' sfuggito. Il Geass ora ti appartiene.");','teachGeass(sp,l);',1)
-s=s.replace('Nuova magia appresa: Geass (livello 5).','Nuova magia appresa: Geass.',1)
+s=s.replace('sp.sendSystemMessage(Component.literal("Nuova magia appresa: Geass (livello 5).").withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE));','',1)
 a=s.index('    @Override public void tick(){');a=s.index('super.tick();',a)+len('super.tick();')
 s=s[:a]+'''if(pizzaJoy>0){pizzaJoy--;if(pizzaJoy%8==0&&level() instanceof ServerLevel joyLevel)joyLevel.sendParticles(ParticleTypes.HEART,getX(),getEyeY()+.30,getZ(),3,.35,.25,.35,.025);}'''+s[a:]
 p.write_text(s,encoding='utf-8')
@@ -128,11 +129,12 @@ s=s.replace('String info="Lv "+lv+"   |   MP "+mana+"/"+max;','String info=minec
 p.write_text(s,encoding='utf-8')
 # Tomato is both food and a planting item, like carrots.
 dump(res/'data/noctismagic/recipes/pizza.json',{'type':'minecraft:crafting_shapeless','ingredients':[{'item':'minecraft:wheat'},{'item':'minecraft:wheat'},{'item':'noctismagic:tomato'},{'item':'minecraft:milk_bucket'}],'result':{'item':'noctismagic:pizza','count':2}})
+dump(assets/'models/item/tomato_seeds.json',{'parent':'minecraft:item/generated','textures':{'layer0':'noctismagic:item/tomato_seeds'}})
 dump(assets/'models/item/tomato.json',{'parent':'minecraft:item/generated','textures':{'layer0':'noctismagic:item/tomato'}})
 dump(assets/'blockstates/tomato_crop.json',{'variants':{'age='+str(i):{'model':'noctismagic:block/tomato_stage'+str(i//2)} for i in range(8)}})
 for i in range(4):
  dump(assets/('models/block/tomato_stage'+str(i)+'.json'),{'parent':'minecraft:block/crop','render_type':'minecraft:cutout','textures':{'crop':'noctismagic:block/tomato_stage'+str(i)}})
-dump(res/'data/noctismagic/loot_tables/blocks/tomato_crop.json',{'type':'minecraft:block','pools':[{'rolls':1,'entries':[{'type':'minecraft:item','name':'noctismagic:tomato'}],'conditions':[{'condition':'minecraft:survives_explosion'}]},{'rolls':1,'entries':[{'type':'minecraft:item','name':'noctismagic:tomato','functions':[{'function':'minecraft:set_count','count':{'type':'minecraft:uniform','min':1,'max':3}},{'function':'minecraft:apply_bonus','enchantment':'minecraft:fortune','formula':'minecraft:uniform_bonus_count','parameters':{'bonusMultiplier':1}}]}],'conditions':[{'condition':'minecraft:block_state_property','block':'noctismagic:tomato_crop','properties':{'age':'7'}},{'condition':'minecraft:survives_explosion'}]}]})
+dump(res/'data/noctismagic/loot_tables/blocks/tomato_crop.json',{'type':'minecraft:block','pools':[{'rolls':1,'entries':[{'type':'minecraft:item','name':'noctismagic:tomato_seeds'}],'conditions':[{'condition':'minecraft:survives_explosion'}]},{'rolls':1,'entries':[{'type':'minecraft:item','name':'noctismagic:tomato','functions':[{'function':'minecraft:set_count','count':{'type':'minecraft:uniform','min':2,'max':4}},{'function':'minecraft:apply_bonus','enchantment':'minecraft:fortune','formula':'minecraft:uniform_bonus_count','parameters':{'bonusMultiplier':1}}]}],'conditions':[{'condition':'minecraft:block_state_property','block':'noctismagic:tomato_crop','properties':{'age':'7'}},{'condition':'minecraft:survives_explosion'}]}]})
 # Hand-painted pixel art: edible ripe fruit and four visible growth stages.
 def fruit(d,x,y,r):
  d.ellipse((x-r,y-r,x+r,y+r),fill=(102,27,23,255))
@@ -144,6 +146,10 @@ d.polygon([(16,7),(11,5),(13,10),(7,10),(15,13),(21,9),(25,10),(19,5)],fill=(40,
 d.rectangle((15,3,17,8),fill=(89,143,49,255))
 (assets/'textures/item').mkdir(parents=True,exist_ok=True);im.save(assets/'textures/item/tomato.png')
 (assets/'textures/block').mkdir(parents=True,exist_ok=True)
+seed=Image.new('RGBA',(32,32));d=ImageDraw.Draw(seed)
+for x,y in [(8,10),(19,7),(13,19),(23,20),(7,25),(21,27)]:
+ d.ellipse((x-3,y-2,x+3,y+2),fill=(110,76,40,255));d.ellipse((x-2,y-2,x+2,y+1),fill=(224,192,119,255));d.point((x-1,y-1),fill=(255,230,165,255))
+seed.save(assets/'textures/item/tomato_seeds.png')
 for i in range(4):
  im=Image.new('RGBA',(32,32));d=ImageDraw.Draw(im);h=8+i*6
  d.line((16,31,16,31-h),fill=(54,110,42,255),width=2)
@@ -160,9 +166,10 @@ for i in range(4):
 for lang in ('it_it','en_us'):
  p=assets/('lang/'+lang+'.json');d=json.loads(p.read_text(encoding='utf-8'));it=lang=='it_it'
  d['item.noctismagic.tomato']='Pomodoro' if it else 'Tomato'
+ d['item.noctismagic.tomato_seeds']='Semi di pomodoro' if it else 'Tomato seeds'
  d['block.noctismagic.tomato_crop']='Pianta di pomodoro' if it else 'Tomato plant'
  d['advancement.noctismagic.rituals.lelouch.title']='La fame della strega' if it else 'The witch’s hunger'
- d['advancement.noctismagic.rituals.lelouch.description']='Un re mascherato, una strega affamata. Il grano, il rosso frutto e il latte fanno una promessa rotonda.' if it else 'A masked king, a hungry witch. Wheat, red fruit and milk make a round promise.'
+ d['advancement.noctismagic.rituals.lelouch.description']='Un re mascherato, una strega affamata.' if it else 'A masked king, a hungry witch.'
  d['advancement.noctismagic.rituals.lelouch_complete.title']='Il patto del re' if it else 'The king’s pact'
  d['advancement.noctismagic.rituals.lelouch_complete.description']='La strega sorride. Una pupilla scarlatta ti concede il suo potere.' if it else 'The witch smiles. A crimson eye grants you its power.'
  dump(p,d)

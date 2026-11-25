@@ -178,6 +178,7 @@ jobs:
           python3 upgrade_205.py "$(dirname "$wrapper")"
           python3 upgrade_206.py "$(dirname "$wrapper")"
           python3 upgrade_207.py "$(dirname "$wrapper")"
+          python3 upgrade_208.py "$(dirname "$wrapper")"
       - name: Integra musica del boss
         run: |
           audio='One_-_Winged Angel (Final Fantasy VII) - Arnie Roth.mp3'
@@ -186,7 +187,7 @@ jobs:
           ffmpeg -nostdin -loglevel error -y -i "$audio" -map 0:a:0 -vn -c:a libvorbis -q:a 5 "$target"
           test -s "$target"
           ffprobe -v error -show_entries stream=codec_name:format=duration -of default=noprint_wrappers=1 "$target"
-          sed -i 's/^mod_version=0\.8\.0$/mod_version=1.7.52/' "$PROJECT_DIR/gradle.properties"
+          sed -i 's/^mod_version=0\.8\.0$/mod_version=1.7.53/' "$PROJECT_DIR/gradle.properties"
       - name: Compila Forge
         run: |
           cd "$PROJECT_DIR"
@@ -268,7 +269,7 @@ jobs:
       - name: Carica JAR
         uses: actions/upload-artifact@v4
         with:
-          name: NoctisMagic-1.7.52
+          name: NoctisMagic-1.7.53
           path: progetto/**/build/libs/*.jar
           if-no-files-found: error
 
@@ -278,7 +279,7 @@ jobs:
           from pathlib import Path
           from zipfile import ZipFile, ZIP_DEFLATED
           source=Path("shaderpack/NoctisArcane")
-          out=Path("shaderpack-dist/NoctisArcane-2.0.zip")
+          out=Path("shaderpack-dist/NoctisArcane-2.1.zip")
           out.parent.mkdir(exist_ok=True)
           with ZipFile(out,"w",ZIP_DEFLATED) as z:
             for p in sorted(source.rglob("*")):
@@ -291,6 +292,6 @@ jobs:
       - name: Carica shaderpack separato
         uses: actions/upload-artifact@v4
         with:
-          name: NoctisArcane-Shaderpack-2.0
-          path: shaderpack-dist/NoctisArcane-2.0.zip
+          name: NoctisArcane-Shaderpack-2.1
+          path: shaderpack-dist/NoctisArcane-2.1.zip
           if-no-files-found: error

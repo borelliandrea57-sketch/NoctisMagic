@@ -30,7 +30,7 @@ s=s.replace(a,'''int l=style==1&&f.tile==15?0x00F000F0:style==0&&(f.tile==12||f.
                 boolean metal=ArcaneShading.metal(style,f.tile);''',1)
 a='buf.vertex(mat,v.x/16f,v.y/16f,v.z/16f).color(red,green,blue,alpha).uv(u,vv).overlayCoords(overlay).uv2(l).normal(norm,v.nx,v.ny,v.nz).endVertex();'
 assert a in s,a
-s=s.replace(a,'''float shade=style==1&&f.tile==15?1f:ArcaneShading.shade(norm,v.nx,v.ny,v.nz,metal,style,alpha);
+s=s.replace(a,'''float shade=style==1&&f.tile==15?1f:ArcaneShading.shade(norm,v.nx,v.ny,v.nz,metal,style,f.tile,alpha);
                     buf.vertex(mat,v.x/16f,v.y/16f,v.z/16f).color(red*shade,green*shade,blue*shade,alpha).uv(u,vv).overlayCoords(overlay).uv2(l).normal(norm,v.nx,v.ny,v.nz).endVertex();''',1)
 a='for(Part c:children)c.draw(p,buf,light,overlay,red,green,blue,alpha);'
 assert a in s,a
@@ -48,7 +48,7 @@ final class ArcaneShading{
    default -> false;
   };
  }
- static float shade(Matrix3f m,float x,float y,float z,boolean metal,int style,float alpha){
+ static float shade(Matrix3f m,float x,float y,float z,boolean metal,int style,int tile,float alpha){
   if(alpha<.60f)return 1f; // Preserve the energy ribbons and transparent effects.
   float nx=m.m00()*x+m.m10()*y+m.m20()*z;
   float ny=m.m01()*x+m.m11()*y+m.m21()*z;
@@ -68,6 +68,32 @@ final class ArcaneShading{
   // Preserve the painted atlas colors: do not dim gold and silver to brown/gray.
   float shade=metal?.77f+.12f*key+.035f*fill+.025f*upper+.045f*rim+.10f*spec+.035f*soft:
       .87f+.08f*key+.025f*fill+.025f*upper+.025f*rim+.025f*spec;
+  // Hair has a broad directional lobe plus a narrow secondary satin sheen;
+  // cloth is a rough diffuse material with a soft grazing-angle fibre response.
+  boolean hair=switch(style){
+   case 5 -> tile==6||tile==7||tile==9;
+   case 6 -> tile==7;
+   case 7 -> tile==5||tile==6||tile==11||tile==12;
+   case 8 -> tile==3||tile==10;
+   case 9 -> tile==8;
+   default -> false;
+  };
+  boolean cloth=switch(style){
+   case 5 -> tile==0||tile==2||tile==8;
+   case 6 -> tile==0||tile==1||tile==8;
+   case 7 -> tile==0||tile==1||tile==13||tile==14;
+   case 8 -> tile==0||tile==1||tile==9||tile==14;
+   case 9 -> tile==0||tile==1||tile==2||tile==3||tile==5;
+   default -> false;
+  };
+  if(hair){
+   float band=(float)Math.pow(Math.max(0,1-Math.abs(ny-.26f)),8);
+   float second=(float)Math.pow(Math.max(0,1-Math.abs(ny+.15f)),18);
+   shade=.78f+.09f*key+.05f*fill+.09f*band*(.45f+.55f*h)+.045f*second+.045f*rim;
+  }else if(cloth){
+   float fibre=(float)Math.pow(rim,1.5);
+   shade=.82f+.10f*key+.045f*fill+.025f*upper+.065f*fibre;
+  }
   return Math.max(.72f,Math.min(1,shade));
  }
 }''',encoding='utf-8')
