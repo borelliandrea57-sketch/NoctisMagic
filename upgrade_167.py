@@ -2053,3 +2053,151 @@ for lang,it in [('it_it',True),('en_us',False)]:
  d['message.noctismagic.geass_break']='Il comando del Geass si interrompe.' if it else 'The Geass command is interrupted.'
  j(p,d)
 print('Defensive Lelouch Geass: controlled 200-block walk, safe terrain and temporary input override.')
+
+
+# Individual character loot and three new wearable/usable/collectible items.
+edit('Noctis.java','public static final RegistryObject<Item> CATHEDRAL_EGG=','''public static final RegistryObject<Item> LEON_PISTOL=ITEMS.register("leon_pistol",LeonPistol::new);
+    public static final RegistryObject<Item> LEON_JACKET=ITEMS.register("leon_jacket",LeonJacket::new);
+    public static final RegistryObject<Item> HOPE=ITEMS.register("hope",()->new Item(new Item.Properties().stacksTo(1).rarity(net.minecraft.world.item.Rarity.RARE)){
+        @Override public void appendHoverText(net.minecraft.world.item.ItemStack stack,net.minecraft.world.level.Level l,java.util.List<net.minecraft.network.chat.Component> lines,net.minecraft.world.item.TooltipFlag flag){lines.add(net.minecraft.network.chat.Component.translatable("item.noctismagic.hope.desc").withStyle(net.minecraft.ChatFormatting.GRAY));}
+    });
+    public static final RegistryObject<Item> CATHEDRAL_EGG=''')
+edit('Noctis.java','e.accept(CATHEDRAL_EGG.get());','e.accept(CATHEDRAL_EGG.get());e.accept(LEON_PISTOL.get());e.accept(LEON_JACKET.get());e.accept(HOPE.get());')
+write('CharacterLoot.java','''package it.noctis.magic;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.animal.Turtle;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.*;
+import net.minecraftforge.event.entity.living.LivingDropsEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+@Mod.EventBusSubscriber(modid=Noctis.ID)
+public class CharacterLoot{
+ static void add(LivingDropsEvent e,ItemStack s){LivingEntity m=e.getEntity();e.getDrops().add(new ItemEntity(m.level(),m.getX(),m.getY()+.25,m.getZ(),s));}
+ static void add(LivingDropsEvent e,Item i,int count){add(e,new ItemStack(i,count));}
+ static void suit(LivingDropsEvent e,int color){
+  for(Item i:new Item[]{Items.LEATHER_HELMET,Items.LEATHER_CHESTPLATE,Items.LEATHER_LEGGINGS,Items.LEATHER_BOOTS}){
+   ItemStack stack=new ItemStack(i);((DyeableLeatherItem)i).setColor(stack,color);add(e,stack);
+  }
+ }
+ @SubscribeEvent public static void loot(LivingDropsEvent e){
+  LivingEntity m=e.getEntity();if(!(m.level() instanceof ServerLevel l))return;
+  if(m instanceof CrossoverGuest g){
+   if(g.kind()==0){add(e,Noctis.LEON_PISTOL.get(),1);add(e,Noctis.LEON_JACKET.get(),1);}
+   else{add(e,Items.PAPER,5+m.getRandom().nextInt(6));suit(e,g.kind()==1?0x254DAD:0xA42D49);}
+  }else if(m instanceof JojoMob j&&!j.stand()){
+   if(j.variant()==1)add(e,Noctis.PIZZA.get(),1);
+   else if(j.variant()==2){
+    add(e,Items.WHEAT_SEEDS,4+m.getRandom().nextInt(5));add(e,Items.PUMPKIN_SEEDS,2);add(e,Items.MELON_SEEDS,2);add(e,Items.OAK_SAPLING,2);add(e,Items.POPPY,2);add(e,Items.DANDELION,2);
+    Turtle t=EntityType.TURTLE.create(l);
+    if(t!=null){t.moveTo(m.getX(),m.getY(),m.getZ(),m.getYRot(),0);if(l.noCollision(t)){t.setPersistenceRequired();l.addFreshEntity(t);}else add(e,Items.TURTLE_SPAWN_EGG,1);}
+   }
+  }else if(m instanceof SushiGuest s){
+   if(s.maomao()){add(e,Items.FERN,3);add(e,Items.ALLIUM,2);add(e,Items.AZURE_BLUET,2);add(e,Items.DANDELION,2);}
+   else{add(e,Items.GOLD_INGOT,2+m.getRandom().nextInt(3));add(e,Items.AMETHYST_SHARD,3);add(e,Items.EMERALD,2);add(e,Items.PEONY,1);}
+  }else if(m instanceof Vincent)add(e,Noctis.HOPE.get(),1);
+ }
+}''')
+write('LeonJacket.java','''package it.noctis.magic;
+import net.minecraft.world.item.*;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+public class LeonJacket extends ArmorItem{
+ static final ArmorMaterial MATERIAL=new ArmorMaterial(){
+  public int getDurabilityForType(ArmorItem.Type t){return (switch(t){case HELMET->11;case CHESTPLATE->16;case LEGGINGS->15;case BOOTS->13;})*48;}
+  public int getDefenseForType(ArmorItem.Type t){return t==ArmorItem.Type.CHESTPLATE?10:0;}
+  public int getEnchantmentValue(){return 19;}public SoundEvent getEquipSound(){return SoundEvents.ARMOR_EQUIP_LEATHER;}
+  public Ingredient getRepairIngredient(){return Ingredient.of(Items.LEATHER);}
+  public String getName(){return "noctismagic:leon_jacket";}public float getToughness(){return 4;}public float getKnockbackResistance(){return .15f;}
+ };
+ public LeonJacket(){super(MATERIAL,ArmorItem.Type.CHESTPLATE,new Item.Properties().rarity(Rarity.EPIC));}
+}''')
+# Fictional ranged weapon uses game resources, block line-of-sight and cooldown.
+write('LeonPistol.java','''package it.noctis.magic;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.*;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.*;
+import net.minecraft.world.level.*;
+import net.minecraft.world.phys.*;
+public class LeonPistol extends Item{
+ public LeonPistol(){super(new Item.Properties().durability(640).rarity(Rarity.EPIC));}
+ @Override public InteractionResultHolder<ItemStack> use(Level level,Player p,InteractionHand hand){
+  ItemStack gun=p.getItemInHand(hand);
+  if(!(level instanceof ServerLevel l))return InteractionResultHolder.sidedSuccess(gun,true);
+  int slot=-1;for(int i=0;i<p.getInventory().getContainerSize();i++)if(p.getInventory().getItem(i).is(Items.IRON_NUGGET)){slot=i;break;}
+  if(!p.getAbilities().instabuild&&slot<0){p.displayClientMessage(Component.translatable("message.noctismagic.leon_ammo"),true);return InteractionResultHolder.fail(gun);}
+  if(!p.getAbilities().instabuild){p.getInventory().getItem(slot).shrink(1);gun.hurtAndBreak(1,p,x->x.broadcastBreakEvent(hand));}
+  p.getCooldowns().addCooldown(this,12);
+  Vec3 a=p.getEyePosition(),end=a.add(p.getLookAngle().scale(28));
+  HitResult wall=l.clip(new ClipContext(a,end,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p));Vec3 b=wall.getLocation();
+  LivingEntity target=null;double best=a.distanceToSqr(b);
+  for(LivingEntity e:l.getEntitiesOfClass(LivingEntity.class,new AABB(a,b).inflate(1),e->e!=p&&e.isAlive()&&!(e instanceof Player q&&q.isSpectator()))){
+   var hit=e.getBoundingBox().inflate(.15).clip(a,b);if(hit.isPresent()&&a.distanceToSqr(hit.get())<best){best=a.distanceToSqr(hit.get());target=e;}
+  }
+  if(target!=null){target.hurt(p.damageSources().playerAttack(p),14);b=a.add(p.getLookAngle().scale(Math.sqrt(best)));}
+  for(int i=1;i<=12;i++){Vec3 v=a.lerp(b,i/12.0);l.sendParticles(ParticleTypes.CRIT,v.x,v.y-.08,v.z,1,.012,.012,.012,0);}
+  p.playSound(SoundEvents.FIREWORK_ROCKET_BLAST,.8f,1.8f);return InteractionResultHolder.success(gun);
+ }
+ @Override public void appendHoverText(ItemStack s,Level l,java.util.List<Component> lines,TooltipFlag flag){lines.add(Component.translatable("item.noctismagic.leon_pistol.desc").withStyle(net.minecraft.ChatFormatting.GRAY));}
+}''')
+# Detailed brown leather and shearling jacket, using vanilla 64x32 armor UV scaled 4x.
+W,H=256,128;pix=bytearray(W*H*4)
+for y in range(H):
+ for x in range(W):
+  u=x/4;v=y/4
+  # Main body and sleeves; draw leather panels, cuffs and shearling collar.
+  if 16<=u<40 and 16<=v<32 or 40<=u<56 and 16<=v<32:
+   grain=.5+.5*math.sin(x*1.91+y*.72)*math.cos(y*2.03-x*.31)
+   c=shade((93,61,40),.72+.31*grain+.12*math.sin(u*.9)**2)
+   if 20<=u<28 and 20<=v<32:
+    if v<23 and abs(u-24)<(23-v)*.80+1.1:c=shade((204,185,143),.82+.15*grain)
+    if abs(u-24)<.28 and v>=23:c=(145,121,81)
+    if 25<=v<=28 and (21<=u<=22.5 or 25.5<=u<=27):c=shade(c,.65)
+   if v>30 or 40<=u<56 and v>29:c=shade((207,184,145),.77+.25*grain)
+   if abs(u-round(u/4)*4)<.18:c=shade(c,.68)
+   off=(y*W+x)*4;pix[off:off+4]=bytes((*c,255))
+png(assets/'textures/models/armor/leon_jacket_layer_1.png',W,H,pix)
+# Three distinct pixel-art inventory icons.
+for name in ['leon_jacket','leon_pistol','hope']:
+ W=64;H=64;pix=bytearray(W*H*4)
+ for y in range(H):
+  for x in range(W):
+   c=None
+   if name=='leon_jacket':
+    if (19<=x<=44 and 13<=y<=53) or (8<=x<19 and 15<=y<=43) or (44<x<=55 and 15<=y<=43):
+     c=shade((108,68,45),.72+.26*math.sin(x*.4)**2)
+     if y<24 and abs(x-32)<(25-y)*.72+2:c=(213,192,151)
+     if 31<=x<=32 and y>23:c=(160,139,103)
+     if y>49 or y>39 and (x<19 or x>44):c=(199,179,145)
+   elif name=='leon_pistol':
+    if 7<=x<=56 and 17<=y<=28:c=shade((65,69,78),.80+.25*math.sin(y*.8)**2)
+    if 30<=x<=54 and 28<=y<=33:c=(40,42,49)
+    if 40<=x<=51 and 32<=y<=52:c=(45,38,36)
+    if 25<=x<=40 and 32<=y<=40 and (x in (25,26,39,40) or y>=38):c=(65,69,78)
+   else:
+    u=(x-31.5)/19;v=(y-31.5)/24
+    if abs(u)+abs(v)<1:
+     c=mix((125,140,184),(255,248,210),max(0,1-abs(u)-abs(v)))
+    if abs(u)<.10 and abs(v)<1.1 or abs(v)<.08 and abs(u)<1.1:c=(255,246,203)
+   if c is not None:
+    off=(y*W+x)*4;pix[off:off+4]=bytes((*c,255))
+ png(assets/'textures/item'/f'{name}.png',W,H,pix)
+ j(assets/'models/item'/f'{name}.json',{'parent':'minecraft:item/generated','textures':{'layer0':f'noctismagic:item/{name}'}})
+for lang,it in [('it_it',True),('en_us',False)]:
+ p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
+ d['item.noctismagic.leon_jacket']='Giubbotto di Leon' if it else "Leon's Jacket"
+ d['item.noctismagic.leon_pistol']='Pistola di Leon' if it else "Leon's Pistol"
+ d['item.noctismagic.hope']='Speranza' if it else 'Hope'
+ d['item.noctismagic.hope.desc']='Non ha alcun potere.' if it else 'It has no power.'
+ d['item.noctismagic.leon_pistol.desc']='Tasto destro per sparare. Consuma una pepita di ferro.' if it else 'Right-click to fire. Uses one iron nugget.'
+ d['message.noctismagic.leon_ammo']='Servono pepite di ferro.' if it else 'Iron nuggets required.'
+ j(p,d)
+print('Character loot, colored court suits, Leon jacket and pistol, medicinal herbs, gifts, and Hope.')
