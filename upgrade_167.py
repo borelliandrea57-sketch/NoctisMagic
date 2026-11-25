@@ -569,7 +569,7 @@ s=s[:start]+'''    @Override public void travel(Vec3 v){
         super.travel(v);
     }
 '''+s[end:]
-s=s.replace('WASD per volare; guarda in alto/basso per salire/scendere; bacchetta di Blaze per il potere.','W per decollare e volare, A/D per virare, S per arretrare. Guarda in alto o in basso mentre premi W per salire o atterrare. Rilascia W per librarti. Bacchetta di Blaze: potere.')
+s=s.replace('WASD per volare; guarda in alto/basso per salire/scendere; bacchetta di Blaze per il potere.','W per decollare e volare, A/D per spostarti di lato, S per arretrare. Usa il mouse per virare; guarda in alto o in basso mentre premi W per salire o atterrare. Rilascia W per librarti. Bacchetta di Blaze: potere.')
 p.write_text(s,encoding='utf-8')
 
 # Quest clues are now legible without spoiling other mysteries.
@@ -586,3 +586,9 @@ for idx,lang in enumerate(('it_it','en_us')):
 edit('Joker.java','Take your time. Cinque ombre custodiscono la strada per il mio covo.','Take your time. La Calling Card reclama cinque ombre: sconfiggi cinque creature ostili, poi torna da me.')
 edit('Joker.java','Le Ombre non si sconfiggono da sole.','La Calling Card non e ancora pronta. Sconfiggi altre creature ostili, poi torna qui.')
 print('Black Rose and Joker dedicated detailed meshes, improved mounted flight, clarified quest hints.')
+
+# Fix the compile failure from the previous workflow run.
+p=java/'DramaGuest.java';s=p.read_text(encoding='utf-8')
+if 'import net.minecraft.server.level.ServerPlayer;' not in s and 'import net.minecraft.server.level.*;' not in s:
+ s=s.replace('package it.noctis.magic;', 'package it.noctis.magic;\nimport net.minecraft.server.level.ServerPlayer;',1)
+ p.write_text(s,encoding='utf-8')
