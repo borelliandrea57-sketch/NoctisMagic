@@ -3956,3 +3956,173 @@ change('slide.loft(11,16,-.7f,0,0,.53f,.62f,0,0,0,.57f,.63f,3.4f,0,0,.50f,.55f);
             slide.blade(5,0,.15f,-.57f,0,2.95f,-.57f,.37f);''')
 p.write_text(s,encoding='utf-8')
 print('Corrective patch: angular Phantom mask and hair; Leon active during daylight, hostile targeting, firing and visible pistol.')
+
+
+# Code Geass refinement: independent angular heads, layered hair, tailored outfits and colored dialogue.
+p=java/'DramaGuest.java';s=p.read_text(encoding='utf-8')
+a='void say(ServerLevel l,String s){NpcDialogue.say(l,Component.literal(getDisplayName().getString()+": "+s));}'
+assert a in s,a
+s=s.replace(a,'''void say(ServerLevel l,String s){
+        var msg=Component.literal(getDisplayName().getString()+": "+s);
+        if(kind()==2)msg.withStyle(net.minecraft.ChatFormatting.GREEN);
+        NpcDialogue.say(l,msg);
+    }''',1)
+p.write_text(s,encoding='utf-8')
+
+p=java/'GeassSculptedClient.java';s=p.read_text(encoding='utf-8')
+def geass_replace(a,b):
+ global s
+ assert a in s,a
+ s=s.replace(a,b,1)
+# Keep the shared animations; replace just the head construction for each character.
+a=s.index('            if(cc){\n            head.loft(6,64,')
+b=s.index('                arms[i]=root.child(',a)
+s=s[:a]+'''            if(cc){
+                head.loft(6,40,-7.65f,0,.10f,1.25f,1.45f,-7.12f,0,.05f,2.25f,2.15f,-5.60f,0,0,2.73f,2.50f,-4.05f,0,-.08f,2.64f,2.43f,-2.65f,0,-.19f,2.11f,2.03f,-1.23f,0,-.34f,1.20f,1.42f,-.28f,0,-.48f,.48f,.75f,0,0,-.50f,.25f,.51f);
+            }else{
+                head.loft(6,40,-7.85f,0,.11f,1.20f,1.40f,-7.25f,0,.03f,2.28f,2.27f,-5.65f,0,0,2.71f,2.58f,-4.20f,0,-.10f,2.64f,2.50f,-2.85f,0,-.17f,2.19f,2.12f,-1.45f,0,-.34f,1.40f,1.57f,-.45f,0,-.48f,.62f,.91f,0,0,-.50f,.29f,.56f);
+            }
+            projectFace(head);
+            head.loft(7,16,-4.8f,0,-2.36f,.14f,.10f,-3.9f,0,-2.55f,.24f,.23f,-3.05f,0,cc?-2.78f:-2.96f,.33f,.29f,-2.80f,0,-2.62f,.23f,.15f);
+            for(int side:new int[]{-1,1}){
+                head.oval(7,side*2.62f,-3.60f,.06f,.30f,.66f,.42f);
+            }
+            // A low tapered hair shell with independent swept, sharply pointed layered strands.
+            head.loft(8,28,-8.70f,0,.15f,.82f,.88f,-8.34f,0,.12f,2.11f,2.08f,-7.55f,0,.18f,2.95f,2.74f,-6.3f,0,.27f,3.05f,2.77f);
+            for(int j=0;j<13;j++){
+                float t=j/12f;
+                Part q=head.child(-2.53f+t*5.05f,-7.91f+(float)Math.sin(j*.83f)*.21f,-1.80f);
+                float len=cc?2.15f+2.05f*(float)Math.pow(Math.sin(t*Math.PI),1.7):2.0f+1.82f*(float)Math.sin(t*Math.PI)+(j%3)*.12f;
+                float dx=cc?(t-.52f)*1.55f-.20f:-1.2f+t*.72f;
+                q.loft(8,12,-.50f,0,.52f,.43f,.49f,.24f,dx*.10f,-.18f,.54f,.51f,1.15f,dx*.33f,-.72f,.47f,.35f,len*.70f,dx*.72f,-.91f,.29f,.20f,len,dx,-.69f,.025f,.035f);
+                q.blade(15,-.15f,.15f,-.48f,dx*.75f,len*.78f,-.92f,.14f);
+            }
+            for(int j=0;j<9;j++){
+                float t=j/8f;
+                Part q=head.child(-2.44f+t*4.88f,-8.25f+(float)Math.cos(j*1.1f)*.14f,.24f);
+                float dx=cc?(t-.5f)*1.2f:-.9f+t*.6f;
+                q.loft(8,12,-.64f,0,.22f,.32f,.43f,.1f,0,0,.52f,.56f,1.35f,dx*.45f,-.42f,.42f,.37f,2.25f,dx,-.84f,.025f,.03f);
+            }
+            if(cc){
+                // Long flowing green locks, sculpted as tapered ribbons with a dark inner layer.
+                for(int j=0;j<13;j++){
+                    float t=j/12f,x=-2.82f+t*5.64f,spread=(t-.5f)*6.2f;
+                    Part q=head.child(x,-6.65f,1.75f+.7f*(float)Math.sin(t*Math.PI));hair.add(q);
+                    float len=21.8f+2.7f*(float)Math.sin(t*Math.PI)+(j%3)*.4f;
+                    q.loft(j%4==0?11:8,12,-.32f,0,0,.36f,.44f,2,0,.39f,.51f,.51f,6,spread*.23f,.76f,.65f,.44f,12,spread*.55f,1.36f,.72f,.35f,18,spread*.87f,2.15f,.62f,.25f,len,spread,2.60f,.026f,.035f);
+                    q.blade(15,0,2,-.48f,spread*.85f,len*.87f,1.91f,.15f);
+                }
+            }else{
+                Part back=head.child(0,-6.8f,1.57f);hair.add(back);
+                back.loft(8,24,-.45f,0,0,2.45f,1.45f,1.25f,0,.39f,2.73f,1.53f,3.65f,0,.40f,2.45f,1.25f,5.4f,0,.65f,1.47f,.25f);
+            }
+            for(int i=0;i<2;i++){
+                int s=i==0?-1:1;
+                for(int j=0;j<(cc?4:3);j++){
+                    Part lock=head.child(s*(2.34f+j*.14f),-6.95f+j*.27f,-.70f+j*.48f);hair.add(lock);
+                    float len=cc?16.9f+j*1.4f:4.0f+j*.55f;
+                    lock.loft(8,12,-.28f,0,.1f,.38f,.45f,1.2f,s*.30f,-.34f,.50f,.49f,len*.33f,s*.40f,-.48f,.49f,.37f,len*.68f,s*(cc?1.0f:.34f),-.08f,.36f,.22f,len,s*(cc?1.36f:.26f),.34f,.025f,.035f);
+                    if(cc)lock.blade(15,0,.65f,-.45f,s*.95f,len*.88f,-.15f,.13f);
+                }
+'''+s[b:]
+geass_replace('float u=front?.5f+v.x()/7.5f:.035f;','float u=front?Math.max(.025f,Math.min(.975f,.5f+v.x()/6.25f)):.035f;')
+geass_replace('return new V(v.x(),v.y(),z,u,v.v(),v.nx(),v.ny(),v.nz());','return new V(v.x(),v.y(),z,u,Math.max(.025f,Math.min(.975f,(v.y()+7.8f)/7.8f)),v.nx(),v.ny(),v.nz());')
+# C.C.'s high-neck black/purple uniform with silver seam motif and three separate burgundy belts.
+a=s.index('            }else{\n                body.blade(4,0,-.8f')
+b=s.index('            // Separate head silhouette',a)
+s=s[:a]+'''            }else{
+                body.loft(0,28,-1.35f,0,0,1.08f,1.02f,-.7f,0,0,1.16f,1.12f,.15f,0,0,1.38f,1.27f);
+                body.loft(4,24,-1.37f,0,0,1.10f,1.04f,-1.19f,0,0,1.10f,1.04f);
+                body.blade(4,0,-1.17f,-1.07f,0,1.13f,-1.56f,.19f);
+                for(int side:new int[]{-1,1}){
+                    body.blade(4,side*.25f,.72f,-1.43f,side*2.42f,.12f,-1.35f,.24f);
+                    body.blade(10,side*.16f,1.25f,-1.79f,side*1.65f,2.52f,-2.15f,.45f);
+                    body.blade(10,side*2.65f,2.22f,-1.42f,0,5.18f,-1.91f,.66f);
+                    body.blade(10,side*.64f,5.08f,-1.89f,side*.14f,6.90f,-1.62f,.41f);
+                    body.blade(12,side*2.25f,5.60f,-1.15f,side*1.65f,8.75f,-1.48f,.48f);
+                }
+                body.blade(10,0,1.20f,-1.82f,0,4.15f,-2.22f,.23f);
+                body.loft(3,24,10.25f,0,0,2.55f,1.73f,11.40f,0,0,2.79f,1.83f,12.70f,0,0,2.62f,1.62f);
+                for(int k=0;k<3;k++){
+                    float y=8.85f+k*.77f;
+                    body.loft(1,28,y,0,0,2.55f+k*.13f,1.81f+k*.04f,y+.58f,0,0,2.56f+k*.13f,1.83f+k*.04f);
+                    Part buckle=body.child(.50f,y+.29f,-1.96f-k*.04f);
+                    buckle.loft(4,8,-.30f,0,0,.43f,.14f,.30f,0,0,.43f,.14f);
+                    buckle.loft(13,8,-.18f,0,-.13f,.28f,.05f,.18f,0,-.13f,.28f,.05f);
+                    for(int side:new int[]{-1,1})body.oval(4,side*1.95f,y+.29f,-1.35f,.11f,.12f,.09f);
+                }
+            }
+'''+s[b:]
+# Narrow the collar of Lelouch to its silhouette, refine front uniform details rather than oversized trim.
+geass_replace('side*2.0f,1.0f,.04f,.05f,-5.6f,side*2.18f,.8f,.78f,.30f','side*1.65f,1.0f,.04f,.05f,-5.6f,side*1.85f,.8f,.70f,.30f')
+geass_replace('side*3.15f,1.2f,-1.28f,side*1.2f,3.1f,-1.92f,.85f','side*3.15f,1.2f,-1.28f,side*1.2f,3.1f,-1.92f,.46f')
+geass_replace('side*1.2f,3.1f,-1.92f,0,3.6f,-1.97f,.48f','side*1.2f,3.1f,-1.92f,0,3.6f,-1.97f,.28f')
+geass_replace('fore[i].oval(0,0,4.98f,-.08f,.67f,.91f,.55f);','''{
+                    fore[i].oval(7,0,4.75f,-.08f,.59f,.65f,.42f);
+                    for(int k=0;k<4;k++)fore[i].loft(7,10,4.98f,-.42f+k*.28f,-.10f,.12f,.15f,5.72f-(k==3?.17f:0),-.42f+k*.28f,-.18f,.10f,.12f,5.91f-(k==3?.17f:0),-.42f+k*.28f,-.18f,.035f,.045f);
+                    fore[i].blade(12,-.48f,.30f,-.72f,.20f,3.53f,-.64f,.40f);
+                    arms[i].blade(1,s*.48f,2.10f,-.82f,s*.36f,3.1f,-.81f,.44f);
+                }''')
+# C.C. boots and open long split tails: separate dark exterior, burgundy inside and fine gold edge.
+geass_replace('knees[i].blade(4,0,5.6f,-.81f,0,7.0f,-1.8f,.68f);','''knees[i].blade(4,0,5.6f,-.81f,0,7.0f,-1.8f,.68f);
+                if(cc){
+                    legs[i].loft(9,24,3.65f,0,0,1.05f,1.08f,4.06f,0,0,1.08f,1.10f,5.40f,0,0,.90f,.95f);
+                    knees[i].blade(10,0,.10f,-1.02f,0,4.1f,-.76f,.30f);
+                    knees[i].blade(4,0,1.35f,-1.03f,0,2.85f,-.94f,.87f);
+                    knees[i].blade(12,s*.55f,2.80f,-.69f,s*.40f,5.00f,-.69f,.23f);
+                }''')
+geass_replace('float len=cc?15.4f:23.8f;','float len=cc?17.1f:23.8f;')
+geass_replace('if(cc)c.loft(5,18,0,0,0,1.5f,.32f,len*.24f,s*.6f,.4f,2.0f,.37f,len*.54f,s*1.25f,1.2f,2.4f,.4f,len*.80f,s*2.0f,2.0f,1.7f,.34f,len,s*2.7f,3.3f,.08f,.10f);','''if(cc){
+                    c.loft(0,20,0,0,0,1.35f,.18f,len*.24f,s*.48f,.45f,1.65f,.21f,len*.54f,s*1.05f,1.05f,1.78f,.20f,len*.80f,s*1.70f,1.80f,1.38f,.16f,len,s*2.30f,2.60f,.05f,.06f);
+                    c.loft(5,20,0,0,.19f,1.29f,.09f,len*.24f,s*.48f,.67f,1.56f,.11f,len*.54f,s*1.05f,1.25f,1.68f,.10f,len*.80f,s*1.70f,1.97f,1.29f,.08f,len,s*2.30f,2.66f,.04f,.04f);
+                }''')
+p.write_text(s,encoding='utf-8')
+
+# Both atlases receive expressive eyes, controlled face shadows, directional strands and fabric detail.
+W,H=1024,512
+for cc in (True,False):
+ pix=bytearray(W*H*4)
+ pal=[(28,29,45),(123,20,54),(34,29,45),(218,222,235),(211,167,65),(103,23,51),(247,206,182),(245,204,181),(114,177,64) if cc else (28,24,36),(190,203,221),(155,165,194),(49,105,62) if cc else (27,24,40),(65,67,93) if cc else (21,23,35),(95,57,31) if cc else (44,26,41),(161,96,84),(185,224,110) if cc else (69,58,83)]
+ for m,base in enumerate(pal):
+  for y in range(128):
+   v=sat2((y-3)/121)
+   for x in range(128):
+    u=sat2((x-3)/121);f=abs(u-.5)
+    c=shade(base,.83+.19*math.sin(math.pi*u)+.045*math.sin(u*55+v*23)**2)
+    if m in (0,5,12):
+     fold=math.sin(u*math.pi*4+v*4+math.sin(v*7)*.5)
+     c=mix(c,(104,111,145) if m!=5 else (168,51,82),.27*max(0,fold)**6)
+     c=mix(c,(12,13,23) if m!=5 else (57,12,31),.30*max(0,-fold)**6)
+    if m==1:
+     c=mix(c,(196,42,89),.33*math.exp(-((u-.36)/.17)**2))
+     if v<.08 or v>.93:c=shade(c,.55)
+    if m==4:c=mix(c,(255,229,128),.43*math.sin(math.pi*u)**2)
+    if m in (9,10):
+     c=mix(c,(245,249,255),.42*math.exp(-((u-.33)/.14)**2))
+     c=mix(c,(71,83,112),.27*math.exp(-((u-.80)/.15)**2))
+    if m in (8,11,15) and (cc or m!=11):
+     wave=math.sin(u*math.pi*15+v*2.7+.4*math.sin(v*6))
+     c=mix(c,(221,249,140) if cc else (87,76,107),.38*max(0,wave)**5+.13*math.exp(-((v-.28)/.16)**2))
+     c=mix(c,(37,88,45) if cc else (11,12,20),.34*max(0,-wave)**4)
+    if m==6:
+     def g(cx,cy,sx,sy):return math.exp(-((u-cx)/sx)**2-((v-cy)/sy)**2)
+     c=mix(base,(153,82,79),.26*sat2((f-.19)*4)+.10*v)
+     c=mix(c,(255,231,206),.38*g(.50,.38,.12,.20))
+     for side in (-1,1):
+      ex=.5+side*.175;dx=side*(u-ex)/(.124 if cc else .119)
+      dy=(v-(.474-.038*dx))/(.052 if cc else .046)
+      d=abs(dx)**1.7+abs(dy)**1.28
+      c=mix(c,(175,102,109),.23*g(ex,.46,.12,.078)+.16*g(ex,.61,.10,.055))
+      if d<1.19:c=(43,25,36)
+      if d<.80:c=(249,240,224)
+      if d<.77 and abs(dx+.05)<.44:c=mix((136,87,29) if cc else (62,32,106),(247,198,72) if cc else (170,92,209),sat2((dy+.60)/1.3))
+      if d<.74 and abs(dx+.05)<.18:c=(28,20,32)
+      if d<.73 and (dx+.22)**2+(dy+.23)**2<.053:c=(255,251,241)
+      if abs(dx)<1.10 and abs(v-(.372-.034*dx))<.013:c=(66,99,41) if cc else (35,25,38)
+      if cc and .78<dx<1.16 and abs(v-(.443-.025*dx))<.012:c=(40,26,36)
+     if f<.04 and abs(v-.675)<.009:c=mix(c,(164,89,81),.66)
+     if f<.07 and abs(v-(.793-.014*(1-f/.07)))<.008:c=(145,74,80) if cc else (101,47,56)
+     if f<.045 and abs(v-.812)<.007:c=(222,142,128)
+    off=((m//8*128+y)*W+m%8*128+x)*4;pix[off:off+4]=bytes((*c,255))
+ png(assets/'textures/entity'/('cc_sculpted.png' if cc else 'lelouch_sculpted.png'),W,H,pix)
+print('Code Geass: new angular heads, fine layered hair, detailed C.C. outfit and light-green chat.')
