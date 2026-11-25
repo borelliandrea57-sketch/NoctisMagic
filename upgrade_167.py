@@ -5770,3 +5770,85 @@ for m,base in enumerate(pal):
    off=((m//8*128+y)*W+m%8*128+x)*4;pix[off:off+4]=bytes((*c,255))
 png(assets/'textures/entity/moonwalk_sculpted.png',W,H,pix)
 print('Magic input and mana HUD restored; hit vocalizations for both admirers; dedicated Michael Jackson moonwalk model.')
+
+
+# More open temperate landscapes, opt-in world preset (no change to saved vanilla generators).
+write('OpenPlainsSource.java','''package it.noctis.magic;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import java.util.stream.Stream;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.level.biome.*;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.RegisterEvent;
+@Mod.EventBusSubscriber(modid=Noctis.ID,bus=Mod.EventBusSubscriber.Bus.MOD)
+public final class OpenPlainsSource extends BiomeSource {
+ private final BiomeSource original;
+ private final Holder<Biome> plains;
+ public static final Codec<OpenPlainsSource> CODEC=RecordCodecBuilder.create(i->i.group(
+  BiomeSource.CODEC.fieldOf("original").forGetter(s->s.original),
+  Biome.CODEC.fieldOf("plains").forGetter(s->s.plains)
+ ).apply(i,OpenPlainsSource::new));
+ public OpenPlainsSource(BiomeSource original,Holder<Biome> plains){this.original=original;this.plains=plains;}
+ @SubscribeEvent public static void register(RegisterEvent e){
+  e.register(Registries.BIOME_SOURCE,helper->helper.register(new net.minecraft.resources.ResourceLocation(Noctis.ID,"open_plains"),CODEC));
+ }
+ @Override protected Codec<? extends BiomeSource> codec(){return CODEC;}
+ @Override protected Stream<Holder<Biome>> collectPossibleBiomes(){return Stream.concat(original.possibleBiomes().stream(),Stream.of(plains)).distinct();}
+ @Override public Holder<Biome> getNoiseBiome(int x,int y,int z,Climate.Sampler sampler){
+  Holder<Biome> b=original.getNoiseBiome(x,y,z,sampler);
+  // Only expand temperate open country; leave cave biomes, oceans, rivers,
+  // deserts, jungles, mountains, snowy biomes and all mod-added biomes alone.
+  if(!b.is(Biomes.FOREST)&&!b.is(Biomes.BIRCH_FOREST)&&!b.is(Biomes.DARK_FOREST))return b;
+  Climate.TargetPoint climate=sampler.sample(x,y,z);
+  // The climate sampler's quantized values are scaled by 10,000.
+  // Favor lower-relief terrain and moderately dry areas instead of replacing all forests.
+  if(climate.erosion()>=-500&&climate.humidity()<4800&&climate.depth()<5500)return plains;
+  return b;
+ }
+}''')
+preset={'dimensions':{
+ 'minecraft:overworld':{'type':'minecraft:overworld','generator':{'type':'minecraft:noise','settings':'minecraft:overworld','biome_source':{'type':'noctismagic:open_plains','original':{'type':'minecraft:multi_noise','preset':'minecraft:overworld'},'plains':'minecraft:plains'}}},
+ 'minecraft:the_nether':{'type':'minecraft:the_nether','generator':{'type':'minecraft:noise','settings':'minecraft:nether','biome_source':{'type':'minecraft:multi_noise','preset':'minecraft:nether'}}},
+ 'minecraft:the_end':{'type':'minecraft:the_end','generator':{'type':'minecraft:noise','settings':'minecraft:end','biome_source':{'type':'minecraft:the_end'}}}
+}}
+j(res/'data/noctismagic/worldgen/world_preset/open_plains.json',preset)
+j(res/'data/minecraft/tags/worldgen/world_preset/normal.json',{'replace':False,'values':['noctismagic:open_plains']})
+for lang in ('it_it','en_us'):
+ p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
+ d['generator.noctismagic.open_plains']='Noctis - Grandi pianure' if lang=='it_it' else 'Noctis - Open plains'
+ j(p,d)
+
+# A candidate may try several neighboring footprints instead of being discarded at
+# the first unsuitable height sample. Keep the original 24-chunk region and seed.
+p=java/'NaturalMonuments.java';s=p.read_text(encoding='utf-8')
+a=s.index('   int x=cp.getMinBlockX(),z=cp.getMinBlockZ();')
+b=s.index('   active.put(l,job);activeKey.put(l,key);return;',a)
+s=s[:a]+'''   int x0=cp.getMinBlockX(),z0=cp.getMinBlockZ();
+   if(!l.hasChunk(cp.x,cp.z))continue;
+   GothicEgg.Plan p=plan(c[2]);
+   int[][] offsets={{0,0},{16,0},{0,16},{-16,0},{0,-16},{32,16},{-32,16},{16,-32},{-16,-32}};
+   boolean waiting=false;BlockPos chosen=null;
+   for(int[] o:offsets){
+    int x=x0+o[0],z=z0+o[1];
+    if(!loaded(l,x,z,p.w,p.d)){waiting=true;continue;}
+    if(!l.getWorldBorder().isWithinBounds(new BlockPos(x,64,z))||!l.getWorldBorder().isWithinBounds(new BlockPos(x+p.w-1,64,z+p.d-1)))continue;
+    int low=Integer.MAX_VALUE,high=Integer.MIN_VALUE;boolean bad=false;
+    for(int dx=0;dx<p.w&&!bad;dx+=3)for(int dz=0;dz<p.d;dz+=3){
+     int h=l.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,x+dx,z+dz);
+     BlockPos ground=new BlockPos(x+dx,h-1,z+dz);
+     low=Math.min(low,h);high=Math.max(high,h);
+     if(!l.getFluidState(ground).isEmpty()||!l.getBlockState(ground).isFaceSturdy(l,ground,Direction.UP)||l.getHeight(Heightmap.Types.MOTION_BLOCKING,x+dx,z+dz)>h){bad=true;break;}
+    }
+    if(bad||high-low>2||high<l.getSeaLevel()||high+p.h>=l.getMaxBuildHeight())continue;
+    // The queued Job checks the complete volume again before placing anything.
+    chosen=new BlockPos(x,high,z);break;
+   }
+   if(chosen==null){if(!waiting)finish(data,key);continue;}
+   job=new GothicEgg.Job(l,null,p,chosen,Direction.SOUTH);
+'''+s[b:]
+# Persist successful/failed candidate once; do not overwrite existing structures.
+p.write_text(s,encoding='utf-8')
+print('Open plains world preset and multiple safe natural monument placement candidates.')
