@@ -1393,3 +1393,67 @@ edit('PonyPowerKey.java','  @SubscribeEvent public static void tick(TickEvent.Cl
    }
   }
   @SubscribeEvent public static void tick(TickEvent.ClientTickEvent e){''')
+
+
+# Maomao's herbal remedy: permanent vanilla Poison immunity, including respawns.
+write('MaomaoRemedy.java','''package it.noctis.magic;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraftforge.event.entity.living.MobEffectEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+@Mod.EventBusSubscriber(modid=Noctis.ID)
+public class MaomaoRemedy{
+    static final String KEY="NoctisMaomaoPoisonImmunity";
+    public static boolean herb(ItemStack s){
+        return s.is(Items.FERN)||s.is(Items.LARGE_FERN)||s.is(Items.GRASS)||s.is(Items.DANDELION)||s.is(Items.ALLIUM)||s.is(Items.AZURE_BLUET)||s.is(Items.OXEYE_DAISY);
+    }
+    public static boolean immune(Player p){return p.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG).getBoolean(KEY);}
+    public static void grant(ServerPlayer p){
+        var data=p.getPersistentData();var keep=data.getCompound(Player.PERSISTED_NBT_TAG);keep.putBoolean(KEY,true);data.put(Player.PERSISTED_NBT_TAG,keep);
+        p.removeEffect(MobEffects.POISON);
+        p.displayClientMessage(Component.translatable("message.noctismagic.maomao_immunity"),false);
+    }
+    @SubscribeEvent public static void applicable(MobEffectEvent.Applicable e){
+        if(e.getEntity() instanceof ServerPlayer p&&immune(p)&&e.getEffectInstance().getEffect()==MobEffects.POISON)e.setResult(net.minecraftforge.eventbus.api.Event.Result.DENY);
+    }
+    @SubscribeEvent public static void tick(TickEvent.PlayerTickEvent e){
+        if(e.phase==TickEvent.Phase.END&&e.player instanceof ServerPlayer p&&immune(p)&&p.hasEffect(MobEffects.POISON))p.removeEffect(MobEffects.POISON);
+    }
+    @SubscribeEvent public static void clone(PlayerEvent.Clone e){
+        if(immune(e.getOriginal())){
+            var data=e.getEntity().getPersistentData();var keep=data.getCompound(Player.PERSISTED_NBT_TAG);keep.putBoolean(KEY,true);data.put(Player.PERSISTED_NBT_TAG,keep);
+        }
+    }
+}''')
+edit('SushiGuest.java','ItemStack s=p.getItemInHand(h);if(!s.isEmpty()&&!s.is(Items.GOLD_NUGGET))return InteractionResult.PASS;','''ItemStack s=p.getItemInHand(h);
+        if(maomao()&&MaomaoRemedy.herb(s)){
+            if(p instanceof net.minecraft.server.level.ServerPlayer sp&&level() instanceof ServerLevel l){
+                if(MaomaoRemedy.immune(sp)){sp.displayClientMessage(Component.translatable("message.noctismagic.maomao_already"),true);return InteractionResult.CONSUME;}
+                int count=Noctis.data(sp).getInt("MaomaoHerbs");
+                if(!p.getAbilities().instabuild)s.shrink(1);
+                count++;Noctis.data(sp).putInt("MaomaoHerbs",count);
+                l.broadcastEntityEvent(this,(byte)112);
+                if(count>=5){MaomaoRemedy.grant(sp);say(l,"Ecco. Ora il veleno non dovrebbe piu avere effetto su di te.");l.sendParticles(ParticleTypes.HAPPY_VILLAGER,sp.getX(),sp.getY()+1,sp.getZ(),24,.35,.45,.35,.02);playSound(SoundEvents.PLAYER_LEVELUP,.65f,1.2f);}
+                else{sp.displayClientMessage(Component.translatable("message.noctismagic.maomao_herbs",count,5),true);}
+            }
+            return InteractionResult.sidedSuccess(level().isClientSide);
+        }
+        if(!s.isEmpty()&&!s.is(Items.GOLD_NUGGET))return InteractionResult.PASS;''')
+edit('SushiGuest.java','if(s.isEmpty()){\n                if(p.isShiftKeyDown())','''if(s.isEmpty()){
+                if(maomao()&&!MaomaoRemedy.immune(p)&&!p.isShiftKeyDown())p.displayClientMessage(Component.translatable("message.noctismagic.maomao_hint"),true);
+                if(p.isShiftKeyDown())''')
+for lang,it in [('it_it',True),('en_us',False)]:
+ p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
+ d['message.noctismagic.maomao_hint']='Maomao cerca erbe medicinali. Portale 5 erbe o fiori comuni.' if it else 'Maomao seeks medicinal plants. Bring her 5 herbs or common flowers.'
+ d['message.noctismagic.maomao_herbs']='Erbe consegnate a Maomao: %s/%s' if it else 'Herbs delivered to Maomao: %s/%s'
+ d['message.noctismagic.maomao_immunity']='Rimedio di Maomao: immunita permanente al veleno!' if it else 'Maomao remedy: permanent poison immunity!'
+ d['message.noctismagic.maomao_already']='Sei gia immune al veleno.' if it else 'You are already immune to poison.'
+ j(p,d)
+print('Maomao herbal remedy: five common plants, permanent poison immunity saved across death.')
