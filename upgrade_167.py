@@ -592,3 +592,39 @@ p=java/'DramaGuest.java';s=p.read_text(encoding='utf-8')
 if 'import net.minecraft.server.level.ServerPlayer;' not in s and 'import net.minecraft.server.level.*;' not in s:
  s=s.replace('package it.noctis.magic;', 'package it.noctis.magic;\nimport net.minecraft.server.level.ServerPlayer;',1)
  p.write_text(s,encoding='utf-8')
+
+
+# More mystery-driven quest clues, with vampire pact and Cthulhu ritual tracking.
+# Miaugusto is already tracked by RitualQuests from upgrade_165.
+edit('CthulhuRitual.java','if(!l.addFreshEntity(boss))return;','if(!l.addFreshEntity(boss))return;\n        RitualQuests.summon(p,boss,"cthulhu");')
+edit('RitualQuests.java','&&!id.equals("exodia"))return;','&&!id.equals("exodia")&&!id.equals("cthulhu"))return;')
+edit('Vampire.java','String key=friendKey(p);int points=friendship.getInt(key);','RitualQuests.award(p,"vampire");\n            String key=friendKey(p);int points=friendship.getInt(key);')
+edit('VampireLife.java','Noctis.data(p).putBoolean("vampire",true);marker(p,VAMPIRISM.get());','Noctis.data(p).putBoolean("vampire",true);marker(p,VAMPIRISM.get());\n        RitualQuests.award(p,"vampire");RitualQuests.complete(p,"vampire");')
+base=res/'data/noctismagic/advancements/rituals'
+for ident,icon,parent,xp in [
+ ('vampire','minecraft:bat_spawn_egg','root',50),
+ ('vampire_complete','noctismagic:blood_bucket','vampire',200),
+ ('cthulhu','minecraft:ink_sac','root',75),
+ ('cthulhu_complete','minecraft:nether_star','cthulhu',450)]:
+ j(base/(ident+'.json'),{'parent':'noctismagic:rituals/'+parent,'display':{'icon':{'item':icon},'title':{'translate':'advancement.noctismagic.rituals.'+ident+'.title'},'description':{'translate':'advancement.noctismagic.rituals.'+ident+'.description'},'frame':'challenge' if ident=='cthulhu_complete' else 'goal','show_toast':True,'announce_to_chat':True,'hidden':False},'criteria':{'ritual':{'trigger':'minecraft:impossible'}},'rewards':{'experience':xp}})
+mysteries={
+ 'sephiroth':('Una sola ala','One wing','Incidi un nome nel legno. Non tutti gli angeli possiedono due ali.','Carve a name into wood. Not every angel has two wings.'),
+ 'sephiroth_complete':('Il silenzio dopo il canto','Silence after the song','Fa che il canto dell angelo si spenga per sempre.','Let the angel song fall silent forever.'),
+ 'joker':('Il RubaCuori gentiluomo','The gentleman heart thief','Cerca un RubaCuori gentiluomo: al calar della notte, il suo sorriso si cela dietro una maschera bianca.','Seek a gentleman heart thief: at nightfall, his smile hides behind a white mask.'),
+ 'joker_complete':('Il cuore rubato','The stolen heart','Cinque ombre oscurano la lettera scarlatta. Quando pulsa, cerca di nuovo il suo mittente.','Five shadows darken the scarlet letter. When it pulses, seek its sender again.'),
+ 'vampire':('Un cortese sconosciuto','A courteous stranger','Non tutti i figli della notte desiderano farti del male. Alcuni preferiscono le buone maniere.','Not all children of the night wish you harm. Some prefer good manners.'),
+ 'vampire_complete':('Il patto scarlatto','The scarlet pact','Dieci doni del colore della vita possono conquistare una fiducia immortale. Una scelta ti attende.','Ten gifts the color of life may earn immortal trust. A choice awaits you.'),
+ 'miaugusto':('Nove vite, cinque legami','Nine lives, five bonds','Conquista cinque piccoli cuori felini. Una fame ben piu grande potrebbe risvegliarsi.','Win five little feline hearts. A far greater hunger may awaken.'),
+ 'miaugusto_complete':('Il re delle crocchette','The kibble king','Nemmeno un sovrano dalle nove vite puo banchettare in eterno.','Even a nine-lived king cannot feast forever.'),
+ 'cthulhu':('Non farlo arrabbiare','Do not anger him','Il piccolo gentiluomo dagli otto tentacoli ti avvertira una volta. Ascoltarlo sarebbe saggio.','The little gentleman with eight tentacles will warn you once. Listening would be wise.'),
+ 'cthulhu_complete':('Il padre degli abissi','Father of the abyss','Quando il figlio grida, gli abissi rispondono. Riuscirai a farli tacere?','When the son cries out, the abyss answers. Can you silence it?')
+}
+for idx,lang in enumerate(('it_it','en_us')):
+ p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
+ for key,t in mysteries.items():
+  d['advancement.noctismagic.rituals.'+key+'.title']=t[idx]
+  d['advancement.noctismagic.rituals.'+key+'.description']=t[idx+2]
+ j(p,d)
+edit('Joker.java','Take your time. La Calling Card reclama cinque ombre: sconfiggi cinque creature ostili, poi torna da me.','Take your time. Cinque ombre gravano sulla lettera. Quando avra ripreso vita, sai dove trovarmi.')
+edit('Joker.java','La Calling Card non e ancora pronta. Sconfiggi altre creature ostili, poi torna qui.','Le ombre non hanno ancora restituito il cuore della lettera.')
+print('Mystery quest journal expanded: vampire blood pact, Miaugusto, Cthulhu and subtler Joker/Sephiroth hints.')
