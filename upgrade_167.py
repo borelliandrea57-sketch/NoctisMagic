@@ -2283,3 +2283,17 @@ for lang,it in [('it_it',True),('en_us',False)]:
  d['item.noctismagic.blood_vial']='Ampolla di sangue' if it else 'Blood Vial'
  j(p,d)
 print('Hostile vampire garlic drops and friendly vampire blood vials.')
+
+
+# Nether demons: varied Nether mineral loot, including the mod's own amethyst ore.
+edit('CharacterLoot.java','  if(m instanceof Vampire.Friendly){','''  if(m instanceof Demon){
+   Item[] common={Items.QUARTZ,Items.GOLD_NUGGET,Items.NETHER_GOLD_ORE,Items.NETHER_QUARTZ_ORE};
+   int first=m.getRandom().nextInt(common.length);
+   int second=(first+1+m.getRandom().nextInt(common.length-1))%common.length;
+   add(e,common[first],2+m.getRandom().nextInt(4)+Math.max(0,e.getLootingLevel()));
+   add(e,common[second],1+m.getRandom().nextInt(3)+Math.max(0,e.getLootingLevel()));
+   if(m.getRandom().nextInt(4)==0)add(e,VampireLife.ORE_ITEM.get(),1+m.getRandom().nextInt(2));
+   if(m.getRandom().nextInt(20)==0)add(e,Items.NETHERITE_SCRAP,1);
+  }
+  else if(m instanceof Vampire.Friendly){''')
+print('Both Nether demon variants now drop a mixed selection of Nether minerals.')
