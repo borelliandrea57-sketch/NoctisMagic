@@ -2893,3 +2893,142 @@ for name,label,color in [('vaffanculo','Vaffanculo',(231,49,45)),('suca','Suca',
   p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'));d[f'item.noctismagic.{seed}']=f'Semi di {label}';d[f'block.noctismagic.{crop}']=f'Pianta di {label}';d[f'item.noctismagic.{fruit}']=f'Frutto di {label}';d[f'subtitles.noctismagic.{snd}']=label+'!';j(p,d)
 j(sounds,sd)
 print('Vaffanculo and Suca crops, renewable fruits, mob seed drops, aimed area attacks and synthesized Italian voice clips.')
+
+
+# Giorno second sculpt: independent UVs for the face, chest and clothing.
+n='GiornoSculptedClient.java'
+p=java/n;s=p.read_text(encoding='utf-8')
+a=s.index(' static V face(');b=s.index(' static class M',a)
+s=s[:a]+''' static float clamp(float v){return Math.max(.025f,Math.min(.975f,v));}
+ static V uv(V v,boolean front,boolean chest){
+  float u=front?clamp(.5f+v.x()/(chest?8.65f:6.65f)):.025f;
+  float t=chest?clamp((v.y()+.85f)/12f):clamp((v.y()+7.8f)/7.8f);
+  return new V(v.x(),v.y(),v.z(),u,t,v.nx(),v.ny(),v.nz());
+ }
+ static void project(Part p,int tile,boolean chest){
+  for(int i=0;i<p.faces.size();i++){Q q=p.faces.get(i);if(q.tile()!=tile)continue;
+   boolean f=q.a().nz()+q.b().nz()+q.c().nz()+q.d().nz()<-.05f;
+   p.faces.set(i,new Q(uv(q.a(),f,chest),uv(q.b(),f,chest),uv(q.c(),f,chest),uv(q.d(),f,chest),tile));}
+ }
+ static void strand(Part p,float x,float y,float z,float X,float Y,float Z,float width){
+  Part q=p.child(0,0,0);
+  for(int i=0;i<5;i++){
+   float t=i/4f,curve=(float)Math.sin(t*Math.PI)*.42f;
+   q.oval(6,x+(X-x)*t+curve,y+(Y-y)*t,z+(Z-z)*t,width*(1-.90f*t),width*.89f*(1-.85f*t),width*.76f*(1-.88f*t));
+  }
+  p.blade(6,x,y,z,X,Y,Z,width*1.25f);
+  p.blade(9,x-.14f,y,z-.30f,X,Y,Z-.06f,width*.24f);
+ }
+ static void patch(Part p,int m,float x,float y,float z,float w,float h){
+  V a=new V(x-w,y-h,z,0,0,0,0,-1),b=new V(x-w,y+h,z,0,1,0,0,-1),c=new V(x+w,y+h,z,1,1,0,0,-1),d=new V(x+w,y-h,z,1,0,0,0,-1);
+  p.faces.add(new Q(a,b,c,d,m));
+ }
+'''+s[b:]
+s=s.replace('body.loft(0,40,-1,0,0,1.75f,1.40f,.15f,0,0,4.12f,2.20f,2.6f,0,-.10f,3.96f,2.28f,5.6f,0,0,3.12f,1.85f,8.6f,0,0,2.55f,1.60f,10.8f,0,0,3.0f,1.85f);','''body.loft(8,64,-1,0,0,1.75f,1.42f,.15f,0,0,4.35f,2.30f,1.7f,0,-.10f,4.13f,2.43f,3.2f,0,-.10f,3.88f,2.48f,5.6f,0,0,3.04f,1.90f,8.6f,0,0,2.53f,1.62f,10.8f,0,0,3.15f,1.93f);
+   project(body,8,true);
+   // Tall upright collar and gold embroidered leaf motifs.
+   body.loft(2,36,-1.55f,0,0,1.55f,1.43f,.25f,0,0,1.93f,1.64f);
+   for(int side:new int[]{-1,1}){
+    body.blade(0,side*1.22f,-1.8f,-.8f,side*1.89f,.55f,-1.24f,1.35f);
+    for(int k=0;k<5;k++)body.blade(3,side*(1.27f+k*.09f),-1.35f+k*.33f,-1.54f,side*(1.84f+k*.035f),-1.1f+k*.33f,-1.57f,.38f);
+    body.blade(2,side*3.85f,.45f,-1.35f,side*3.35f,2.15f,-1.83f,.55f);
+    body.blade(2,side*2.99f,5.7f,-1.35f,side*.80f,7.3f,-1.76f,.55f);
+    body.blade(0,side*3.0f,8.1f,-1.1f,side*3.6f,13.8f,-.45f,2.15f);
+    body.blade(2,side*2.7f,9.6f,-1.67f,side*3.3f,13.3f,-.95f,.32f);
+   }
+   body.blade(3,0,6.65f,-1.88f,0,10.5f,-1.79f,.16f);''')
+s=s.replace('project(head);','''project(head,5,false);
+   // Sculpted angular nose, lower lip, cheek and eyelid ridges.
+   head.loft(1,24,-4.9f,0,-2.68f,.20f,.13f,-3.9f,0,-2.92f,.32f,.25f,-3.03f,0,-3.20f,.46f,.39f,-2.78f,0,-2.94f,.31f,.18f);
+   head.oval(10,0,-2.05f,-2.20f,.60f,.13f,.18f);
+   for(int side:new int[]{-1,1}){
+    head.blade(11,side*.80f,-4.40f,-2.66f,side*2.22f,-4.75f,-2.03f,.13f);
+    head.blade(11,side*.72f,-4.04f,-2.71f,side*2.10f,-4.18f,-2.10f,.10f);
+    head.blade(10,side*1.60f,-3.17f,-2.23f,side*2.30f,-2.58f,-1.48f,.20f);
+   }''')
+s=s.replace('for(int j=0;j<3;j++){Part q=head.child(-2.15f+j*2.15f,-6.9f,-2.64f);q.rz=(j-1)*.13f;curl(q,.80f,.95f);q.oval(7,0,0,.06f,.42f,.55f,.20f);}','''// Voluminous swept spikes behind the signature three rolls.
+   for(int i=0;i<9;i++){
+    float x=(i-4)*.76f;
+    strand(head,x,-7.25f,.2f,x*.76f+(i%2==0?.55f:-.32f),-11.3f+(float)Math.abs(i-4)*.42f,.45f+Math.abs(i-4)*.10f,1.18f);
+    strand(head,x*.80f,-8.25f,1.6f,x*1.12f,-10.65f+Math.abs(i-4)*.29f,2.45f,1.05f);
+   }
+   for(int side:new int[]{-1,1}){
+    strand(head,side*2.8f,-5.55f,.02f,side*3.55f,-8.8f,1.16f,.82f);
+    strand(head,side*2.6f,-5.85f,1.65f,side*2.8f,-8.7f,3.3f,1.1f);
+   }
+   for(int j=0;j<3;j++){
+    Part q=head.child(-2.08f+j*2.08f,-6.68f,-2.69f);q.rz=(j-1)*.12f;curl(q,.79f,.90f);
+    q.oval(7,0,0,.09f,.44f,.49f,.19f);
+    for(int k=0;k<7;k++){float a=k*.66f;float x=(float)Math.cos(a)*.68f,y=(float)Math.sin(a)*.78f;q.blade(9,x,y,-.37f,x*.80f,y*.78f,-.42f,.17f);}
+   }''')
+s=s.replace('prev.child(0,j==0?-5.9f:1.65f,j==0?2.6f:.25f)','prev.child(j==0?-1.8f:j<3?-.25f:.14f,j==0?-5.9f:1.48f,j==0?2.9f:.15f)')
+s=s.replace('q.oval(6,-.46f,.65f,0,1.05f,1.21f,.85f);q.oval(3,.46f,1.10f,.12f,1.0f,1.18f,.83f);','''q.oval(6,-.46f,.65f,0,1.05f,1.21f,.85f);q.oval(6,.46f,1.10f,.12f,1.0f,1.18f,.83f);
+    q.blade(9,-.96f,.22f,-.52f,.76f,1.16f,-.58f,.21f);q.blade(9,.95f,.75f,-.55f,-.72f,1.63f,-.56f,.21f);''')
+s=s.replace('fore[i].oval(1,0,4.95f,-.12f,.89f,1.1f,.72f);','''fore[i].oval(1,0,4.76f,-.10f,.65f,.74f,.43f);
+    for(int j=0;j<4;j++)fore[i].loft(1,12,4.96f,-.48f+j*.31f,-.13f,.15f,.22f,5.75f-(j==3?.20f:0),-.48f+j*.31f,-.20f,.13f,.15f,5.92f-(j==3?.20f:0),-.48f+j*.31f,-.21f,.05f,.07f);
+    fore[i].oval(1,s*.66f,4.80f,-.30f,.22f,.48f,.22f);
+    arm[i].blade(2,0,1.55f,-1.55f,s*.75f,3.5f,-.95f,.43f);
+    arm[i].blade(0,-s*.60f,.25f,-1.15f,-s*.45f,2.25f,-1.47f,.59f);
+    fore[i].blade(2,s*.65f,.5f,-.88f,s*.20f,3.6f,-.85f,.28f);''')
+s=s.replace('shin[i].blade(3,0,5.6f,-.95f,0,6.9f,-1.65f,.23f);','''shin[i].blade(3,0,5.6f,-.95f,0,6.9f,-1.65f,.23f);
+    leg[i].blade(2,s*.58f,.25f,-1.30f,s*.12f,5.15f,-.95f,.29f);
+    shin[i].blade(2,0,.2f,-1.10f,s*.35f,4.3f,-.88f,.31f);
+    shin[i].loft(2,24,7.35f,0,-.64f,1.17f,1.71f,7.57f,0,-.64f,1.19f,1.74f);''')
+s=s.replace('arm[i].rz=-s*.12f+(i==0?pose*.8f:0);','arm[i].rz=s*.07f+(i==0?pose*.46f:0);')
+p.write_text(s,encoding='utf-8')
+# Material atlas: no exposed skin anywhere on sleeves or trousers; heart only on projected chest.
+W,H=1024,512;pix=bytearray(W*H*4)
+def seg(u,v,x,y,X,Y):
+ dx=X-x;dy=Y-y;t=max(0,min(1,((u-x)*dx+(v-y)*dy)/max(.0001,dx*dx+dy*dy)))
+ return math.hypot(u-x-dx*t,v-y-dy*t)
+def sat(v):return max(0,min(1,v))
+bases=[(150,67,153),(232,178,143),(65,28,81),(223,169,54),(41,109,177),(232,178,143),(232,189,65),(111,70,29),(150,67,153),(255,225,126),(163,94,88),(47,31,43)]
+for m,base in enumerate(bases):
+ for y in range(128):
+  for x in range(128):
+   u=sat((x-3)/121);v=sat((y-3)/121);f=abs(u-.5)
+   c=shade(base,.79+.20*math.sin(u*math.pi)+.07*math.sin(u*15+v*7)**2)
+   if m in (0,8):
+    fold=min(seg(u,v,.10,.12,.27,.65),seg(u,v,.85,.23,.69,.83),seg(u,v,.31,.56,.46,.78),seg(u,v,.65,.07,.60,.24))
+    c=mix(c,(55,23,74),.42*math.exp(-(fold/.033)**2))
+    c=mix(c,(207,126,203),.22*math.exp(-((u-.33)/.11)**2))
+   if m==8:
+    # Heart equation with broad lobes and a pointed bottom, skin only on the torso front.
+    X=(u-.5)/.245;Y=(.29-v)/.245
+    h=(X*X+Y*Y-1)**3-X*X*Y**3
+    if .09<u<.91 and .08<v<.66 and h<=0:
+     c=mix((237,184,151),(143,82,89),.18*abs(X)+.15*max(0,-Y))
+     c=mix(c,(250,212,182),.20*math.exp(-((abs(X)-.48)/.22)**2))
+     if abs(X)<.06:c=mix(c,(143,78,83),.35)
+    if abs(h)<.09 and .19<u<.81 and .08<v<.66:c=(222,164,49)
+    if abs(u-.5)<.007 and v>.67:c=(229,181,70)
+   if m in (3,6,9):
+    c=mix(c,(255,239,159),.38*math.sin(u*math.pi)**2)
+    if m==6:
+     t=math.sin(u*math.pi*12+v*1.9)
+     c=mix(c,(146,95,30),.34*max(0,-t)**5)
+     c=mix(c,(255,233,137),.36*max(0,t)**3)
+   if m==4:
+    if min((u-.27)**2+(v-.25)**2,(u-.73)**2+(v-.25)**2,(u-.27)**2+(v-.75)**2,(u-.73)**2+(v-.75)**2)<.026:c=(24,26,46)
+   if m==5:
+    c=mix(base,(122,65,77),.32*sat((f-.20)*4)+.20*v)
+    c=mix(c,(255,217,185),.36*math.exp(-((u-.5)/.11)**2))
+    for side in (-1,1):
+     xx=side*(u-(.5+side*.17));dx=xx/.127;ey=.493-.035*dx;dy=(v-ey)/.047
+     d=abs(dx)**1.6+abs(dy)**1.3
+     if d<1.2:c=(39,25,39)
+     if d<.78:c=(250,239,219)
+     if d<.76 and abs(dx+.05)<.40:c=(57,137,121)
+     if d<.73 and abs(dx+.05)<.16:c=(15,29,35)
+     if d<.70 and (dx+.21)**2+(dy+.22)**2<.034:c=(255,255,243)
+     if abs(dx)<1.12 and abs(v-(.402-.044*dx))<.018:c=(102,63,34)
+     if abs(dx)<.96 and abs(v-(.425-.037*dx))<.008:c=(64,36,43)
+     if seg(u,v,.5+side*.095,.57,.5+side*.065,.66)<.009:c=(165,93,91)
+     if seg(u,v,.5+side*.25,.59,.5+side*.17,.66)<.013:c=mix(c,(138,79,87),.48)
+    if f<.065 and abs(v-(.793-.018*(1-f/.065)))<.012:c=(110,52,65)
+    if f<.045 and abs(v-.815)<.009:c=(203,119,111)
+    if f<.065 and abs(v-.713)<.009:c=(146,80,80)
+   if m==10:c=mix(c,(107,49,66),.35)
+   q=(y*W+(m%8)*128+x+(m//8)*128*W)*4;pix[q:q+4]=bytes((*c,255))
+png(assets/'textures/entity/giorno_sculpted.png',W,H,pix)
+print('Giorno Giovanna resculpted: angular face, layered swept blonde hair, rolls, braid, tailored purple suit and dedicated chest material.')
