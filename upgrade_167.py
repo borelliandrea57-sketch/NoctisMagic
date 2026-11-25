@@ -6692,9 +6692,9 @@ print('Ogre: sculpted ivory voxel tusks and exposed shoulders/midriff/upper legs
 # Dante: distinct angular adult head, white swept hair, detailed red coat and original-inspired relics.
 p=java/'WitchHunterClient.java';s=p.read_text(encoding='utf-8')
 a='   head.loft(5,48,-7.8f,'
-i=s.index(a);j=s.index('\n   head.loft(6,20,',i)
+i=s.index(a);j=s.index('\n   projectFace(head,witch);',i)
 s=s[:i]+'   if(witch)'+s[i+3:j]+'''\n   else VoxelPortrait.head(head,5,6,6.8f,7.8f,-7.8f,2.45f,2.24f,.10f,.48f,-7.2f,3.08f,2.71f,.05f,.54f,-4.9f,3.17f,2.72f,0,.60f,-2.6f,2.89f,2.48f,-.11f,.58f,-.75f,2.40f,2.05f,-.17f,.49f,0,1.88f,1.66f,-.12f,.41f);'''+s[j:]
-s=s.replace('   head.loft(6,20,-3.8f,','   if(witch)head.loft(6,20,-3.8f,',1)
+s=s.replace('   projectFace(head,witch);','   if(witch)projectFace(head,witch);',1)
 a='   for(int s:new int[]{-1,1})head.oval(6,s*w*.95f'
 i=s.index(a)
 s=s[:i]+'''   if(!witch){
@@ -6702,7 +6702,7 @@ s=s[:i]+'''   if(!witch){
     head.loft(6,8,-.45f,0,.04f,1.04f,1.03f,.9f,0,.04f,1.25f,1.18f);
    }
 '''+s[i:]
-for a,b in [('body.loft(0,32,-1,','body.loft(0,12,-1,'),('arms[i].loft(0,26,','arms[i].loft(0,witch?26:12,'),('fore[i].loft(1,24,','fore[i].loft(witch?1:0,witch?24:12,'),('legs[i].loft(0,26,','legs[i].loft(witch?0:1,witch?26:10,'),('shins[i].loft(0,24,','shins[i].loft(witch?0:1,witch?24:10,')]:
+for a,b in [('body.loft(0,40,-1,','body.loft(0,12,-1,'),('arms[i].loft(0,26,','arms[i].loft(0,witch?26:12,'),('fore[i].loft(1,24,','fore[i].loft(witch?1:0,witch?24:12,'),('legs[i].loft(0,26,','legs[i].loft(witch?0:1,witch?26:10,'),('shins[i].loft(0,24,','shins[i].loft(witch?0:1,witch?24:10,')]:
  assert a in s,a
  s=s.replace(a,b,1)
 s=s.replace('q.loft(j%3==0?8:7,20,','q.loft(j%3==0?8:7,8,',1)
@@ -6729,7 +6729,7 @@ s=s[:i]+'''     arms[i].loft(10,10,-.34f,0,0,1.48f,1.40f,.78f,0,0,1.79f,1.68f,1.
 '''+s[i:]
 # Preserve Bayonetta's original gun geometry; use bespoke Dante relics only.
 s=s.replace('guns[i]=gun(witch?2:i==0?4:9);','guns[i]=witch?gun(2):dantePistol(i==0);',1)
-i=s.index(' static Part rebellion(){');j=s.index(' static class M<',i)
+i=s.index(' static Part rebellion(){');j=s.index(' static V faceVertex(',i)
 s=s[:i]+''' static Part dantePistol(boolean ivory){
   int metal=ivory?4:9;Part p=new Part(0,5.1f,-.42f);p.rx=-1.4f;
   // Stylized collectible replica: two differently coloured slides, grip plates,
@@ -6905,7 +6905,7 @@ s=s[:a]+'''   if(witch)VoxelPortrait.head(head,5,6,6.35f,7.8f,
       -7.8f,2.34f,2.17f,.10f,.43f,-7.24f,2.82f,2.49f,.05f,.49f,
       -5.1f,2.94f,2.64f,0,.53f,-3.0f,2.72f,2.49f,-.07f,.50f,
       -1.25f,2.20f,2.07f,-.13f,.48f,-.15f,1.65f,1.52f,-.19f,.38f);'''+s[b:]
-bay('   if(witch)head.loft(6,20,-3.8f,0,-2.55f,.22f,.17f,-2.6f,0,-2.93f,.39f,.46f,-2.04f,0,-2.82f,.32f,.24f);','''   if(witch){
+bay('   if(witch)projectFace(head,witch);','''   if(witch){
     head.loft(6,8,-4.55f,0,-2.53f,.11f,.075f,-3.50f,0,-2.69f,.18f,.13f,-2.72f,0,-2.89f,.27f,.20f,-2.48f,0,-2.66f,.17f,.10f);
     head.loft(6,8,-.45f,0,.06f,.77f,.81f,.85f,0,.06f,.97f,.95f,1.45f,0,.06f,1.08f,1.02f);
    }''')
@@ -6935,7 +6935,7 @@ s=s[:a]+'''    // Swept beehive with layered strands and distinct red ribbon, no
     }
     head.blade(3,-.34f,-4.24f,-2.83f,.34f,-4.24f,-2.83f,.12f);
 '''+s[b:]
-bay('body.loft(0,40,-1,','body.loft(0,12,-1,')
+bay('body.loft(0,64,-1,','body.loft(0,12,-1,')
 bay('arms[i].loft(0,witch?26:12,','arms[i].loft(0,12,')
 bay('fore[i].loft(witch?1:0,witch?24:12,','fore[i].loft(witch?1:0,12,')
 bay('legs[i].loft(witch?0:1,witch?26:10,','legs[i].loft(witch?0:1,12,')
