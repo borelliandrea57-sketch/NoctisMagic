@@ -7019,3 +7019,101 @@ for y in range(128):
    pix[off:off+4]=bytes((*c,255))
 png(p,W,H,pix)
 print('Bayonetta: adult angular Minecraft portrait, cat-eye glasses, confident expression, refined hair, gold couture and four ornamental Scarborough Fair replicas.')
+
+
+# Manual monument eggs clear their exact construction volume. Natural jobs
+# retain the original non-destructive placement checks.
+p=java/'GothicEgg.java';s=p.read_text(encoding='utf-8')
+def excavation_change(a,b):
+ global s
+ assert a in s,a
+ s=s.replace(a,b,1)
+excavation_change('        Job job=new Job(l,p,plan,origin,front);','''        if(!p.isShiftKeyDown()){
+            p.sendSystemMessage(Component.literal("ATTENZIONE: il sigillo rimuove i blocchi nel volume "+plan.w+" x "+plan.d+" x "+plan.h+". Accovacciati e usa l'uovo per confermare.").withStyle(net.minecraft.ChatFormatting.RED));
+            return InteractionResult.FAIL;
+        }
+        Job job=new Job(l,p,plan,origin,front);''')
+excavation_change('        p.sendSystemMessage(Component.literal("Verifica spazio per "+plan.name','''        if(!job.allLoaded()){p.sendSystemMessage(Component.literal("Tutti i chunk dell'edificio devono essere caricati e dentro il confine del mondo."));return InteractionResult.FAIL;}
+        p.sendSystemMessage(Component.literal("Verifica spazio per "+plan.name''')
+excavation_change('        int scan=0,built=0;boolean ready=false;','''        int scan=0,built=0,clearCursor=0,foundationScan=0,foundationBuild=0;
+        boolean ready=false,paused=false;
+        int[] foundationDepth;
+        boolean allLoaded(){
+            BlockPos a=pos(0,0,0),b=pos(p.w-1,0,p.d-1);
+            if(!l.getWorldBorder().isWithinBounds(a)||!l.getWorldBorder().isWithinBounds(b))return false;
+            return NaturalMonuments.loaded(l,Math.min(a.getX(),b.getX()),Math.min(a.getZ(),b.getZ()),Math.abs(a.getX()-b.getX())+1,Math.abs(a.getZ()-b.getZ())+1);
+        }
+        boolean protectedBlock(BlockPos at){
+            BlockState state=l.getBlockState(at);
+            return state.getDestroySpeed(l,at)<0||l.getBlockEntity(at)!=null;
+        }
+        boolean blocked(String reason){msg(reason);refund();return true;}
+''')
+excavation_change('            if(!ready){\n                for(int n=0;n<18000', '''            if(player!=null&&!allLoaded()){
+                if(clearCursor==0&&foundationBuild==0&&!ready)return blocked("Evocazione annullata: area non caricata o fuori dal confine.");
+                if(!paused){msg("Costruzione sospesa: ritorna nella zona per riprendere.");paused=true;}
+                return false;
+            }
+            if(player!=null)paused=false;
+            if(player!=null&&!ready){
+                // Preflight: protect containers, other block entities and unbreakable blocks.
+                int volume=area*(p.h+3);
+                for(int n=0;n<18000&&scan<volume;n++,scan++){
+                    int y=scan/area-3,z=scan%area/p.w,x=scan%p.w;
+                    BlockPos at=pos(x,y,z);
+                    if(protectedBlock(at))return blocked("Evocazione annullata: blocco protetto a "+at.toShortString()+".");
+                }
+                if(scan<volume)return false;
+                // Find solid support within 24 blocks for each foundation column.
+                if(foundationDepth==null)foundationDepth=new int[area];
+                for(int n=0;n<512&&foundationScan<area;n++,foundationScan++){
+                    int x=foundationScan%p.w,z=foundationScan/p.w,depth=0;
+                    for(int y=-1;y>=-24;y--){
+                        BlockPos at=pos(x,y,z);
+                        if(at.getY()<l.getMinBuildHeight())break;
+                        BlockState state=l.getBlockState(at);
+                        if(state.isFaceSturdy(l,at,Direction.UP)&&l.getFluidState(at).isEmpty()){depth=-y;break;}
+                        if(protectedBlock(at))break;
+                    }
+                    if(depth==0)return blocked("Fondamenta troppo profonde o terreno protetto: scegli un'altra posizione.");
+                    foundationDepth[foundationScan]=depth;
+                }
+                if(foundationScan<area)return false;
+                // Never clear the player or another player inside the build footprint.
+                BlockPos a=pos(0,0,0),b=pos(p.w-1,p.h-1,p.d-1);
+                net.minecraft.world.phys.AABB bounds=new net.minecraft.world.phys.AABB(Math.min(a.getX(),b.getX()),origin.getY()-24,Math.min(a.getZ(),b.getZ()),Math.max(a.getX(),b.getX())+1,origin.getY()+p.h,Math.max(a.getZ(),b.getZ())+1);
+                if(!l.getEntitiesOfClass(net.minecraft.world.entity.player.Player.class,bounds).isEmpty()){
+                    if(!paused){msg("Esci dal volume di costruzione per continuare.");paused=true;}
+                    return false;
+                }
+                if(clearCursor==0)msg("Sgombero terreno: nessun blocco distrutto verra lasciato a terra.");
+                // Top-down and bounded per tick, without drops or explosions.
+                for(int n=0;n<5000&&clearCursor<total;n++,clearCursor++){
+                    int y=p.h-1-clearCursor/area,z=clearCursor%area/p.w,x=clearCursor%p.w;
+                    BlockPos at=pos(x,y,z);
+                    if(!l.getBlockState(at).isAir()){
+                        if(protectedBlock(at)){msg("Sgombero interrotto: nuovo blocco protetto.");return true;}
+                        l.setBlock(at,Blocks.AIR.defaultBlockState(),2);
+                    }
+                }
+                if(clearCursor<total)return false;
+                for(int n=0;n<160&&foundationBuild<area;n++,foundationBuild++){
+                    int x=foundationBuild%p.w,z=foundationBuild/p.w;
+                    for(int y=-1;y>-foundationDepth[foundationBuild];y--){
+                        BlockPos at=pos(x,y,z);
+                        if(protectedBlock(at)){msg("Fondamenta interrotte: nuovo blocco protetto.");return true;}
+                        l.setBlock(at,Blocks.STONE.defaultBlockState(),2);
+                    }
+                }
+                if(foundationBuild<area)return false;
+                ready=true;it=p.blocks.entrySet().iterator();msg("Area sgomberata. Inizia la costruzione di "+p.name+"...");
+            }
+            if(!ready){
+                for(int n=0;n<18000''')
+excavation_change('                if(!l.getBlockState(at).isAir()&&!(player==null&&l.getBlockState(at).canBeReplaced()&&l.getFluidState(at).isEmpty()))continue;','''                if(player==null&&!l.getBlockState(at).isAir()&&!(l.getBlockState(at).canBeReplaced()&&l.getFluidState(at).isEmpty()))continue;
+                if(player!=null&&protectedBlock(at))continue;''')
+# Keep chat from repeating while waiting for the player to leave.
+s=s.replace('if(player!=null)paused=false;\n            if(player!=null&&!ready){','if(player!=null&&!ready){',1)
+s=s.replace('                if(clearCursor==0)msg("Sgombero terreno:', '                paused=false;\n                if(clearCursor==0)msg("Sgombero terreno:',1)
+p.write_text(s,encoding='utf-8')
+print('Manual prefab eggs: crouch confirmation, protected-block preflight, staged terrain clearing and supported foundations; natural generation unchanged.')
