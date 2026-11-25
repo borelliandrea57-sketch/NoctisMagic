@@ -2201,3 +2201,48 @@ for lang,it in [('it_it',True),('en_us',False)]:
  d['message.noctismagic.leon_ammo']='Servono pepite di ferro.' if it else 'Iron nuggets required.'
  j(p,d)
 print('Character loot, colored court suits, Leon jacket and pistol, medicinal herbs, gifts, and Hope.')
+
+
+# Art furniture drops, horse meat and varied dragon treasures.
+edit('Noctis.java','public static final RegistryObject<Item> CATHEDRAL_EGG=','''public static final RegistryObject<Item> HORSE_MEAT=ITEMS.register("horse_meat",()->new Item(new Item.Properties().food(new net.minecraft.world.food.FoodProperties.Builder().nutrition(3).saturationMod(.3f).meat().build())));
+    public static final RegistryObject<Item> COOKED_HORSE_MEAT=ITEMS.register("cooked_horse_meat",()->new Item(new Item.Properties().food(new net.minecraft.world.food.FoodProperties.Builder().nutrition(8).saturationMod(.8f).meat().build())));
+    public static final RegistryObject<Item> CATHEDRAL_EGG=''')
+edit('Noctis.java','e.accept(CATHEDRAL_EGG.get());','e.accept(CATHEDRAL_EGG.get());e.accept(HORSE_MEAT.get());e.accept(COOKED_HORSE_MEAT.get());')
+edit('CharacterLoot.java','  }else if(m instanceof Vincent)add(e,Noctis.HOPE.get(),1);','''  }else if(m instanceof Vincent)add(e,Noctis.HOPE.get(),1);
+  else if(m instanceof ArtGuest a)add(e,a.maelle()?Furniture.EASEL_ITEM.get():Furniture.PIANO_ITEM.get(),1);
+  else if(m instanceof FriendshipPony pony){
+   add(e,Items.LEATHER,2+m.getRandom().nextInt(3)+Math.max(0,e.getLootingLevel()));
+   add(e,pony.isOnFire()?Noctis.COOKED_HORSE_MEAT.get():Noctis.HORSE_MEAT.get(),2+m.getRandom().nextInt(4)+Math.max(0,e.getLootingLevel()));
+  }else if(m instanceof SynchroDragon){
+   Item[] treasure={Items.GOLD_INGOT,Items.IRON_INGOT,Items.DIAMOND,Items.EMERALD,Items.AMETHYST_SHARD,Items.ENDER_PEARL,Items.BLAZE_ROD,Items.OBSIDIAN,Items.EXPERIENCE_BOTTLE,Items.PHANTOM_MEMBRANE,Items.GOLDEN_APPLE,Items.REDSTONE,Items.QUARTZ,Items.BONE};
+   int rolls=2+m.getRandom().nextInt(4)+Math.max(0,e.getLootingLevel());
+   for(int i=0;i<rolls;i++){
+    Item item=treasure[m.getRandom().nextInt(treasure.length)];
+    int count=item==Items.DIAMOND||item==Items.GOLDEN_APPLE?1:1+m.getRandom().nextInt(4);
+    add(e,item,count);
+   }
+   if(m.getRandom().nextInt(30)==0)add(e,Items.NETHERITE_SCRAP,1);
+  }''')
+# Food can be cooked in a furnace, smoker or campfire.
+for name,kind,time in [('smelt_horse_meat','smelting',200),('smoke_horse_meat','smoking',100),('campfire_horse_meat','campfire_cooking',600)]:
+ j(res/'data/noctismagic/recipes'/f'{name}.json',{'type':'minecraft:'+kind,'category':'food','ingredient':{'item':'noctismagic:horse_meat'},'result':'noctismagic:cooked_horse_meat','experience':.35,'cookingtime':time})
+for cooked,name in [(False,'horse_meat'),(True,'cooked_horse_meat')]:
+ W,H=64,64;pix=bytearray(W*H*4)
+ for y in range(H):
+  for x in range(W):
+   u=(x-31.5)/24;v=(y-32)/17
+   t=(u+.12*v)**2+v*v+.09*math.sin(u*9+v*4)
+   if t>1:continue
+   c=mix((82,40,25) if cooked else (136,39,56),(157,89,45) if cooked else (218,100,116),.42+.32*math.cos(v*2.4))
+   if abs(math.sin(u*11+v*3.2))<.12 and t<.84:c=shade(c,.72 if cooked else 1.12)
+   if .83<t<1:c=mix(c,(171,122,79) if cooked else (238,185,162),.66)
+   c=shade(c,.94+.07*math.sin(x*1.7+y*2.3))
+   off=(y*W+x)*4;pix[off:off+4]=bytes((*c,255))
+ png(assets/'textures/item'/f'{name}.png',W,H,pix)
+ j(assets/'models/item'/f'{name}.json',{'parent':'minecraft:item/generated','textures':{'layer0':f'noctismagic:item/{name}'}})
+for lang,it in [('it_it',True),('en_us',False)]:
+ p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
+ d['item.noctismagic.horse_meat']='Carne di cavallo cruda' if it else 'Raw Horse Meat'
+ d['item.noctismagic.cooked_horse_meat']='Carne di cavallo cotta' if it else 'Cooked Horse Meat'
+ j(p,d)
+print('Maelle easel, Verso piano, pony leather and edible horse meat, randomized Synchro dragon treasure.')
