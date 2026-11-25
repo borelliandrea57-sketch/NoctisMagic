@@ -172,8 +172,8 @@ for k in range(6):
                 elif mat=='hoof':base=tuple(int(a*.91) for a in body)
                 g=.80+.17*math.sin(u*math.pi)+.04*math.cos(v*5)
                 c=tuple(int(a*g) for a in base)
-                if mat=='face' and face in ('front','left','right'):
-                    centers=(.24,.76) if face=='front' else (.45,)
+                if mat=='face' and face in ('left','right'):
+                    centers=(.45,)
                     for ex in centers:
                         dx=(u-ex)/(.22 if face=='front' else .39);dy=(v-.57)/.35;d=dx*dx+dy*dy
                         if d<1:c=(45,32,54)
