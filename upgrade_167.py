@@ -2246,3 +2246,40 @@ for lang,it in [('it_it',True),('en_us',False)]:
  d['item.noctismagic.cooked_horse_meat']='Carne di cavallo cotta' if it else 'Cooked Horse Meat'
  j(p,d)
 print('Maelle easel, Verso piano, pony leather and edible horse meat, randomized Synchro dragon treasure.')
+
+
+# Separate vampire loot: garlic and bottled blood.
+edit('Noctis.java','public static final RegistryObject<Item> CATHEDRAL_EGG=','''public static final RegistryObject<Item> GARLIC=ITEMS.register("garlic",()->new Item(new Item.Properties().food(new net.minecraft.world.food.FoodProperties.Builder().nutrition(1).saturationMod(.2f).build())));
+    public static final RegistryObject<Item> BLOOD_VIAL=ITEMS.register("blood_vial",()->new Item(new Item.Properties().stacksTo(16)));
+    public static final RegistryObject<Item> CATHEDRAL_EGG=''')
+edit('Noctis.java','e.accept(CATHEDRAL_EGG.get());','e.accept(CATHEDRAL_EGG.get());e.accept(GARLIC.get());e.accept(BLOOD_VIAL.get());')
+edit('CharacterLoot.java','  if(m instanceof CrossoverGuest g){','''  if(m instanceof Vampire.Friendly){add(e,Noctis.BLOOD_VIAL.get(),2+m.getRandom().nextInt(3)+Math.max(0,e.getLootingLevel()));}
+  else if(m.getClass().getSimpleName().equals("Vampire")||new net.minecraft.resources.ResourceLocation(Noctis.ID,"vampire").equals(net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(m.getType()))){add(e,Noctis.GARLIC.get(),1+m.getRandom().nextInt(3)+Math.max(0,e.getLootingLevel()));}
+  else if(m instanceof CrossoverGuest g){''')
+for name in ['garlic','blood_vial']:
+ W,H=64,64;pix=bytearray(W*H*4)
+ for y in range(H):
+  for x in range(W):
+   c=None
+   if name=='garlic':
+    for ex,ey,rx,ry in [(21,39,12,17),(32,39,13,19),(43,39,12,17)]:
+     u=(x-ex)/rx;v=(y-ey)/ry
+     if u*u+v*v<1:c=shade((231,215,186),.78+.22*math.cos(u*1.4)**2)
+    if 28<=x<=35 and 9<=y<=25:c=shade((168,145,100),.85+.15*math.sin(x)**2)
+    if 22<=y<=50 and x in (24,39) and c is not None:c=shade(c,.86)
+   else:
+    if 24<=x<=40 and 8<=y<=16:c=(145,104,64)
+    if (25<=x<=39 and 17<=y<=23) or (18<=x<=46 and 25<=y<=54):
+     c=(164,191,202) if x in (18,19,45,46) or y==54 else (63,22,36) if y>=32 else (87,112,128)
+     if 21<=x<=25 and y>=26:c=mix(c,(212,224,223),.38)
+     if 26<=x<=42 and 34<=y<=50:c=shade((155,18,42),.80+.20*math.sin(x*.13)**2)
+   if c is not None:
+    off=(y*W+x)*4;pix[off:off+4]=bytes((*c,255))
+ png(assets/'textures/item'/f'{name}.png',W,H,pix)
+ j(assets/'models/item'/f'{name}.json',{'parent':'minecraft:item/generated','textures':{'layer0':f'noctismagic:item/{name}'}})
+for lang,it in [('it_it',True),('en_us',False)]:
+ p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
+ d['item.noctismagic.garlic']='Aglio' if it else 'Garlic'
+ d['item.noctismagic.blood_vial']='Ampolla di sangue' if it else 'Blood Vial'
+ j(p,d)
+print('Hostile vampire garlic drops and friendly vampire blood vials.')
