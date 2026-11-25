@@ -175,5 +175,7 @@ for lang in ('it_it','en_us'):
  dump(p,d)
 for id in ('lelouch','lelouch_complete'):
  p=res/('data/noctismagic/advancements/rituals/'+id+'.json')
- d=json.loads(p.read_text(encoding='utf-8'));d['display']['icon']={'item':'noctismagic:pizza' if id=='lelouch' else 'minecraft:ender_eye'};dump(p,d)
+ d=json.loads(p.read_text(encoding='utf-8'))
+ if 'display' in d:d['display']['icon']={'item':'noctismagic:pizza' if id=='lelouch' else 'minecraft:ender_eye'}
+ dump(p,d)
 print('Creative free spell casting, tomato cultivation, pizza recipe and Lelouch pact with C.C. heart particles.')
