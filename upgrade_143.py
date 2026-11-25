@@ -112,7 +112,7 @@ public class SculptedGuestsClient {
             ponyTail=body.child(0,-1.2f,6.6f);
             ponyTail.oval(24,0,-1,2,2.3f,2.6f,3.0f);ponyTail.oval(24,0,.2f,5.4f,2.8f,3.2f,3.2f);ponyTail.oval(24,-.5f,3.4f,6.3f,2.5f,3.1f,2.7f);ponyTail.oval(24,.4f,5.7f,4.8f,2.1f,2.4f,2.0f);
             // Two flank marks; separate oval patches, one on each side.
-            for(int s:new int[]{-1,1}){Part mark=body.child(s*3.85f,.4f,4);mark.ry=s*(float)Math.PI/2;mark.oval(25,0,0,0,1.45f,1.45f,.16f);}
+            for(int s:new int[]{-1,1}){Part mark=body.child(s*3.85f,.4f,4);mark.ry=-s*(float)Math.PI/2;mark.oval(25,0,0,0,1.45f,1.45f,.16f);}
         }
         void build(){
             boolean ars=k==1,gem=k>=2;int suit=ars?7:gem?10:0,face=k==0?1:k==1?8:k==2?14:15;
@@ -135,7 +135,7 @@ public class SculptedGuestsClient {
                 int h=k==0?3:k==2?12:13;
                 head.loft(h,18,-8.8f,0,.1f,.55f,.7f,-8.5f,0,.1f,2.3f,2.1f,-7.6f,0,.15f,3.3f,3.1f,-6.2f,0,.25f,3.45f,3.05f);
                 Part back=head.child(0,-6.8f,1.8f);hair.add(back);float end=k==3?15:k==2?6.6f:4.9f;
-                back.loft(h,16,-.8f,0,0,2.8f,1.8f,1.2f,0,.45f,3.1f,1.55f,4,0,.7f,3.05f,1.35f,end*.72f,0,1.15f,k==3?3.1f:2.6f,1.1f,end,0,1,k==3?2.4f:1.4f,.22f);
+                back.loft(h,16,-.8f,0,0,2.8f,1.8f,1.2f,0,.45f,3.1f,1.55f,4,0,.7f,3.05f,1.35f,Math.max(4.2f,end*.72f),0,1.15f,k==3?3.1f:2.6f,1.1f,end,0,1,k==3?2.4f:1.4f,.22f);
                 for(int i=0;i<(k==0?6:4);i++){
                     float x=k==0?-2.9f+i*1.03f:-2.7f+i*1.55f;Part q=head.child(x,-7.5f,-2.1f);hair.add(q);
                     float drift=k==0?-.8f:k==2?(i<2?-.7f:.55f):(i<2?-.35f:1.05f);
