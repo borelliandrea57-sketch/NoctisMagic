@@ -3806,3 +3806,9 @@ public final class CharacterSpawnLimit{
  }
 }''')
 print('One new mob per exact NoctisMagic entity type within a two-chunk radius; existing mobs and vanilla unaffected.')
+
+
+# Explicit exceptions: both Nether demons and the three original Gothic Horror enemies.
+edit('CharacterSpawnLimit.java','if(key==null||!Noctis.ID.equals(key.getNamespace()))return;','''if(key==null||!Noctis.ID.equals(key.getNamespace()))return;
+  if(incoming instanceof Demon||incoming instanceof GothicHorror)return;''')
+print('Spawn density exceptions: both Nether demon forms, Crimson Lady, Iron Midwife and Skull Stalker. All original spawn rules remain intact.')
