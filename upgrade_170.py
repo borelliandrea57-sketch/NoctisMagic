@@ -138,7 +138,7 @@ s=s[:b]+'''        if(pastry){
             for(int x:new int[]{4,8,16,20}){p.put(x,1,19,Furniture.SWEET_COUNTER.get());p.put(x,2,19,Furniture.SWEET_CASE.get());}
             for(int x:new int[]{6,10,14,18})p.put(x,4,21,Furniture.SWEET_ART.get());
             for(int z:new int[]{6,12,18}){royalFacing(p,1,4,z,Furniture.SWEET_ART.get(),Direction.EAST);royalFacing(p,23,4,z,Furniture.SWEET_ART.get(),Direction.WEST);}
-            for(int x:new int[]{2,22})for(int z:new int[]{8,15}){p.put(x,1,z,Furniture.SWEET_TABLE.get());p.put(x,2,z,Blocks.POTTED_AZALEA_BUSH);}
+            for(int x:new int[]{2,22})for(int z:new int[]{8,15}){p.put(x,1,z,Furniture.SWEET_TABLE.get());p.put(x,2,z,Blocks.POTTED_POPPY);}
             p.put(3,1,18,Blocks.CRAFTING_TABLE);p.put(21,1,18,Furniture.FRIDGE.get());
         }
 '''+s[b:]
