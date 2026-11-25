@@ -5,14 +5,14 @@ root=Path(sys.argv[1]);java=root/'src/main/java/it/noctis/magic';assets=root/'sr
 def edit(name,a,b):
     p=java/name;s=p.read_text(encoding='utf-8');assert a in s,(name,a);p.write_text(s.replace(a,b,1),encoding='utf-8')
 a='public static final RegistryObject<Item> CATHEDRAL_EGG='
-edit('Noctis.java',a,'''public static final RegistryObject<EntityType<SonicGuest>> SHADOW=ENTITIES.register("shadow",()->EntityType.Builder.<SonicGuest>of(SonicGuest::new,MobCategory.CREATURE).sized(1.15f,1.65f).clientTrackingRange(10).build(ID+":shadow"));
+edit('Noctis.java',a,'''public static final RegistryObject<EntityType<SonicGuest>> SHADOW_HEDGEHOG=ENTITIES.register("shadow_hedgehog",()->EntityType.Builder.<SonicGuest>of(SonicGuest::new,MobCategory.CREATURE).sized(1.15f,1.65f).clientTrackingRange(10).build(ID+":shadow_hedgehog"));
     public static final RegistryObject<EntityType<SonicGuest>> METAL_SONIC=ENTITIES.register("metal_sonic",()->EntityType.Builder.<SonicGuest>of(SonicGuest::new,MobCategory.CREATURE).sized(.7f,1.65f).clientTrackingRange(10).build(ID+":metal_sonic"));
-    public static final RegistryObject<Item> SHADOW_EGG=ITEMS.register("shadow_spawn_egg",()->new ForgeSpawnEggItem(SHADOW,0x1b1b20,0xc51e32,new Item.Properties()));
+    public static final RegistryObject<Item> SHADOW_HEDGEHOG_EGG=ITEMS.register("shadow_spawn_egg",()->new ForgeSpawnEggItem(SHADOW_HEDGEHOG,0x1b1b20,0xc51e32,new Item.Properties()));
     public static final RegistryObject<Item> METAL_SONIC_EGG=ITEMS.register("metal_sonic_spawn_egg",()->new ForgeSpawnEggItem(METAL_SONIC,0x2149b9,0xf1cd48,new Item.Properties()));
     '''+a)
 a='e.put(SCRAP_THIEF.get(),ScrapThief.attributes().build());'
-edit('Noctis.java',a,'e.put(SHADOW.get(),SonicGuest.attributes().build());e.put(METAL_SONIC.get(),SonicGuest.attributes().build());'+a)
-a='e.accept(CATHEDRAL_EGG.get());';edit('Noctis.java',a,a+'e.accept(SHADOW_EGG.get());e.accept(METAL_SONIC_EGG.get());')
+edit('Noctis.java',a,'e.put(SHADOW_HEDGEHOG.get(),SonicGuest.attributes().build());e.put(METAL_SONIC.get(),SonicGuest.attributes().build());'+a)
+a='e.accept(CATHEDRAL_EGG.get());';edit('Noctis.java',a,a+'e.accept(SHADOW_HEDGEHOG_EGG.get());e.accept(METAL_SONIC_EGG.get());')
 (java/'Morgana.java').write_text('''package it.noctis.magic;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -61,7 +61,7 @@ public class SonicGuest extends PathfinderMob{
     int speech,hit;
     public SonicGuest(EntityType<? extends PathfinderMob> t,Level l){super(t,l);setMaxUpStep(1);}
     @Override protected void defineSynchedData(){super.defineSynchedData();entityData.define(NEO,false);}
-    public boolean shadow(){return getType()==Noctis.SHADOW.get();}
+    public boolean shadow(){return getType()==Noctis.SHADOW_HEDGEHOG.get();}
     public boolean neo(){return !shadow()&&entityData.get(NEO);}
     public static AttributeSupplier.Builder attributes(){return Mob.createMobAttributes().add(Attributes.MAX_HEALTH,100).add(Attributes.ARMOR,9).add(Attributes.ATTACK_DAMAGE,12).add(Attributes.MOVEMENT_SPEED,.34).add(Attributes.FOLLOW_RANGE,24);}
     @Override protected void registerGoals(){goalSelector.addGoal(0,new FloatGoal(this));goalSelector.addGoal(1,new MeleeAttackGoal(this,1.15,true));goalSelector.addGoal(2,new WaterAvoidingRandomStrollGoal(this,1.0));goalSelector.addGoal(3,new LookAtPlayerGoal(this,Player.class,8));goalSelector.addGoal(4,new RandomLookAroundGoal(this));targetSelector.addGoal(1,new HurtByTargetGoal(this));}
@@ -91,7 +91,7 @@ public class SonicGuest extends PathfinderMob{
 }''',encoding='utf-8')
 edit('NightGuests.java','if(l.dimension()!=Level.OVERWORLD)return;','''if(l.dimension()!=Level.OVERWORLD)return;
         if(p.getRandom().nextInt(20)==0&&l.getEntitiesOfClass(SonicGuest.class,p.getBoundingBox().inflate(80)).isEmpty()){
-            BlockPos q=Eclipse.spot(p,12,24);if(q!=null){SonicGuest m=(p.getRandom().nextBoolean()?Noctis.SHADOW.get():Noctis.METAL_SONIC.get()).create(l);if(m!=null){m.moveTo(q.getX()+.5,q.getY(),q.getZ()+.5);if(l.noCollision(m))l.addFreshEntity(m);}}
+            BlockPos q=Eclipse.spot(p,12,24);if(q!=null){SonicGuest m=(p.getRandom().nextBoolean()?Noctis.SHADOW_HEDGEHOG.get():Noctis.METAL_SONIC.get()).create(l);if(m!=null){m.moveTo(q.getX()+.5,q.getY(),q.getZ()+.5);if(l.noCollision(m))l.addFreshEntity(m);}}
         }''')
 # Three independent meshes, same common limb names for animation. Shadow's motorcycle is part of his model.
 N=256;S=4;W=N*S;models=[]
@@ -173,7 +173,7 @@ public class SonicGuestClient{
     static final ModelLayerLocation[] L=new ModelLayerLocation[3];
     static{for(int i=0;i<3;i++)L[i]=new ModelLayerLocation(new ResourceLocation(Noctis.ID,N[i]),"main");}
     @SubscribeEvent public static void layers(EntityRenderersEvent.RegisterLayerDefinitions e){e.registerLayerDefinition(L[0],SonicGuestClient::mesh0);e.registerLayerDefinition(L[1],SonicGuestClient::mesh1);e.registerLayerDefinition(L[2],SonicGuestClient::mesh2);}
-    @SubscribeEvent public static void renderers(EntityRenderersEvent.RegisterRenderers e){e.registerEntityRenderer(Noctis.SHADOW.get(),c->new Renderer(c,true));e.registerEntityRenderer(Noctis.METAL_SONIC.get(),c->new Renderer(c,false));}
+    @SubscribeEvent public static void renderers(EntityRenderersEvent.RegisterRenderers e){e.registerEntityRenderer(Noctis.SHADOW_HEDGEHOG.get(),c->new Renderer(c,true));e.registerEntityRenderer(Noctis.METAL_SONIC.get(),c->new Renderer(c,false));}
 '''+ '\n'.join(models)+'''
     static class Model extends EntityModel<SonicGuest>{
         final ModelPart r,b,h;final int k;
@@ -200,6 +200,6 @@ for n in ('shadow','metal_sonic'):(assets/'models/item'/f'{n}_spawn_egg.json').w
 for lang in ('it_it','en_us'):
     p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
     for n,label in [('shadow','Shadow the Hedgehog'),('metal_sonic','Metal Sonic')]:
-        d['entity.noctismagic.'+n]=label;d['item.noctismagic.'+n+'_spawn_egg']=('Uovo generatore: ' if lang=='it_it' else 'Spawn Egg: ')+label
+        d['entity.noctismagic.'+('shadow_hedgehog' if n=='shadow' else n)]=label;d['item.noctismagic.'+n+'_spawn_egg']=('Uovo generatore: ' if lang=='it_it' else 'Spawn Egg: ')+label
     p.write_text(json.dumps(d,ensure_ascii=False,indent=2),encoding='utf-8')
 print('Morgana dialogue and neutral Sonic guests installed')
