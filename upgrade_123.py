@@ -84,8 +84,8 @@ public class BakeryClerk extends PathfinderMob{
     public static AttributeSupplier.Builder attributes(){return Mob.createMobAttributes().add(Attributes.MAX_HEALTH,40).add(Attributes.MOVEMENT_SPEED,.15).add(Attributes.KNOCKBACK_RESISTANCE,.8);}
     @Override protected void registerGoals(){goalSelector.addGoal(0,new FloatGoal(this));goalSelector.addGoal(1,new LookAtPlayerGoal(this,Player.class,8));goalSelector.addGoal(2,new RandomLookAroundGoal(this));}
     void say(ServerLevel l,String s){NpcDialogue.say(l,Component.literal(getDisplayName().getString()+": "+s));}
-    static final String[] H={"Avevo un piano per il pane. Il lievito non era d'accordo.","Questa brioche e' venuta storta. Per fortuna non dirige un esercito.","Il mio unico ordine oggi: togliere il pane dal forno prima che bruci."};
-    static final String[] S={"Il piano quinquennale delle brioche e' gia in ritardo.","La torta e' di tutti, ma la fetta piu grande l'ho gia mangiata.","Il comitato del lievito ha approvato il pane. Purtroppo e' duro come una pietra."};
+    static final String[] H={"Questi forni mi ricordano i bei tempi... quando riuscivo ancora a non bruciare il pane.","Avevo un piano per il pane. Il lievito non era d'accordo.","Questa brioche e' venuta storta. Per fortuna non dirige un esercito.","Il mio unico ordine oggi: togliere il pane dal forno prima che bruci."};
+    static final String[] S={"Mi sono venduto al capitalismo. Una pepita per il prossimo biscotto!","Il piano quinquennale delle brioche e' gia in ritardo.","La torta e' di tutti, ma la fetta piu grande l'ho gia mangiata.","Il comitato del lievito ha approvato il pane. Purtroppo e' duro come una pietra."};
     @Override public void tick(){super.tick();if(cooldown>0)cooldown--;if(level() instanceof ServerLevel l&&cooldown==0&&tickCount%160==0&&l.getNearestPlayer(this,9)!=null&&random.nextInt(4)==0){cooldown=200;String[] lines=stalin()?S:H;say(l,lines[random.nextInt(lines.length)]);}}
     @Override public InteractionResult mobInteract(Player p,InteractionHand h){
         if(h!=InteractionHand.MAIN_HAND)return InteractionResult.PASS;
