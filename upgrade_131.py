@@ -125,7 +125,7 @@ def part(var,parent,name,pos,rot,boxes):
     lines.append(f'        PartDefinition {var}={parent}.addOrReplaceChild("{name}",CubeListBuilder.create()'+''.join(cube(*b) for b in boxes)+',PartPose.offsetAndRotation('+','.join(str(float(a))+'f' for a in (*pos,*rot))+'));')
 part('b','r','body',(0,17,1),(0,0,0),[(-6,-6,-6,12,10,12,'orange'),(-7,-4,-5,14,7,10,'orange'),(-5,-7,-4,10,3,8,'orange'),(-5,2,-4,10,3,8,'orange')])
 part('h','r','head',(0,15,-5),(0,0,0),[(-6,-6,-5,12,10,8,'face'),(-7,-3,-4,14,6,6,'orange'),(-4,-7,-3,8,2,6,'orange')])
-part('m','h','muzzle',(0,1,-5),(0,0,0),[(-3,-2,-2,6,3,3,'orange'),(-2,1,-1,4,2,1,'mouth'),(-1.5,2,-2,3,2,1,'tongue')])
+part('muzzle','h','muzzle',(0,1,-5),(0,0,0),[(-3,-2,-2,6,3,3,'orange'),(-2,1,-1,4,2,1,'mouth'),(-1.5,2,-2,3,2,1,'tongue')])
 part('saw','h','saw',(0,-4,-4),(-.6,0,0),[(-.8,-11,-1,2,12,2,'steel'),(-.9,-12,-1,2,1,2,'steel')])
 for i in range(6):
     for s in (-1,1):part(f'tooth{i}{s+1}','saw',f'tooth{i}_{s}',(0,-1-i*2,s*1.2),(.4*s,0,0),[(-.7,-1,-.6,1,2,1,'dark')])
