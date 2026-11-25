@@ -4657,3 +4657,194 @@ for k,id in enumerate(('head','left_arm','right_arm','left_leg','right_leg')):
    link_icon(im,32+s*9,48,.65);link_icon(im,32+s*14,54,1.12)
  im.save('exodia_'+id)
 print('Inventory textures: 64px labeled Vaffanculo/Suca seeds and fruits, five shaded Egyptian Exodia relics.')
+
+
+# Miles Edgeworth: dedicated sculpted renderer, with an independent articulated tea grip.
+edit('CrossoverClient.java','e.registerEntityRenderer(Noctis.MILES_EDGEWORTH.get(),c->new Renderer(c,2));','')
+write('EdgeworthSculptedClient.java','''package it.noctis.magic;
+import com.mojang.blaze3d.vertex.*;
+import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.renderer.entity.*;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import it.noctis.magic.SculptedGuestsClient.Part;
+import it.noctis.magic.SculptedGuestsClient.V;
+import it.noctis.magic.SculptedGuestsClient.Q;
+@Mod.EventBusSubscriber(modid=Noctis.ID,value=Dist.CLIENT,bus=Mod.EventBusSubscriber.Bus.MOD)
+public class EdgeworthSculptedClient{
+ @SubscribeEvent public static void renderers(EntityRenderersEvent.RegisterRenderers e){e.registerEntityRenderer(Noctis.MILES_EDGEWORTH.get(),R::new);}
+ static float clamp(float v){return Math.max(.025f,Math.min(.975f,v));}
+ static V face(V v,boolean f){return new V(v.x(),v.y(),v.z(),f?clamp(.5f+v.x()/6.35f):.025f,clamp((v.y()+7.75f)/7.75f),v.nx(),v.ny(),v.nz());}
+ static void project(Part p){for(int i=0;i<p.faces.size();i++){Q q=p.faces.get(i);if(q.tile()!=5)continue;boolean f=q.a().nz()+q.b().nz()+q.c().nz()+q.d().nz()<-.05f;p.faces.set(i,new Q(face(q.a(),f),face(q.b(),f),face(q.c(),f),face(q.d(),f),5));}}
+ static V handleV(float a,float b,float u,float v){
+  float ca=(float)Math.cos(a),sa=(float)Math.sin(a),cb=(float)Math.cos(b),sb=(float)Math.sin(b);
+  return new V((.45f+.13f*cb)*ca,(.57f+.13f*cb)*sa,.13f*sb,u,v,ca*cb,sa*cb,sb);
+ }
+ static void handle(Part p){
+  for(int i=0;i<20;i++)for(int j=0;j<8;j++){
+   float a=i*(float)Math.PI/10,A=(i+1)*(float)Math.PI/10,b=j*(float)Math.PI/4,B=(j+1)*(float)Math.PI/4;
+   p.faces.add(new Q(handleV(a,b,i/20f,j/8f),handleV(A,b,(i+1)/20f,j/8f),handleV(A,B,(i+1)/20f,(j+1)/8f),handleV(a,B,i/20f,(j+1)/8f),9));
+  }
+ }
+ static class M extends EntityModel<CrossoverGuest>{
+  final Part root=new Part(0,0,0),body=root.child(0,0,0),head=body.child(0,-1,0);
+  final Part[] arms=new Part[2],fore=new Part[2],legs=new Part[2],shins=new Part[2];
+  final Part wrist,cup;
+  M(){
+   // Tailored crimson three-piece suit, narrow waist and broad, defined shoulders.
+   body.loft(0,24,-.75f,0,0,1.75f,1.35f,.15f,0,0,4.15f,2.12f,2.45f,0,-.08f,3.83f,2.24f,5.2f,0,0,3.18f,1.83f,8.15f,0,0,2.88f,1.65f,10.75f,0,0,3.37f,1.94f);
+   body.loft(4,24,-1.35f,0,0,1.30f,1.23f,.4f,0,0,1.49f,1.30f);
+   body.blade(1,0,.30f,-1.98f,0,7.65f,-1.85f,3.20f);
+   // Folded white cravat, separate cascading fabric lobes.
+   body.loft(2,20,-.40f,0,-1.48f,1.23f,.38f,.5f,0,-1.63f,1.36f,.41f,1.0f,0,-1.76f,.75f,.30f);
+   for(int j=0;j<4;j++){
+    float y=.64f+j*.86f,w=1.17f-j*.14f;
+    body.loft(2,20,y,0,-2.06f,w*.76f,.24f,y+.28f,0,-2.23f,w,.29f,y+.73f,0,-2.28f,w*.53f,.14f);
+    body.blade(3,-w*.67f,y+.36f,-2.43f,w*.58f,y+.57f,-2.43f,.10f);
+   }
+   for(int s:new int[]{-1,1}){
+    body.blade(6,s*2.96f,.35f,-1.67f,s*.68f,6.45f,-1.93f,1.50f);
+    body.blade(0,s*3.15f,.4f,-1.53f,s*1.85f,2.4f,-2.11f,1.13f);
+    body.blade(7,s*2.98f,6.9f,-1.24f,s*1.65f,7.05f,-1.66f,.14f);
+    body.blade(6,s*2.73f,8.2f,-1.15f,s*3.02f,12.25f,-.70f,1.30f);
+    body.blade(7,s*.14f,8.7f,-1.69f,s*.60f,11.8f,-1.74f,.08f);
+   }
+   for(int j=0;j<3;j++)body.oval(7,.19f,5.3f+j*1.32f,-1.89f,.14f,.16f,.10f);
+   body.blade(7,-3.2f,3.33f,-1.46f,-1.98f,3.47f,-2.01f,.16f);
+   // Angular, adult face, narrower jaw and visibly sculpted nose.
+   head.loft(5,36,-7.75f,0,.12f,1.25f,1.55f,-7.18f,0,.06f,2.34f,2.25f,-5.55f,0,0,2.78f,2.61f,-4.1f,0,-.09f,2.73f,2.51f,-2.55f,0,-.17f,2.26f,2.15f,-1.12f,0,-.36f,1.55f,1.59f,-.30f,0,-.44f,.82f,.96f,0,0,-.46f,.50f,.63f);
+   project(head);
+   head.loft(4,16,-4.80f,0,-2.43f,.20f,.14f,-3.98f,0,-2.69f,.30f,.24f,-3.08f,0,-2.99f,.42f,.33f,-2.78f,0,-2.72f,.29f,.16f);
+   for(int s:new int[]{-1,1}){
+    head.oval(4,s*2.67f,-3.40f,.12f,.32f,.69f,.45f);
+    head.blade(4,s*1.72f,-3.24f,-2.07f,s*2.14f,-2.54f,-1.48f,.19f);
+   }
+   // Signature parted gray hair: swept raised crown, two tapered forehead locks, trimmed back.
+   head.loft(8,28,-8.83f,0,.10f,.65f,.75f,-8.45f,0,.12f,2.12f,2.03f,-7.65f,0,.24f,2.94f,2.80f,-6.48f,0,.45f,2.97f,2.73f);
+   Part back=head.child(0,-6.88f,1.47f);
+   back.loft(8,24,-.50f,0,0,2.36f,1.36f,1.10f,0,.27f,2.65f,1.28f,3.20f,0,.36f,2.42f,.95f,4.9f,0,.20f,1.62f,.20f);
+   for(int s:new int[]{-1,1}){
+    for(int j=0;j<7;j++){
+     float t=j/6f;
+     Part lock=head.child(s*(.20f+t*2.25f),-8.13f+.49f*t,-1.67f+.30f*t);
+     float len=2.15f+1.82f*t+(j%2)*.20f;
+     float drift=s*(.67f+.28f*t);
+     lock.loft(8,12,-.55f,0,.55f,.43f,.53f,.32f,drift*.28f,-.27f,.54f,.49f,1.34f,drift*.62f,-.76f,.48f,.33f,len*.74f,drift,-.74f,.29f,.20f,len,drift*.90f,-.40f,.025f,.035f);
+     lock.blade(11,0,.12f,-.40f,drift*.85f,len*.82f,-.72f,.13f);
+    }
+    for(int j=0;j<4;j++){
+     Part lock=head.child(s*(2.41f+j*.08f),-6.97f+j*.26f,.05f+j*.47f);
+     lock.loft(8,12,-.45f,0,.12f,.34f,.49f,.58f,s*.24f,.03f,.43f,.50f,1.77f,s*.14f,.24f,.30f,.34f,3.30f-j*.24f,s*.02f,.43f,.035f,.05f);
+    }
+   }
+   for(int i=0;i<2;i++){
+    int s=i==0?-1:1;
+    arms[i]=body.child(s*4.20f,.35f,0);
+    arms[i].loft(0,20,-.58f,0,0,1.05f,1.11f,.55f,0,0,1.38f,1.35f,2.65f,0,0,1.17f,1.15f,4.75f,0,0,.91f,.94f);
+    arms[i].blade(6,s*.53f,.38f,-1.02f,s*.60f,3.92f,-.75f,.23f);
+    fore[i]=arms[i].child(0,4.65f,0);
+    fore[i].loft(0,20,-.16f,0,0,.94f,.96f,1.6f,0,0,1.04f,1.04f,3.8f,0,0,.74f,.77f);
+    fore[i].loft(2,20,3.66f,0,0,.76f,.78f,4.23f,0,0,.69f,.71f);
+    for(int j=0;j<3;j++)fore[i].oval(7,s*.72f,2.45f+j*.33f,-.43f,.10f,.10f,.09f);
+    if(i==0){
+     fore[i].oval(4,0,4.96f,-.05f,.66f,.78f,.46f);
+     for(int j=0;j<4;j++){
+      float x=-.44f+j*.29f,len=j==1?1.25f:.65f;
+      fore[i].loft(4,10,5.00f,x,-.16f,.15f,.19f,5.50f,x,-.22f,.13f,.15f,5.00f+len+.31f,x,-.25f,.05f,.07f);
+     }
+     fore[i].oval(4,-.66f,4.83f,-.26f,.21f,.46f,.22f);
+    }
+    legs[i]=root.child(s*1.65f,11.0f,0);
+    legs[i].loft(0,24,-.25f,0,0,1.51f,1.52f,2.55f,0,0,1.42f,1.40f,5.7f,0,0,1.10f,1.14f);
+    legs[i].blade(6,0,.45f,-1.43f,0,5.35f,-1.13f,.16f);
+    shins[i]=legs[i].child(0,5.5f,0);
+    shins[i].loft(0,24,-.25f,0,0,1.12f,1.14f,2.0f,0,0,1.14f,1.16f,5.75f,0,0,.93f,1.02f,6.50f,0,0,1.05f,1.09f);
+    shins[i].blade(6,0,.22f,-1.14f,0,6.0f,-1.04f,.13f);
+    shins[i].loft(7,24,6.0f,0,0,.94f,1.06f,6.90f,0,-.55f,1.12f,1.72f,7.5f,0,-.61f,1.16f,1.83f);
+   }
+   // Real wrist pivot and fingers gripping the cup's loop. Cup stays upright as elbow moves.
+   wrist=fore[1].child(0,4.23f,0);
+   wrist.oval(4,.25f,.52f,0,.52f,.69f,.44f);
+   cup=wrist.child(-1.30f,-.52f,-.06f);
+   cup.loft(9,24,-.72f,0,0,1.02f,1.02f,-.55f,0,0,1.04f,1.04f,.62f,0,0,.77f,.77f,1.02f,0,0,.56f,.56f);
+   cup.loft(9,24,.99f,0,0,.65f,.65f,1.16f,0,0,.65f,.65f);
+   // Visible dark tea surface and a thin porcelain rim above it.
+   cup.loft(10,24,-.76f,0,0,.88f,.88f,-.71f,0,0,.88f,.88f);
+   Part rim=cup.child(0,-.79f,0);rim.rx=(float)Math.PI/2;
+   for(int j=0;j<32;j++){
+    float a=j*(float)Math.PI/16;rim.oval(9,.99f*(float)Math.cos(a),.99f*(float)Math.sin(a),0,.075f,.075f,.075f);
+   }
+   Part grip=cup.child(1.21f,.04f,0);handle(grip);
+   for(int j=0;j<3;j++){
+    float y=-.52f+j*.28f;
+    wrist.loft(4,10,y,.36f,-.33f,.19f,.20f,y+.19f,.09f,-.37f,.20f,.18f,y+.25f,-.16f,-.24f,.15f,.14f);
+   }
+   wrist.oval(4,.17f,-.18f,.17f,.24f,.40f,.24f);
+  }
+  @Override public void setupAnim(CrossoverGuest e,float limb,float amount,float age,float yaw,float pitch){
+   float a=e.action(),obj=e.animation()==0?a:0,tea=e.animation()==1?a:0;
+   head.ry=yaw*.017f*(1-obj*.55f);head.rx=pitch*.012f+tea*.09f-obj*.04f;
+   body.ry=0;
+   for(int i=0;i<2;i++){
+    float s=i==0?-1:1,w=(float)Math.cos(limb*.666f+i*Math.PI)*amount;
+    legs[i].rx=w*.62f;shins[i].rx=Math.max(0,-w)*.25f;
+    arms[i].ry=0;arms[i].rz=0;
+    arms[i].rx=-w*.48f;fore[i].rx=-.08f-Math.max(0,w)*.25f;
+   }
+   // Opposite arm points, so the other hand never throws or clips its cup.
+   arms[0].rx=-.12f-1.40f*obj;arms[0].rz=.10f-.12f*obj;fore[0].rx=-.20f*(1-obj);
+   arms[1].rx=-.34f-.52f*tea;fore[1].rx=-1.05f-.48f*tea;
+   wrist.rx=-(arms[1].rx+fore[1].rx);
+   wrist.ry=0;wrist.rz=0;
+  }
+  @Override public void renderToBuffer(PoseStack p,VertexConsumer v,int light,int overlay,float r,float g,float b,float a){root.draw(p,v,light,overlay,r,g,b,a);}
+ }
+ static class R extends MobRenderer<CrossoverGuest,M>{
+  R(EntityRendererProvider.Context c){super(c,new M(),.36f);}
+  @Override protected void scale(CrossoverGuest e,PoseStack p,float partial){p.scale(1.08f,1.10f,1.08f);}
+  @Override public ResourceLocation getTextureLocation(CrossoverGuest e){return new ResourceLocation(Noctis.ID,"textures/entity/edgeworth_sculpted.png");}
+ }
+}''')
+W,H=1024,512;pix=bytearray(W*H*4)
+pal=[(135,34,65),(42,29,38),(245,240,230),(163,161,165),(232,190,164),(232,190,164),(98,25,49),(29,26,32),(115,113,125),(245,239,223),(130,76,38),(179,177,187)]
+for m,base in enumerate(pal):
+ for y in range(128):
+  v=sat2((y-3)/121)
+  for x in range(128):
+   u=sat2((x-3)/121);f=abs(u-.5)
+   c=shade(base,.82+.19*math.sin(u*math.pi)+.035*math.sin(u*57+v*19)**2)
+   if m in (0,6):
+    fold=math.sin(u*math.pi*4+v*2.6+.5*math.sin(v*8))
+    c=mix(c,(191,69,102),.30*max(0,fold)**5)
+    c=mix(c,(46,13,32),.29*max(0,-fold)**5)
+   if m in (8,11):
+    wave=math.sin(u*math.pi*16+v*3.2+.4*math.sin(v*5))
+    c=mix(c,(211,207,220),.41*max(0,wave)**4+.11*math.exp(-((v-.27)/.17)**2))
+    c=mix(c,(43,40,52),.33*max(0,-wave)**5)
+   if m in (2,9):c=mix(c,(255,255,251),.26*math.exp(-((u-.32)/.13)**2))
+   if m==9 and (.07<v<.10 or .90<v<.93):c=mix(c,(173,133,67),.70)
+   if m==10:c=mix(c,(201,143,73),.27*math.sin(u*math.pi)**2)
+   if m==5:
+    def g(cx,cy,sx,sy):return math.exp(-((u-cx)/sx)**2-((v-cy)/sy)**2)
+    c=mix(base,(126,70,66),.22*sat2((f-.19)*4)+.11*v)
+    c=mix(c,(255,222,195),.32*g(.5,.36,.15,.19))
+    for side in (-1,1):
+     ex=.5+side*.174;dx=side*(u-ex)/.124;dy=(v-(.478-.036*dx))/.043
+     d=abs(dx)**1.6+abs(dy)**1.25
+     c=mix(c,(141,84,83),.24*g(ex,.47,.13,.07))
+     if d<1.18:c=(48,30,39)
+     if d<.78:c=(244,235,223)
+     if d<.75 and abs(dx+.08)<.39:c=mix((62,60,66),(150,149,162),sat2((dy+.6)/1.2))
+     if d<.72 and abs(dx+.08)<.16:c=(25,23,30)
+     if d<.70 and (dx+.22)**2+(dy+.25)**2<.045:c=(255,250,241)
+     if abs(dx)<1.10 and abs(v-(.375-.037*dx))<.015:c=(76,68,78)
+     if abs(dx)<.91 and abs(v-(.405-.036*dx))<.008:c=mix(c,(128,80,78),.75)
+    if f<.033 and abs(v-.677)<.009:c=mix(c,(137,77,70),.62)
+    if f<.078 and abs(v-(.786-.009*(1-f/.078)))<.009:c=(110,55,64)
+    if f<.05 and abs(v-.805)<.007:c=(207,131,115)
+   off=((m//8*128+y)*W+m%8*128+x)*4;pix[off:off+4]=bytes((*c,255))
+png(assets/'textures/entity/edgeworth_sculpted.png',W,H,pix)
+print('Miles Edgeworth: sculpted angular face, parted silver hair, magenta suit and cravat, upright tea cup with articulated hand and independent objection arm.')
