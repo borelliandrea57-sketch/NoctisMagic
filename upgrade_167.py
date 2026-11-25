@@ -649,3 +649,87 @@ s,n=re.subn(r'(FAPUTA=ENTITIES\.register\("faputa".*?\.sized\()[^)]*(\))',r'\g<1
 assert n==1,'Faputa entity dimensions not found'
 p.write_text(s,encoding='utf-8')
 print('Faputa enlarged: broader rigid shoulder girdle, stronger upper arms and matched collision dimensions.')
+
+
+# C.C. and Lelouch: occasional reciprocal non-combat affection, synchronized to both clients.
+edit('DramaGuest.java','UUID partner;int cd=40,dance=0,pizzaCd=0;','UUID partner;int cd=40,dance=0,pizzaCd=0;\n    private int affectionTime=0,affectionMode=0,affectionCooldown=900,approachTime=0;')
+edit('DramaGuest.java','return dance==0&&kind()!=2&&canWanderTogether()&&super.canUse();','return affectionTime==0&&approachTime==0&&dance==0&&kind()!=2&&canWanderTogether()&&super.canUse();')
+edit('DramaGuest.java','return dance==0&&kind()!=2&&canWanderTogether()&&super.canContinueToUse();','return affectionTime==0&&approachTime==0&&dance==0&&kind()!=2&&canWanderTogether()&&super.canContinueToUse();')
+edit('DramaGuest.java','    @Override public void tick(){super.tick();','''    public int affectionMode(){return affectionTime>0?affectionMode:0;}
+    public float affectionProgress(){return affectionTime<=0?0:Math.min(1f,Math.min((72-affectionTime)/12f,affectionTime/12f));}
+    private void facePartner(DramaGuest q){
+        double dx=q.getX()-getX(),dz=q.getZ()-getZ();
+        if(dx*dx+dz*dz<.001)return;
+        float yaw=(float)(Math.atan2(dz,dx)*180/Math.PI)-90;
+        setYRot(yaw);yBodyRot=yaw;setYHeadRot(yaw);setXRot(0);
+    }
+    private boolean safeAffection(DramaGuest q){
+        return q.isAlive()&&isAlive()&&onGround()&&q.onGround()&&!isInWater()&&!q.isInWater()&&hurtTime==0&&q.hurtTime==0&&getTarget()==null&&q.getTarget()==null&&Math.abs(getY()-q.getY())<.38&&hasLineOfSight(q);
+    }
+    private void beginAffection(ServerLevel l,DramaGuest q){
+        int mode=random.nextBoolean()?1:2;affectionMode=q.affectionMode=mode;
+        affectionTime=q.affectionTime=72;approachTime=q.approachTime=0;
+        affectionCooldown=q.affectionCooldown=1800+random.nextInt(2400);
+        getNavigation().stop();q.getNavigation().stop();facePartner(q);q.facePartner(this);
+        l.broadcastEntityEvent(this,(byte)(95+mode));l.broadcastEntityEvent(q,(byte)(95+mode));
+    }
+    private boolean affectionTick(ServerLevel l){
+        if(kind()==0)return false;
+        if(affectionCooldown>0)affectionCooldown--;
+        DramaGuest q=partner!=null&&l.getEntity(partner) instanceof DramaGuest other?other:null;
+        if(affectionTime>0){
+            if(q==null||!safeAffection(q)||distanceTo(q)>1.55){
+                affectionTime=0;affectionMode=0;approachTime=0;l.broadcastEntityEvent(this,(byte)98);
+                if(q!=null&&q.affectionTime>0){q.affectionTime=0;q.affectionMode=0;l.broadcastEntityEvent(q,(byte)98);}
+                return false;
+            }
+            getNavigation().stop();facePartner(q);setDeltaMovement(0,getDeltaMovement().y,0);
+            if(kind()==1&&affectionTime==46)l.sendParticles(ParticleTypes.HEART,(getX()+q.getX())*.5,Math.max(getY(),q.getY())+1.95,(getZ()+q.getZ())*.5,3,.17,.15,.17,.025);
+            return true;
+        }
+        if(q==null||!safeAffection(q)){approachTime=0;return false;}
+        if(kind()==2&&q.approachTime>0){getNavigation().stop();facePartner(q);return true;}
+        if(kind()!=1)return false;
+        if(approachTime<=0){
+            if(affectionCooldown>0||q.affectionCooldown>0||tickCount%100!=0||distanceTo(q)>3.4||random.nextInt(3)!=0)return false;
+            approachTime=65;
+        }
+        if(--approachTime<=0){affectionCooldown=300;return false;}
+        getNavigation().stop();q.getNavigation().stop();facePartner(q);q.facePartner(this);
+        double dist=distanceTo(q);
+        if(dist<=.92){beginAffection(l,q);return true;}
+        Vec3 v=q.position().subtract(position());v=new Vec3(v.x,0,v.z).normalize().scale(Math.min(.075,Math.max(.0,dist-.84)));
+        if(l.noCollision(this,getBoundingBox().move(v)))move(MoverType.SELF,v);
+        else{approachTime=0;affectionCooldown=300;return false;}
+        return true;
+    }
+    @Override public void tick(){super.tick();if(affectionTime>0)affectionTime--;''')
+edit('DramaGuest.java','if(tickCount%10!=0)return;','if(affectionTick(l))return;\n        if(tickCount%10!=0)return;')
+edit('DramaGuest.java','if(id==94){dance=60;return;}','if(id==96||id==97){affectionMode=id-95;affectionTime=72;return;}if(id==98){affectionTime=0;affectionMode=0;return;}if(id==94){dance=60;return;}')
+# Layer a distinct kiss or embrace pose over the current articulated walk cycles.
+p=java/'GeassSculptedClient.java';s=p.read_text(encoding='utf-8')
+a='            head.ry=yaw*.01745f;head.rx=pitch*.014f;head.rz=cc?.025f:0;'
+assert a in s
+s=s.replace(a,a+'\n            float affection=e.affectionProgress();int affectionMode=e.affectionMode();\n            body.rx=0;root.rx=0;root.ry=0;root.rz=0;head.z=0;',1)
+a='            for(int i=0;i<hair.size();i++)hair.get(i).rx=amount*.13f+(float)Math.sin(age*.12+i*.55f)*.025f;'
+assert a in s
+s=s.replace(a,a+'''
+            for(int i=0;i<2;i++){arms[i].ry=0;fore[i].ry=0;fore[i].rz=0;}
+            if(affectionMode!=0&&affection>0){
+                float f=affection;head.ry=(cc?.10f:-.10f)*f;head.rz=(cc?-.13f:.12f)*f;
+                head.rx=(cc?-.16f:.12f)*f;root.rx=(cc?-.085f:-.035f)*f;head.z=-.40f*f;
+                for(int i=0;i<2;i++){
+                    int side=i==0?-1:1;legs[i].rx=0;knees[i].rx=0;
+                    if(affectionMode==2){
+                        // Lelouch reaches around C.C.; she returns the gesture more gently.
+                        arms[i].rx=(cc?-.95f:-1.37f)*f;arms[i].rz=-side*.24f*f;arms[i].ry=-side*.30f*f;
+                        fore[i].rx=(cc?-.55f:-.76f)*f;fore[i].rz=side*.46f*f;
+                    }else{
+                        // C.C. leans toward him and lifts one hand; he stays relaxed.
+                        arms[i].rx=(cc?(i==1?-1.30f:-.30f):-.38f)*f;arms[i].rz=-side*.13f*f;
+                        fore[i].rx=(cc&&i==1?-.95f:-.22f)*f;
+                    }
+                }
+            }''',1)
+p.write_text(s,encoding='utf-8')
+print('Lelouch and C.C. spontaneous paired kiss/hug animations with cooldown and safety checks.')
