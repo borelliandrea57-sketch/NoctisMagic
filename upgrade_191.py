@@ -46,10 +46,11 @@ def add(n,it,en,b):items[n]=(it,en,b)
 add('jade_torii_pillar','Colonna torii in lacca vermiglia','Vermilion torii pillar',[B(1,0,1,15,16,15,'vermilion'),B(0,0,0,16,1,16,'gold'),B(0,15,0,16,16,16,'gold'),B(3,2,0.65,13,14,1,'scroll')])
 add('jade_torii_base','Basamento torii','Torii base',[B(0,0,0,16,3,16,'black'),B(1,3,1,15,6,15,'black'),B(1,6,1,15,16,15,'vermilion'),B(0,6,0,16,7,16,'gold')])
 add('jade_torii_beam','Trave torii scolpita','Carved torii beam',[B(0,4,2,16,15,14,'vermilion'),B(0,3,1.5,16,4,14.5,'gold'),B(0,15,1.5,16,16,14.5,'darkred'),B(0,5,1.65,16,14,2,'scroll')])
+add('jade_torii_joint','Capitello torii','Torii capital',[B(0,4,2,16,15,14,'vermilion'),B(0,3,1.5,16,4,14.5,'gold'),B(0,15,1.5,16,16,14.5,'darkred'),B(0,5,1.65,16,14,2,'scroll'),B(1,0,1,15,3,15,'darkred'),B(1,3,1,15,4,15,'gold')])
 add('jade_torii_crown','Architrave torii laccato','Lacquered torii lintel',[B(0,0,2,16,4,14,'darkred'),B(0,4,1,16,7,15,'vermilion'),B(0,7,0,16,10,16,'black'),B(0,10,1,16,12,15,'tile'),B(0,3,1.4,16,4,2,'gold')])
 # End caps are attached to the lintel rather than placed a block above.
 add('jade_torii_tip','Estremità rialzata torii','Upturned torii end',[B(0,0,2,16,4,14,'darkred'),B(0,4,1,16,7,15,'vermilion'),B(0,7,0,16,10,16,'black'),B(0,10,1,16,12,15,'tile'),B(0,12,2,5,15,14,'tile'),B(0,15,3,3,18,13,'gold')])
-crest=[B(2,0,1,14,14,4,'black'),B(3,1,0,13,13,1,'scroll'),B(1,0,0,15,1,4,'gold'),B(1,13,0,15,14,4,'gold')]
+crest=[B(2,0,1,14,14,4,'black'),B(3,1,0,13,13,1,'scroll'),B(1,0,0,15,1,4,'gold'),B(1,13,0,15,14,4,'gold'),B(6,14,2,10,20,4,'gold')]
 add('jade_torii_crest','Targa dorata del torii','Gilded torii plaque',crest)
 # Roof ornaments occupy the same block as the tiles below them.
 roof=[B(0,0,0,16,3,16,'tile')]+[B(x,3,0,x+3,5,16,'tile') for x in (0,4,8,12)]
@@ -103,7 +104,7 @@ sub+='''        // Finish the portal after the veranda, so lanterns and trim can
             p.put(x,1,1,Furniture.JADE_TORII_BASE.get());
             for(int y=2;y<=4;y++)p.put(x,y,1,Furniture.JADE_TORII_PILLAR.get());
         }
-        for(int x=8;x<=20;x++)p.put(x,5,1,Furniture.JADE_TORII_BEAM.get());
+        for(int x=8;x<=20;x++)p.put(x,5,1,x==9||x==19?Furniture.JADE_TORII_JOINT.get():Furniture.JADE_TORII_BEAM.get());
         for(int x=7;x<=21;x++)p.put(x,6,1,Furniture.JADE_TORII_CROWN.get());
         jadeFacing(p,7,6,1,Furniture.JADE_TORII_TIP.get(),Direction.NORTH);
         jadeFacing(p,21,6,1,Furniture.JADE_TORII_TIP.get(),Direction.SOUTH);
@@ -111,8 +112,8 @@ sub+='''        // Finish the portal after the veranda, so lanterns and trim can
         p.put(14,5,4,Furniture.JADE_EXT_SIGN.get());
         // Floral plaques on existing facade piers; leave the shoji windows open.
         Block[] blooms={Furniture.JADE_FLOWER_SAKURA.get(),Furniture.JADE_FLOWER_UME.get(),Furniture.JADE_FLOWER_KIKU.get()};
-        int[] piers={2,7,11,17,21,26};
-        for(int i=0;i<piers.length;i++)jadeFacing(p,piers[i],3,3,blooms[i%3],Direction.NORTH);
+        int[] piers={2,7,21,26};
+        for(int i=0;i<piers.length;i++)jadeFacing(p,piers[i],3,1,blooms[i%3],Direction.NORTH);
         for(int i=0;i<4;i++)for(int x:new int[]{1,27}){
             int z=9+i*4;
             jadeFacing(p,x,5,z,blooms[i%3],x==1?Direction.WEST:Direction.EAST);
