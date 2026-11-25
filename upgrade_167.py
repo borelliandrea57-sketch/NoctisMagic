@@ -1383,3 +1383,13 @@ for lang,it in [('it_it',True),('en_us',False)]:
  d['message.noctismagic.pony_ride']='Premi %s per il potere speciale. Shift per scendere.' if it else 'Press %s to use the special power. Shift to dismount.'
  j(p,d)
 print('Dedicated rebindable P pony power key, server ownership validation and localized taming/riding hints.')
+
+
+# Avoid the vanilla social-interactions P shortcut opening over a mounted pony.
+edit('PonyPowerKey.java','  @SubscribeEvent public static void tick(TickEvent.ClientTickEvent e){','''  @SubscribeEvent public static void key(net.minecraftforge.client.event.InputEvent.Key e){
+   Minecraft mc=Minecraft.getInstance();
+   if(e.getAction()==GLFW.GLFW_PRESS&&mc.player!=null&&mc.screen==null&&mc.player.getVehicle() instanceof FriendshipPony&&POWER.matches(e.getKey(),e.getScanCode())){
+    if(mc.options.keySocialInteractions.matches(e.getKey(),e.getScanCode()))while(mc.options.keySocialInteractions.consumeClick()){}
+   }
+  }
+  @SubscribeEvent public static void tick(TickEvent.ClientTickEvent e){''')
