@@ -2347,3 +2347,65 @@ j(assets/'models/item/exodia_spawn_egg.json',{'parent':'minecraft:item/template_
 for lang,it in [('it_it',True),('en_us',False)]:
  p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'));d['item.noctismagic.exodia_spawn_egg']='Uovo generatore: Exodia' if it else 'Exodia Spawn Egg';j(p,d)
 print('Exodia spawn egg triggers a one-time victory disconnect only when it spawns a new Exodia.')
+
+
+# Metal Sonic uses his central thruster for genuine low-altitude hover.
+edit('SonicGuest.java','int speech,hit;','int speech,hit,hoverTurn;float hoverYaw;')
+edit('SonicGuest.java','super.tick();if(speech>0)speech--;if(hit>0)hit--;','''super.tick();if(speech>0)speech--;if(hit>0)hit--;
+        if(!shadow()&&level() instanceof ServerLevel hoverLevel)hover(hoverLevel);''')
+edit('SonicGuest.java','    @Override public boolean doHurtTarget(Entity e){','''    void hover(ServerLevel l){
+        if(isInWater()||isInLava()){setNoGravity(false);return;}
+        setNoGravity(true);resetFallDistance();
+        var a=position().add(0,.15,0);
+        var b=l.clip(new net.minecraft.world.level.ClipContext(a,a.add(0,-8,0),net.minecraft.world.level.ClipContext.Block.COLLIDER,net.minecraft.world.level.ClipContext.Fluid.NONE,this));
+        double desired=neo()?1.15:.70;
+        double dy=b.getType()==net.minecraft.world.phys.HitResult.Type.MISS?-.12:Math.max(-.18,Math.min(.20,(desired-(getY()-b.getLocation().y))*.28));
+        var v=getDeltaMovement();
+        LivingEntity target=getTarget();
+        if(target!=null&&target.isAlive()&&distanceTo(target)<20&&hasLineOfSight(target)){
+            var d=target.position().subtract(position());var horizontal=new net.minecraft.world.phys.Vec3(d.x,0,d.z);
+            if(horizontal.length()>1.6){var q=horizontal.normalize().scale(neo()?.27:.21);v=new net.minecraft.world.phys.Vec3(q.x,dy,q.z);}
+        }else{
+            if(hoverTurn--<=0){hoverTurn=55+random.nextInt(120);hoverYaw=getYRot()+random.nextFloat()*140-70;}
+            if(tickCount%240<120&&getNavigation().isDone()){
+                double angle=Math.toRadians(hoverYaw);var q=new net.minecraft.world.phys.Vec3(-Math.sin(angle)*.065,dy,Math.cos(angle)*.065);
+                if(l.noCollision(this,getBoundingBox().move(q.x*5,0,q.z*5)))v=q;
+                else hoverTurn=0;
+            }
+        }
+        if(!l.noCollision(this,getBoundingBox().move(0,dy,0)))dy=0;
+        setDeltaMovement(v.x,dy,v.z);
+        if(tickCount%3==0){
+            double angle=Math.toRadians(yBodyRot),x=getX()-Math.sin(angle)*.23,z=getZ()+Math.cos(angle)*.23;
+            l.sendParticles(ParticleTypes.ELECTRIC_SPARK,x,getY()+1.0,z,3,.05,.06,.05,.035);
+            l.sendParticles(ParticleTypes.END_ROD,getX(),getY()+.12,getZ(),1,.10,.06,.10,.015);
+        }
+    }
+    @Override public boolean causeFallDamage(float distance,float multiplier,net.minecraft.world.damagesource.DamageSource source){return shadow()&&super.causeFallDamage(distance,multiplier,source);}
+    @Override public boolean doHurtTarget(Entity e){''')
+edit('SonicGuestClient.java','arm.xRot=k==0?-1.25f-hit*.5f:-walk*.7f-hit*1.4f;leg.xRot=k==0?-.80f:walk*.7f;leg.zRot=k==0?(i==0?-.38f:.38f):0;','''arm.xRot=k==0?-1.25f-hit*.5f:-.15f-amount*.25f-hit*1.4f;leg.xRot=k==0?-.80f:.15f+amount*.22f;leg.zRot=k==0?(i==0?-.38f:.38f):(i==0?-.10f:.10f);''')
+edit('SonicGuestClient.java','if(k==0){for(int i=0;i<2;i++)r.getChild("bike").getChild("wheel"+i).xRot=limb*1.3f;b.xRot=.18f;}','''if(k==0){for(int i=0;i<2;i++)r.getChild("bike").getChild("wheel"+i).xRot=limb*1.3f;b.xRot=.18f;}
+            else{b.y=5+(float)Math.sin(age*.13f)*.5f;b.xRot=.06f+amount*.15f;b.zRot=(float)Math.sin(age*.09f)*.035f;}''')
+# Improve the original central turbine's front UV (first body box 22 UV pixels wide, next starts at 23).
+for name in ['metal_sonic','neo_metal_sonic']:
+ p=assets/'textures/entity'/f'{name}.png'
+ raw=p.read_bytes();chunks=[];off=8;compressed=b''
+ while off<len(raw):
+  n=int.from_bytes(raw[off:off+4],'big');tag=raw[off+4:off+8];data=raw[off+8:off+8+n];off+=n+12
+  if tag==b'IHDR':W,H=struct.unpack('>II',data[:8])
+  if tag==b'IDAT':compressed+=data
+ scan=zlib.decompress(compressed);stride=W*4+1
+ assert all(scan[y*stride]==0 for y in range(H))
+ pix=bytearray(b''.join(scan[y*stride+1:(y+1)*stride] for y in range(H)))
+ # chest core front UV x=24..27, y=1..4 of the 256 atlas
+ for y in range(4,20):
+  for x in range(96,112):
+   u=(x-103.5)/7.5;v=(y-11.5)/7.5;d=math.sqrt(u*u+v*v);ang=math.atan2(v,u)
+   if d>.97:c=(33,42,80)
+   elif d>.71:c=shade((231,184,45),.83+.16*math.cos(ang*3))
+   elif d>.53:c=(66,74,91)
+   elif d>.24:c=mix((20,43,67),(83,199,255),.27+.30*math.sin(ang*6+d*12)**2)
+   else:c=(191,241,255)
+   q=(y*W+x)*4;pix[q:q+4]=bytes((*c,255))
+ png(p,W,H,pix)
+print('Metal Sonic and Neo Metal Sonic hover with no gravity, a central detailed turbine, thrust particles and airborne poses.')
