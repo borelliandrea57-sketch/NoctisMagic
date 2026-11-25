@@ -3280,24 +3280,41 @@ print('Joker revised with open sculpted white mask, angular face, irregular curl
 p=java/'GutsSculptedClient.java';s=p.read_text(encoding='utf-8')
 s=s.replace('f?.5f+v.x()/7.6f:.04f,v.v()','f?Math.max(.03f,Math.min(.97f,.5f+v.x()/6.9f)):.03f,Math.max(.03f,Math.min(.97f,(v.y()+7.7f)/7.7f))',1)
 a=s.index('   head.loft(5,64,');b=s.index('   for(int i=0;i<2;i++){',a)
-s=s[:a]+'''   head.loft(5,80,-7.7f,0,.12f,1.6f,1.6f,-7.05f,0,.05f,2.7f,2.45f,-5.45f,0,0,3.25f,2.75f,-3.8f,0,-.1f,3.02f,2.68f,-2.1f,0,-.21f,2.75f,2.34f,-.65f,0,-.36f,2.24f,1.76f,-.10f,0,-.40f,1.12f,1.12f);project(head);
-   head.loft(2,24,-4.95f,0,-2.58f,.21f,.16f,-3.95f,0,-2.88f,.38f,.31f,-2.92f,0,-3.27f,.52f,.44f,-2.62f,0,-3.0f,.38f,.20f);
+s=s[:a]+'''   // Adult angular skull, broad cheekbones and square jaw.
+   head.loft(5,36,-7.72f,0,.10f,1.55f,1.65f,-7.12f,0,.02f,2.55f,2.42f,-5.55f,0,-.02f,3.08f,2.76f,-4.55f,0,-.10f,3.12f,2.66f,-3.60f,0,-.13f,2.97f,2.58f,-2.32f,0,-.19f,2.72f,2.40f,-1.15f,0,-.32f,2.53f,1.96f,-.48f,0,-.45f,1.87f,1.54f,-.12f,0,-.48f,1.45f,1.13f);project(head);
+   head.loft(2,16,-4.88f,0,-2.56f,.25f,.18f,-4.08f,0,-2.80f,.30f,.30f,-3.36f,0,-3.06f,.41f,.42f,-2.83f,0,-3.13f,.48f,.36f,-2.61f,0,-2.94f,.32f,.18f);
    for(int side:new int[]{-1,1}){
-    head.blade(13,side*.70f,-4.70f,-2.63f,side*2.36f,-5.0f,-1.85f,.32f);
-    head.blade(14,side*1.86f,-3.15f,-2.02f,side*2.38f,-2.55f,-1.39f,.24f);
+    head.oval(14,side*.30f,-2.74f,-3.06f,.10f,.065f,.10f);
+    head.loft(2,12,-5.14f,side*1.15f,-2.48f,.70f,.10f,-4.92f,side*1.35f,-2.51f,.91f,.18f,-4.75f,side*1.45f,-2.45f,.63f,.10f);
+    head.blade(2,side*1.93f,-3.12f,-1.89f,side*2.35f,-2.38f,-1.35f,.43f);
    }
-   head.loft(7,40,-8.42f,0,.15f,1.45f,1.5f,-7.95f,0,.12f,2.77f,2.54f,-7.02f,0,.35f,3.36f,2.96f,-6.05f,0,.55f,3.25f,2.85f);
-   // Dense short irregular spikes, positive ring order, no crown of long identical cones.
-   for(int row=0;row<5;row++)for(int col=0;col<9;col++){
-    float x=(col-4)*.72f,z=-1.75f+row*.92f;
-    if(x*x/10.1f+z*z/8.7f>1.05f)continue;
-    float y=-7.62f+.32f*Math.abs(col-4)+.14f*Math.abs(row-2);
-    float h=.76f+.22f*((row*7+col*3)%5);
-    int mat=row<2&&col==3?12:7;
-    Part q=head.child(x,y,z);q.rz=(col-4)*.065f;q.rx=.24f;
-    q.loft(mat,12,-h, .16f*(col-4)/4f,.24f,.04f,.04f,-h*.47f,0,.13f,.30f,.37f,.18f,0,0,.47f,.49f);
+   head.loft(7,32,-8.25f,0,.20f,1.70f,1.60f,-7.88f,0,.22f,2.82f,2.60f,-7.10f,0,.30f,3.16f,2.80f,-6.08f,0,.60f,3.12f,2.65f);
+   for(int row=0;row<8;row++)for(int col=0;col<13;col++){
+    float x=(col-6)*.47f,z=-2.17f+row*.62f;
+    float rad=x*x/9.5f+z*z/7.9f;
+    if(rad>1.12f)continue;
+    float y=-7.87f+.82f*rad;
+    float h=1.35f+.62f*((row*11+col*7)%7)/6f+.35f*(1-rad);
+    boolean white=(col>=2&&col<=4&&row<=2)||(col==4&&row==3);
+    Part q=head.child(x,y,z);
+    q.rz=(col-6)*.047f;q.rx=.25f+row*.045f;
+    float dx=(col-6)*.047f;
+    int mat=white?15:7;
+    q.loft(mat,8,-h,dx,.56f,.018f,.018f,-h*.73f,dx*.82f,.39f,.13f,.18f,-h*.38f,dx*.38f,.20f,.27f,.29f,.16f,0,0,.34f,.40f);
    }
-   for(int side:new int[]{-1,1})for(int k=0;k<5;k++)head.blade(7,side*2.8f,-7.35f+k*.20f,-1.9f+k*.69f,side*3.35f,-6.0f+k*.18f,-1.2f+k*.69f,.83f);
+   for(int j=0;j<14;j++){
+    float x=-2.73f+j*.42f;
+    int mat=(j>=2&&j<=5)?15:7;
+    Part q=head.child(x,-7.58f+(float)Math.sin(j*1.7)*.13f,-2.04f);
+    float len=(j>=2&&j<=5)?2.10f+(j%3)*.19f:1.25f+(j%4)*.27f;
+    float drift=(j-6.5f)*.04f;
+    q.loft(mat,10,-.32f,0,.18f,.28f,.39f,.35f,drift,-.28f,.32f,.32f,1.03f,drift*.8f,-.45f,.24f,.23f,len*.84f,drift+.05f,-.42f,.11f,.12f,len,drift+.12f,-.28f,.018f,.018f);
+   }
+   for(int side:new int[]{-1,1})for(int k=0;k<8;k++){
+    Part q=head.child(side*(2.60f+.12f*(k%3)),-7.35f+(k%3)*.22f,-1.85f+k*.54f);
+    q.rz=-side*.32f;
+    q.loft(7,8,-.65f,side*.16f,.15f,.03f,.04f,-.16f,0,.08f,.26f,.32f,.54f,0,0,.34f,.37f,1.24f+(k%3)*.16f,side*.09f,.18f,.045f,.055f);
+   }
 '''+s[b:]
 s=s.replace('arms[i].loft(0,28,-.9f,0,0,1.70f,1.72f,.8f,0,0,2.30f,2.15f,3.1f,0,0,1.94f,1.80f,4.9f,0,0,1.4f,1.43f);','''arms[i].loft(i==1?2:0,36,-.9f,0,0,1.92f,1.94f,.8f,0,0,2.50f,2.32f,2.8f,0,0,2.26f,2.14f,4.9f,0,0,1.5f,1.55f);
     if(i==1){
@@ -3336,7 +3353,7 @@ s=s.replace('arms[i].rz=-s*.14f+(i==1?hit*.80f:0);','arms[i].rz=s*.08f+(i==1?hit
 s=s.replace('p.scale(1.23f,1.22f,1.23f);','p.scale(1.36f,1.29f,1.29f);',1)
 p.write_text(s,encoding='utf-8')
 W,H=1024,512;pix=bytearray(W*H*4)
-pal=[(34,37,42),(75,79,87),(193,137,99),(99,63,39),(145,148,150),(192,136,99),(25,22,29),(31,28,27),(155,158,165),(74,78,86),(161,151,133),(115,119,123),(166,165,157),(50,35,32),(127,76,61)]
+pal=[(34,37,42),(75,79,87),(193,137,99),(99,63,39),(145,148,150),(192,136,99),(25,22,29),(31,28,27),(155,158,165),(74,78,86),(161,151,133),(115,119,123),(166,165,157),(50,35,32),(127,76,61),(216,213,204)]
 for m,base in enumerate(pal):
  for y in range(128):
   for x in range(128):
@@ -3349,28 +3366,48 @@ for m,base in enumerate(pal):
     if v<.024 or v>.97:c=shade(c,.57)
    if m==6:
     c=mix((22,19,26) if f>.20 else (65,23,31),(88,67,78),.23*math.sin(u*math.pi*7+v*3)**2)
-   if m==7:c=mix(c,(100,83,69),.33*max(0,math.sin(u*math.pi*16+v*3))**5)
+   if m in (7,15):
+    strand=math.sin(u*math.pi*20+v*3.6+math.sin(v*5)*.38)
+    c=mix(c,(113,103,94) if m==7 else (255,251,238),(.38 if m==7 else .51)*max(0,strand)**4)
+    c=mix(c,(14,12,14) if m==7 else (114,111,109),.42*max(0,-strand)**6)
+    c=shade(c,.77+.23*math.sin(math.pi*min(1,v+.16)))
    if m==10:
     if abs(v*12-round(v*12))<.075:c=shade(c,.57)
    if m==5:
-    c=mix(base,(92,47,39),.34*sat2((f-.17)*4)+.18*v)
-    c=mix(c,(235,185,139),.32*math.exp(-((u-.49)/.13)**2))
+    def g(cx,cy,sx,sy):return math.exp(-((u-cx)/sx)**2-((v-cy)/sy)**2)
+    c=mix(base,(83,43,35),.44*sat2((f-.17)*4)+.13*v)
+    c=mix(c,(239,185,139),.32*g(.50,.34,.13,.19)+.24*g(.50,.65,.09,.13))
     for side in (-1,1):
-     dx=side*(u-(.5+side*.175))/.126;dy=(v-(.474-.045*dx))/.047
+     ex=.5+side*.177
+     dx=side*(u-ex)/.115;dy=(v-(.476-.041*dx))/.040
+     c=mix(c,(70,40,36),.53*g(ex,.46,.13,.074)+.18*g(ex,.54,.11,.045))
+     c=mix(c,(226,157,109),.29*g(.5+side*.20,.584,.10,.065))
+     c=mix(c,(92,48,37),.32*g(.5+side*.255,.68,.085,.10))
      if side==1:
-      d=abs(dx)**1.8+abs(dy)**1.25
-      if d<1.13:c=(42,26,24)
-      if d<.76:c=(224,216,197)
-      if d<.73 and abs(dx)<.43:c=(81,69,58)
-      if d<.70 and abs(dx)<.20:c=(20,17,18)
-     elif abs(dx)<.95 and abs(v-(.479-.012*dx))<.012:c=(61,33,30)
-     if abs(dx)<1.10 and abs(v-(.365-.038*dx))<.020:c=(36,28,27)
-     if abs(dx)<1.0 and abs(v-(.394-.032*dx))<.009:c=(103,55,44)
-    if abs(u-(.32+.045*(v-.50)))<.010 and .36<v<.68:c=(117,58,47)
-    if abs(u-(.68-.025*(v-.5)))<.008 and .51<v<.67:c=mix(c,(111,55,43),.6)
-    if f<.074 and abs(v-(.78-.008*(1-f/.074)))<.010:c=(71,38,32)
-    if f<.055 and abs(v-.801)<.008:c=(153,89,70)
-    if v>.78 and math.sin(u*115+v*99)>.67:c=shade(c,.79)
+      d=abs(dx)**1.8+abs(dy)**1.32
+      if d<1.14:c=(48,30,27)
+      if d<.74:c=(202,197,185)
+      if d<.72 and abs(dx+.13)<.40:c=mix((53,47,42),(116,112,101),.45*sat2(dy+.5))
+      if d<.70 and abs(dx+.13)<.17:c=(20,18,20)
+      if d<.70 and (dx+.29)**2+(dy+.18)**2<.045:c=(244,241,233)
+     elif abs(dx)<1.04 and abs(v-(.480-.010*dx+.010*dx*dx))<.011:c=(51,28,27)
+     brow=.383-.041*dx+.013*dx*dx
+     if abs(dx)<1.13 and abs(v-brow)<(.022-.007*min(1,abs(dx))):
+      c=mix((31,25,24),(77,54,45),.30*max(0,math.sin(u*480+v*51)))
+     if abs(dx)<1.0 and abs(v-(brow+.030))<.008:c=mix(c,(85,42,34),.53)
+    scar=.322+.044*(v-.50)
+    if .395<v<.673 and abs(u-scar)<.012:c=mix(c,(101,47,40),.78)
+    if .398<v<.673 and abs(u-scar-.012)<.005:c=mix(c,(228,157,116),.60)
+    if .564<v<.645 and abs(u-(.71-.35*(v-.565)))<.008:c=mix(c,(110,55,44),.74)
+    if .596<v<.666 and abs(u-(.245+.40*(v-.596)))<.006:c=mix(c,(130,67,52),.65)
+    c=mix(c,(105,54,43),.27*g(.39,.716,.035,.078)+.27*g(.61,.716,.035,.078))
+    if f<.105 and abs(v-(.778-.018*(1-f/.105)+.011*math.sin(u*30)))<.010:c=(69,37,32)
+    if f<.080 and abs(v-(.805-.008*math.cos(f*31)))<.009:c=mix(c,(203,129,105),.75)
+    c=mix(c,(86,49,41),.30*g(.5,.844,.13,.028))
+    c=mix(c,(226,170,124),.26*g(.5,.895,.16,.042))
+    if v>.79 and f<.29:
+     grain=math.sin(x*17.13+y*31.71)*math.sin(x*9.27-y*12.59)
+     if grain>.64:c=mix(c,(65,42,36),.32)
    q=((m//8*128+y)*W+m%8*128+x)*4;pix[q:q+4]=bytes((*c,255))
 png(assets/'textures/entity/guts_sculpted.png',W,H,pix)
 print('Guts revised: shorter irregular hair, scarred angular face, asymmetric armor, prosthetic arm and much wider Dragon Slayer.')
