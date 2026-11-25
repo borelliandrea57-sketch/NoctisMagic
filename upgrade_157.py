@@ -80,7 +80,7 @@ public class FaputaSculptedClient{
    // Three individually animated, broad leaf-shaped tails, rising in a fan.
    for(int i=0;i<3;i++){
     Part t=tails[i]=body.child(0,7.45f,1.95f);
-    t.rx=1.18f-i*.43f;t.rz=(i-1)*.45f;t.ry=(i-1)*.37f;
+    t.rx=i==1?2.65f:2.08f;t.rz=(i-1)*.70f;t.ry=(i-1)*.43f;
     float len=8.0f+i*.7f;
     t.loft(1,32,-.65f,0,0,.66f,.84f,1.5f,0,0,1.65f,1.32f,3.8f,0,.5f,2.46f,1.62f,6.0f,.15f,.92f,2.10f,1.18f,len-1.2f,.35f,1.05f,.98f,.62f,len,.54f,.8f,.035f,.05f);
    }
@@ -95,7 +95,7 @@ public class FaputaSculptedClient{
     for(int j=0;j<2;j++){int k=i*2+j;arms[k].rz=-s*(j==0?.24f:.57f)-(rage?s*.22f:0);arms[k].rx=-w*(j==0?.5f:-.33f)-hit*(j==0?1.25f:.80f)-(rage?.35f:0);
      fore[k].rx=-hit*.75f+(j==0?-.12f:-.35f);}
    }
-   for(int i=0;i<3;i++){tails[i].rx=1.18f-i*.43f+(float)Math.sin(age*(rage?.23:.12)+i*.8f)*(.11f+move*.15f);tails[i].rz=(i-1)*.45f+(float)Math.sin(age*.11+i)*.10f;}
+   for(int i=0;i<3;i++){tails[i].rx=(i==1?2.65f:2.08f)+(float)Math.sin(age*(rage?.23:.12)+i*.8f)*(.11f+move*.15f);tails[i].rz=(i-1)*.70f+(float)Math.sin(age*.11+i)*.10f;}
    for(int i=0;i<locks.size();i++)locks.get(i).rz=(float)Math.sin(age*.13+i*.65f)*(.025f+move*.03f);
   }
   @Override public void renderToBuffer(PoseStack p,VertexConsumer v,int light,int overlay,float r,float g,float b,float a){root.draw(p,v,light,overlay,r,g,b,a);}
