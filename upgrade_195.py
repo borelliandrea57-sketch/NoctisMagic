@@ -192,7 +192,7 @@ for m in range(10):
 im.save(assets/'textures/entity/gold_experience_spirit.png')
 # Extra server-side floating golden sparks, visible independently of the translucent model.
 p=java/'JojoMob.java';s=p.read_text(encoding='utf-8')
-a='if(!(level() instanceof ServerLevel l)||!stand())return;'
+a='if(!stand()){JojoWorldPowers.tick(this,l);return;}'
 assert a in s
 s=s.replace(a,a+'''
         if(variant()==5&&tickCount%4==0){
