@@ -43,7 +43,7 @@ public class GothicEgg extends Item{
         Direction front=p.getDirection();if(front.getAxis()==Direction.Axis.Y)front=Direction.SOUTH;
         BlockPos start=c.getClickedPos().above();
         // Click marks the forecourt, outside the building. Local +Z follows the player's view.
-        BlockPos origin=start.relative(front,4).relative(front.getClockWise(),-plan.w/2);
+        BlockPos origin=start.relative(front,4).relative(front.getCounterClockWise(),-plan.w/2);
         if(origin.getY()+plan.h>=l.getMaxBuildHeight()||origin.getY()-3<l.getMinBuildHeight()){p.sendSystemMessage(Component.literal("Altezza insufficiente."));return InteractionResult.FAIL;}
         Job job=new Job(l,p,plan,origin,front);
         // Do not generate missing chunks or replace terrain, plants, buildings or liquids.
@@ -230,7 +230,7 @@ public class GothicEgg extends Item{
         room(p,60,35,71,58,12,2);room(p,60,59,71,86,12,2);
         for(int x:new int[]{19,60}){p.box(x,24,35,x+11,24,86,TRIM);for(int z=40;z<=82;z+=8)p.lantern(x+5,25,z);}
         // Chapel annex at rear, pews and stained glass, no chests.
-        p.box(36,0,87,54,0,97,TRIM);p.walls(36,1,87,54,16,97,STONE);opening(p,cx,1,87,3,8,false,false);opening(p,cx,3,97,5,12,false,true);
+        p.box(36,0,87,54,0,97,TRIM);p.walls(36,1,87,54,16,97,STONE);opening(p,cx,1,87,3,8,false,false);opening(p,cx,3,97,5,12,false,true);opening(p,cx,1,93,7,13,false,false);
         pews(p,38,42,90,94,1);pews(p,48,52,90,94,1);altar(p,cx,95,1);
         for(int z=87;z<=97;z++)for(int k=0;k<=9;k++){p.put(36+k,16+k,z,ROOF);p.put(54-k,16+k,z,ROOF);}
         // Keep roof, flying buttresses, towers with tapered Gothic spires.
@@ -245,7 +245,7 @@ public class GothicEgg extends Item{
     static class Job{
         final ServerLevel l;final UUID player;final Plan p;final BlockPos origin;final Direction forward,right;
         int scan=0,built=0;boolean ready=false;Iterator<Map.Entry<Integer,BlockState>> it;
-        Job(ServerLevel l,ServerPlayer player,Plan p,BlockPos origin,Direction forward){this.l=l;this.player=player.getUUID();this.p=p;this.origin=origin;this.forward=forward;right=forward.getClockWise();}
+        Job(ServerLevel l,ServerPlayer player,Plan p,BlockPos origin,Direction forward){this.l=l;this.player=player.getUUID();this.p=p;this.origin=origin;this.forward=forward;right=forward.getCounterClockWise();}
         BlockPos pos(int x,int y,int z){return origin.offset(right.getStepX()*x+forward.getStepX()*z,y,right.getStepZ()*x+forward.getStepZ()*z);}
         void msg(String s){ServerPlayer pl=l.getServer().getPlayerList().getPlayer(player);if(pl!=null)pl.sendSystemMessage(Component.literal(s));}
         void refund(){ServerPlayer pl=l.getServer().getPlayerList().getPlayer(player);if(pl!=null&&!pl.getAbilities().instabuild){var item=new net.minecraft.world.item.ItemStack(p.w==91?Noctis.CASTLE_EGG.get():Noctis.CATHEDRAL_EGG.get());if(!pl.getInventory().add(item))pl.drop(item,false);}}
@@ -258,6 +258,10 @@ public class GothicEgg extends Item{
                 }
                 if(scan<total)return false;
                 // Foundation must not replace non-air blocks: existing ground remains untouched.
+                for(int x=8;x<p.w-8;x+=10)for(int z=8;z<p.d-8;z+=10){
+                    boolean support=false;for(int y=-1;y>=-3;y--)if(l.getBlockState(pos(x,y,z)).isFaceSturdy(l,pos(x,y,z),Direction.UP)){support=true;break;}
+                    if(!support){msg("Terreno troppo irregolare o sospeso. Scegli una pianura.");refund();return true;}
+                }
                 ready=true;it=p.blocks.entrySet().iterator();msg("Spazio libero. Inizia l'evocazione di "+p.name+"...");
             }
             for(int n=0;n<1800&&it.hasNext();n++){
