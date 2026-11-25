@@ -6424,3 +6424,170 @@ for name,tile,hair,base,iris in [
    pix[off:off+4]=bytes((*c,255))
  png(p,W,H,pix)
 print('Colored NPC dialogue, safer Geass forced walking, voxel portrait heads and enlarged four-armed Faputa with overlapping neck geometry.')
+
+
+# Ossuary horror pass: distinct skeletal plates, broken jaw, exposed rib cage,
+# twisted limbs and animated hanging entrails. Preserve the existing combat AI.
+p=java/'OssuaryCrawlerClient.java';s=p.read_text(encoding='utf-8')
+s=s.replace('  M(){','''  final Part[] viscera=new Part[9];
+  static void tube(Part p,int mat,float x,float y,float z,float dx,float dy,float dz,float radius){
+   Part q=p.child(x,y,z);q.rz=-(float)Math.atan2(dx,dy);
+   float len=(float)Math.hypot(dx,dy);
+   q.loft(mat,10,0,0,0,radius,radius,len*.5f,0,dz*.5f,radius*.88f,radius*.88f,len,0,dz,radius*.58f,radius*.58f);
+  }
+  M(){''',1)
+a=s.index('   head.loft(1,24,');b=s.index('   for(int i=0;i<6;i++){',a)
+s=s[:a]+'''   // A distorted, faceted skull with a broken nasal cavity, recessed orbital
+   // sockets and a real mobile lower jaw, instead of an oval white mask.
+   head.loft(4,12,-5.95f,0,.55f,1.26f,1.29f,-5.20f,0,.14f,2.30f,1.92f,-3.85f,0,-.04f,2.74f,2.03f,-2.54f,0,-.28f,2.31f,1.90f,-1.35f,0,-.55f,1.94f,1.68f,.15f,0,-.65f,1.54f,1.26f);
+   head.loft(0,12,-1.8f,0,.30f,1.55f,1.42f,.95f,0,.65f,1.74f,1.43f,2.75f,0,.88f,2.16f,1.60f);
+   for(int side:new int[]{-1,1}){
+    Part socket=head.child(side*1.22f,-3.40f,-2.05f);socket.rz=side*.28f;
+    socket.oval(2,0,0,0,.97f,1.01f,.21f);
+    socket.oval(2,0,.07f,-.19f,.64f,.67f,.13f);
+    socket.oval(7,side*.16f,.12f,-.29f,.12f,.18f,.09f);
+    head.blade(1,side*.28f,-4.67f,-1.72f,side*2.42f,-4.11f,-1.49f,.73f);
+    head.blade(4,side*2.37f,-3.03f,-1.15f,side*1.60f,-1.08f,-1.77f,.62f);
+    head.blade(2,side*1.79f,-5.15f,-.87f,side*.88f,-3.94f,-1.84f,.12f);
+    head.blade(1,side*2.04f,-4.77f,.10f,side*3.29f,-6.97f,.62f,.76f);
+    head.blade(5,side*1.88f,-1.11f,-1.42f,side*.94f,.32f,-1.78f,.55f);
+   }
+   head.blade(2,0,-2.86f,-2.07f,-.47f,-1.89f,-2.09f,.43f);
+   head.blade(2,0,-2.86f,-2.08f,.43f,-1.86f,-2.09f,.37f);
+   head.blade(1,0,-4.85f,-1.93f,0,-2.87f,-2.18f,.29f);
+   // Black gaping throat with jagged double rows of individually sized teeth.
+   head.oval(2,0,.31f,-1.80f,1.72f,.85f,.24f);
+   jaw.loft(0,12,-.65f,0,.18f,1.73f,.64f,.70f,0,-.10f,1.77f,1.07f,1.83f,0,-.64f,1.19f,.94f,2.33f,0,-.70f,.62f,.48f);
+   jaw.oval(5,0,.75f,-.72f,1.15f,.37f,.69f);
+   for(int i=0;i<11;i++){
+    float x=-1.72f+i*.344f,len=.65f+(i%4)*.23f;
+    float z=-2.10f+.38f*(float)Math.pow(Math.abs(x)/1.72f,2);
+    head.blade(i%3==0?4:1,x,-.13f,z,x+(i%2==0?.09f:-.06f),len,z-.18f,.25f+(i%3)*.035f);
+    jaw.blade(i%4==0?4:1,x,.97f,-1.12f+.23f*Math.abs(x),x-.05f,.97f-len*.88f,-1.36f+.23f*Math.abs(x),.24f);
+   }
+   for(int side:new int[]{-1,1}){
+    jaw.blade(4,side*1.52f,.21f,-.37f,side*.89f,2.17f,-.98f,.53f);
+    tube(jaw,5,side*1.32f,.02f,.03f,side*.28f,1.71f,-.33f,.14f);
+   }
+   // Embedded secondary masks, irregular ribs and stretched muscle cords.
+   for(int i=0;i<3;i++){
+    Part m=masks[i]=body.child((i-1)*2.10f,-2.0f+i*.32f,-5.85f+i*.34f);m.ry=(i-1)*.40f;
+    m.loft(4,8,-1.87f,0,.1f,.56f,.37f,-1.20f,0,0,1.03f,.68f,.10f,0,0,.91f,.67f,.99f,0,-.13f,.52f,.43f,1.48f,0,-.20f,.27f,.22f);
+    for(int side:new int[]{-1,1}){
+     m.oval(2,side*.40f,-.61f,-.59f,.28f,.40f,.12f);
+     m.blade(4,side*.13f,-1.08f,-.57f,side*.78f,-.85f,-.39f,.20f);
+    }
+    m.oval(2,0,.50f,-.55f,.33f,.46f,.12f);
+   }
+   for(int side:new int[]{-1,1})for(int j=0;j<8;j++){
+    float z=-5.6f+j*1.62f,y=-1.5f+(j%3)*.27f;
+    Part rib=body.child(side*3.0f,y,z);
+    rib.loft(j%2==0?4:1,10,-1.05f,0,0,.40f,.48f,.48f,side*1.25f,.03f,.49f,.44f,2.40f,side*1.48f,-.13f,.38f,.36f,4.04f,side*.40f,-.38f,.21f,.24f,4.75f,-side*.42f,-.46f,.055f,.08f);
+    rib.blade(5,side*1.00f,.88f,.35f,side*.57f,3.62f,.27f,.24f);
+    body.blade(5,side*2.85f,y+.70f,z+.17f,side*3.57f,y+3.25f,z+1.10f,.35f);
+   }
+   // Irregular dorsal vertebrae and splintered bone growths.
+   for(int j=0;j<9;j++){
+    float z=-5.75f+j*1.55f;
+    body.loft(4,10,-4.1f,0,z,.68f,.74f,-3.4f,0,z,.94f,.91f,-2.9f,0,z,.72f,.69f);
+    for(int side:new int[]{-1,1})body.blade(1,side*.55f,-3.60f,z,side*(1.70f+(j%3)*.29f),-5.2f-(j%2)*.68f,z+.43f,.46f);
+   }
+   // Stylized coiled entrails under the torso, on individual animated pivots.
+   for(int i=0;i<viscera.length;i++){
+    Part v=viscera[i]=body.child((i%3-1)*1.13f,2.65f,-4.4f+(i/3)*2.25f);
+    float lastX=0,lastY=0,lastZ=0;
+    for(int j=1;j<=15;j++){
+     float t=j/15f;
+     float X=(float)Math.sin(t*Math.PI*3+i*.7f)*(.62f+(i%3)*.12f);
+     float Y=t*(3.2f+(i%4)*.45f);
+     float Z=(float)Math.cos(t*Math.PI*2+i)*.43f;
+     tube(v,j%4==0?6:5,lastX,lastY,lastZ,X-lastX,Y-lastY,Z-lastZ,.29f-t*.10f);
+     lastX=X;lastY=Y;lastZ=Z;
+    }
+   }
+'''+s[b:]
+a='    for(int n=0;n<3;n++)shin.blade(1,-.4f+n*.4f,8.2f,-.35f,-.52f+n*.52f,9.0f,-2.0f,.33f);'
+assert a in s
+s=s.replace(a,'''    // Six uneven limbs with bone shards, tendon ridges and four hooked claws.
+    leg.loft(5,12,.2f,0,-.60f,.44f,.42f,2.2f,side*1.18f,-.71f,.50f,.44f,4.85f,side*2.73f,-.40f,.35f,.29f,6.8f,side*3.10f,-.26f,.20f,.18f);
+    leg.blade(4,side*2.20f,4.9f,.17f,side*3.85f,6.2f,.8f,.61f);
+    shin.oval(4,0,.20f,0,.79f,.91f,.78f);
+    for(int n=0;n<4;n++){
+     float x=-.54f+n*.36f;
+     shin.blade(4,x,8.10f,-.35f,x*1.38f,8.72f,-1.60f-(n%2)*.34f,.27f);
+     shin.blade(1,x*1.38f,8.72f,-1.60f-(n%2)*.34f,x*1.48f,9.1f,-2.22f-(n%2)*.34f,.21f);
+    }
+    shin.blade(5,side*.25f,1.15f,.51f,side*.38f,7.4f,.17f,.18f);
+    shin.blade(4,-side*.25f,2.82f,.38f,-side*.91f,4.4f,.73f,.35f);''',1)
+s=s.replace('jaw.rx=.10f+(float)Math.sin(age*.19f)*.08f+a*.85f;','jaw.rx=.24f+(float)Math.sin(age*.19f)*.13f+a*1.05f;',1)
+s=s.replace('   for(int i=0;i<3;i++)masks[i].rz=', '''   for(int i=0;i<viscera.length;i++){
+    viscera[i].rx=(float)Math.sin(age*.16f-i*.58f)*(.14f+amount*.20f);
+    viscera[i].rz=(float)Math.cos(age*.13f+i*.72f)*(.12f+amount*.12f);
+   }
+   for(int i=0;i<3;i++)masks[i].rz=''',1)
+p.write_text(s,encoding='utf-8')
+
+# Detailed dark sinew and aged bone atlas with procedural cracks, veins and ragged patches.
+W,H=1024,512;pix=bytearray(W*H*4)
+pal=[(75,32,43),(188,171,139),(11,5,13),(137,110,103),(152,137,113),(111,20,40),(160,42,58),(255,77,35)]
+for m,base in enumerate(pal):
+ for y in range(128):
+  v=y/127
+  for x in range(128):
+   u=x/127
+   grain=.5+.5*math.sin(x*17.63+y*8.47)*math.cos(x*7.37-y*19.13)
+   c=shade(base,.72+.29*math.sin(math.pi*u)+.16*grain)
+   if m in (0,5,6):
+    fiber=math.sin(u*math.pi*25+v*7+1.2*math.sin(v*12))
+    c=mix(c,(187,70,84),.31*max(0,fiber)**7)
+    c=mix(c,(24,7,22),.39*max(0,-fiber)**5)
+    c=mix(c,(52,19,37),.32*math.exp(-((math.sin(u*11+v*8+.5*math.sin(v*14)))/.14)**2))
+   if m in (1,3,4):
+    crack=abs(math.sin(u*19+v*9+1.7*math.sin(v*17)))
+    c=mix(c,(65,43,45),.44*max(0,1-crack/.12))
+    c=mix(c,(91,53,48),.22*math.exp(-((u-.89)/.12)**2))
+    c=mix(c,(225,214,179),.16*grain)
+   if m==2:c=mix(c,(53,12,28),.22*math.sin(u*math.pi)**2)
+   if m==7:c=mix(base,(255,185,110),.60*math.sin(u*math.pi)**2)
+   off=(y*W+m*128+x)*4;pix[off:off+4]=bytes((*c,255))
+png(assets/'textures/entity/ossuary_crawler.png',W,H,pix)
+
+# Denser encounters: still limited locally, never spawn in Peaceful or beside creative players.
+p=java/'NightGuests.java';s=p.read_text(encoding='utf-8')
+a='p.getRandom().nextInt(Eclipse.active(l)?10:55)==0&&l.getEntitiesOfClass(OssuaryCrawler.class,p.getBoundingBox().inflate(96)).isEmpty()'
+assert a in s
+s=s.replace(a,'p.getRandom().nextInt(Eclipse.active(l)?3:15)==0&&l.getEntitiesOfClass(OssuaryCrawler.class,p.getBoundingBox().inflate(96)).size()<(Eclipse.active(l)?6:3)',1)
+p.write_text(s,encoding='utf-8')
+p=java/'CharacterSpawnLimit.java';s=p.read_text(encoding='utf-8')
+s=s.replace('incoming instanceof Demon||incoming instanceof GothicHorror','incoming instanceof Demon||incoming instanceof GothicHorror||incoming instanceof OssuaryCrawler',1)
+p.write_text(s,encoding='utf-8')
+
+# Short-lived red trail with scraps and droplets, no permanent block changes or item drops.
+p=java/'OssuaryCrawler.java';s=p.read_text(encoding='utf-8')
+a=' private int windup,cd=80,pose,mode;'
+assert a in s
+s=s.replace(a,a+'''
+ private static final net.minecraft.core.particles.DustParticleOptions TRAIL=new net.minecraft.core.particles.DustParticleOptions(new org.joml.Vector3f(.48f,.025f,.085f),1.1f);
+ private final java.util.ArrayDeque<Vec3> trail=new java.util.ArrayDeque<>();
+ private Vec3 lastTrace;
+ private void leaveTrace(ServerLevel l){
+  if(tickCount%5!=0)return;
+  Vec3 at=position();
+  if(onGround()&&(lastTrace==null||at.distanceToSqr(lastTrace)>.32)){
+   lastTrace=at;trail.addLast(at);
+   if(trail.size()>14)trail.removeFirst();
+   l.sendParticles(new net.minecraft.core.particles.ItemParticleOption(ParticleTypes.ITEM,new net.minecraft.world.item.ItemStack(Items.ROTTEN_FLESH)),at.x,at.y+.18,at.z,5,.37,.10,.37,.015);
+  }
+  if(tickCount%10==0){
+   for(Vec3 q:trail)if(q.distanceToSqr(at)<196&&l.hasChunkAt(net.minecraft.core.BlockPos.containing(q.x,q.y,q.z)))
+    l.sendParticles(TRAIL,q.x,q.y+.075,q.z,2,.30,.035,.30,0);
+   if(tickCount%20==0&&!trail.isEmpty())trail.removeFirst();
+  }
+  if(tickCount%15==0)l.sendParticles(TRAIL,getX(),getY()+.65,getZ(),3,.47,.18,.47,.015);
+ }
+''',1)
+a='  if(!(level() instanceof ServerLevel l))return;\n  LivingEntity t=getTarget();'
+assert a in s
+s=s.replace(a,'  if(!(level() instanceof ServerLevel l))return;\n  leaveTrace(l);\n  LivingEntity t=getTarget();',1)
+p.write_text(s,encoding='utf-8')
+print('Ossuary Crawler: detailed skeletal horror, animated entrails and transient red trail; 3 normal / 6 eclipse local cap and increased spawn attempts.')
