@@ -6,7 +6,7 @@ root=Path(sys.argv[1]);java=root/'src/main/java/it/noctis/magic';res=root/'src/m
 def dump(p,d):
  p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(d,ensure_ascii=False,indent=2),encoding='utf-8')
 def B(x,y,z,X,Y,Z,m):return (x,y,z,X,Y,Z,m)
-pal={'ivory':(230,220,198),'rose':(174,119,115),'green':(75,113,95),'blue':(79,105,145),'gold':(205,164,82),'shadow':(144,130,114),'sand':(190,169,139),'black':(72,66,76),'red':(144,43,53),'wood':(89,52,39),'wax':(250,235,187),'flame':(255,199,91),'silver':(151,153,164)}
+pal={'pearl':(255,255,247),'ivory':(230,220,198),'rose':(174,119,115),'green':(75,113,95),'blue':(79,105,145),'gold':(205,164,82),'shadow':(144,130,114),'sand':(190,169,139),'black':(72,66,76),'red':(144,43,53),'wood':(89,52,39),'wax':(250,235,187),'flame':(255,199,91),'silver':(151,153,164)}
 for n,c in pal.items():
  im=Image.new('RGBA',(64,64));rng=random.Random(n)
  for y in range(64):
@@ -134,10 +134,93 @@ def sculpt(name):
   else:
    box(-1.5,38,-17,1.5,74,-13,'gold');box(-8,63,-17,8,66,-13,'gold')
  return boxes
+# New distinct cathedral sculptures; original IDs retained for saved worlds.
+def sacred_sculpt(name):
+ boxes=[]
+ def box(x,y,z,X,Y,Z,m='ivory'):
+  if x<X and y<Y and z<Z:boxes.append(B(x,y,z,X,Y,Z,m))
+ def oval(cx,cy,cz,rx,ry,rz,m='ivory',step=2):
+  for y in range(math.floor(cy-ry),math.ceil(cy+ry),step):
+   Y=min(y+step,cy+ry);f=math.sqrt(max(.02,1-(((y+Y)/2-cy)/ry)**2));w=rx*f;d=rz*f
+   box(cx-w,y,cz-d*.67,cx+w,Y,cz+d*.67,m)
+   box(cx-w*.67,y,cz-d,cx+w*.67,Y,cz-d*.67,m)
+   box(cx-w*.67,y,cz+d*.67,cx+w*.67,Y,cz+d,m)
+ def limb(a,b,r,m='ivory'):
+  # Overlapping tapered cross sections in distinct depths.
+  for i in range(max(2,math.ceil(math.dist(a,b)/2.5))+1):
+   n=max(2,math.ceil(math.dist(a,b)/2.5));t=i/n
+   c=[a[j]+(b[j]-a[j])*t for j in range(3)]
+   oval(*c,r*(1-.14*t),r*1.2,r*(1-.14*t),m,2)
+ box(-19,0,-13,19,4,13,'shadow');box(-16,4,-11,16,8,11,'ivory')
+ box(-15,8,-10,15,10,10,'gold')
+ # Sculpted skirt, contrasting robe panels, raised seams and curved drapery.
+ for y in range(10,68,3):
+  w=14.5-(y-10)*.12+1.2*math.sin(y*.13);d=8.8-(y-10)*.035
+  box(-w,y,-d,w,y+3,d,'ivory')
+  for i in range(-3,4):
+   x=i*w/3.7+1.2*math.sin(y*.08+i);z=-d-.5-.6*math.cos(y*.13+i)
+   box(x-.55,y,z-1.15,x+.55,y+3,z,'shadow' if i%3==0 else 'sand')
+  if y<16:box(-w,y,-d-1.2,w,y+1.0,-d-.8,'gold')
+ oval(0,76,0,12,10,7,'ivory',2);oval(0,87,0,4,5,4,'sand')
+ # Distinct shoulders, neck and planar carved face.
+ oval(0,101,0,8,12,7.3,'ivory',2)
+ box(-5.6,99,-8.3,5.6,108,-6.1,'ivory')
+ for side in (-1,1):
+  x=side*3.15
+  box(x-2.1,105.7,-8.65,x+2.1,107.0,-8.2,'shadow')
+  box(x-1.8,103.4,-8.85,x+1.8,104.3,-8.3,'shadow')
+  box(x-1.4,102.9,-8.95,x+1.4,103.4,-8.6,'sand')
+  oval(side*7.5,101,.0,1.3,2.3,1.5,'sand',1)
+ box(-.9,99.5,-10.2,.9,105.0,-8.15,'ivory');box(-1.3,99.2,-9.7,1.3,100.5,-8.0,'sand')
+ box(-2.3,96.0,-8.2,2.3,96.7,-7.5,'shadow')
+ box(-1.7,95.3,-8.0,1.7,95.9,-7.35,'sand')
+ if name in ('mourner','prayer'):
+  # Veiled head, draped hood and long curved outer mantle.
+  oval(0,109,2,9.5,8.5,8.2,'sand',2)
+  for side in (-1,1):
+   for y in range(79,109,3):
+    x=side*(8.8+(109-y)*.085);box(x-1.45,y,-4.0,x+1.45,y+3,5.8,'ivory')
+    box(x-.35,y,-4.8,x+.35,y+3,-4.0,'gold')
+   for y in range(25,79,3):
+    x=side*(11.3+1.6*math.sin(y*.09));box(x-1.5,y,3,x+1.5,y+3,8,'sand')
+ else:
+  # Short curly marble hair, separate laurel crown.
+  for i in range(10):
+   a=i*math.tau/10;oval(6.1*math.cos(a),110+math.sin(a)*1.3,3+4*math.sin(a),2.4,2.7,2.4,'sand',2)
+   oval(8*math.cos(a),110,8*math.sin(a),1.9,1.0,1.2,'gold',1)
+ # Three dramatically different silhouettes.
+ if name=='mourner':
+  for side in (-1,1):
+   limb((side*10,79,0),(side*15,66,-4),3.2)
+   limb((side*15,66,-4),(side*5,81,-13),2.6)
+   oval(side*4.3,82,-13.8,2.6,3.3,2,'ivory',1)
+  for side in (-1,1):
+   x=side*3.15
+   box(x-.65,98.7,-9.16,x+.65,103.25,-8.92,'pearl')
+   box(x-.42,96.9,-9.20,x+.42,98.7,-8.94,'pearl')
+ elif name=='prayer':
+  for side in (-1,1):
+   limb((side*10,79,0),(side*12,64,-5),3.0)
+   limb((side*12,64,-5),(side*1.7,75,-13),2.5)
+   box(side*1.7-1.5,74,-15,side*1.7+1.5,82,-11,'ivory')
+   for j in range(4):box(side*1.7-1.3+j*.65,81,-14.8,side*1.7-.85+j*.65,85-j*.3,-12,'sand')
+  for side in (-1,1):
+   x=side*3.15;box(x-.55,99,-9.16,x+.55,103.2,-8.92,'pearl')
+ else:
+  limb((-10,79,0),(-16,64,-3),3.2);limb((-16,64,-3),(-10,54,-10),2.6)
+  oval(-10,54,-10,3,3,2.4,'ivory',2)
+  limb((10,79,0),(19,86,-4),3.2);limb((19,86,-4),(19,104,-6),2.7)
+  oval(19,104,-6,3,3,2.5,'ivory',2)
+  box(18,87,-9,21,122,-6,'wood');box(10,113,-9,29,116,-6,'gold')
+  box(-14,49,-15,-6,61,-9,'red');box(-13,50,-15.5,-7,60,-15,'gold')
+ for j in range(40):
+  a=j*math.tau/40;x=13*math.cos(a);y=105+13*math.sin(a)
+  box(x-1.15,y-1.15,9,x+1.15,y+1.15,10.6,'gold')
+ return boxes
 def coord(n):return 'm'+str(-n) if n<0 else str(n)
-for name in ('angel','saint','guardian'):
+for name in ('angel','saint','guardian','mourner','prayer','martyr'):
  tiles={}
- for x,y,z,X,Y,Z,m in sculpt(name):
+ for x,y,z,X,Y,Z,m in (sacred_sculpt(name) if name in ('mourner','prayer','martyr') else sculpt(name)):
   for ix in range(math.floor((x+8)/16),math.ceil((X+8)/16)):
    for iy in range(math.floor(y/16),math.ceil(Y/16)):
     for iz in range(math.floor((z+8)/16),math.ceil((Z+8)/16)):
@@ -153,6 +236,7 @@ decl=[]
 mats=list(pal)+['ashlar','rosebrick','greenbrick','bluebrick','nightbrick','mosaic_star','mosaic_flower','mosaic_border','mosaic_cross','mosaic_bat','icon','tapestry','tapestry_top','tapestry_end']
 for n,(it,en,boxes,mat,light,creative) in items.items():
  expr='new Block(BlockBehaviour.Properties.of().strength(2.5f,6f))' if mat else 'new FurnitureBlock('+('3' if light else '0')+')'
+ if n in ('sanctuary_statue_mourner_0_6_m1','sanctuary_statue_prayer_0_6_m1'):expr='new WeepingStatueBlock()'
  decl += [f'    public static final RegistryObject<Block> {n.upper()}=VampireLife.BLOCKS.register("{n}",()->{expr});']
  if creative:decl += [f'    public static final RegistryObject<Item> {n.upper()}_ITEM=Noctis.ITEMS.register("{n}",()->new BlockItem({n.upper()}.get(),new Item.Properties()));']
  if mat:model={'parent':'minecraft:block/cube_all','textures':{'all':'noctismagic:block/sanctuary_'+mat}};variants={'':{'model':'noctismagic:block/'+n}}
@@ -175,7 +259,7 @@ for n,(it,en,boxes,mat,light,creative) in items.items():
   dump(res/'data/noctismagic/loot_tables/blocks'/f'{n}.json',{'type':'minecraft:block','pools':[{'rolls':1,'entries':[{'type':'minecraft:item','name':'noctismagic:'+n}]}]})
 p=java/'Furniture.java';s=p.read_text(encoding='utf-8');a='public class Furniture{';assert a in s;s=s.replace(a,a+'\n'+'\n'.join(decl)+'\n',1);p.write_text(s,encoding='utf-8')
 # Reusable, player-placed statue items. Never overwrite non-replaceable blocks.
-names={'angel':('Statua monumentale: Arcangelo','Monumental archangel'),'saint':('Statua monumentale: Santo','Monumental saint'),'guardian':('Statua monumentale: Guardiano oscuro','Monumental dark guardian')}
+names={'mourner':('Statua monumentale: Vergine delle Lacrime','Monumental weeping Virgin'),'prayer':('Statua monumentale: Santa orante','Monumental praying saint'),'martyr':('Statua monumentale: Martire della Croce','Monumental martyr'),'angel':('Statua monumentale: Arcangelo','Monumental archangel'),'saint':('Statua monumentale: Santo','Monumental saint'),'guardian':('Statua monumentale: Guardiano oscuro','Monumental dark guardian')}
 p=java/'Noctis.java';s=p.read_text(encoding='utf-8');a='public static final RegistryObject<Item> CATHEDRAL_EGG=';assert a in s
 s=s.replace(a,''.join(f'public static final RegistryObject<Item> STATUE_{n.upper()}=ITEMS.register("statue_{n}",()->new MonumentItem("{n}",new Item.Properties().stacksTo(16)));\n    ' for n in shapes)+a,1)
 a='if(e.getTabKey()==CreativeModeTabs.NATURAL_BLOCKS)';assert a in s
@@ -200,7 +284,7 @@ public class MonumentItem extends Item{
  private final String type;
  public MonumentItem(String type,Properties p){super(p);this.type=type;}
  '''+'\n'.join(methods)+'''
- static Tile[] tiles(String n){return switch(n){case "angel"->angel();case "saint"->saint();default->guardian();};}
+ static Tile[] tiles(String n){return switch(n){case "angel"->angel();case "saint"->saint();case "mourner"->mourner();case "prayer"->prayer();case "martyr"->martyr();default->guardian();};}
  static int dx(Tile t,Direction f){return switch(f){case EAST->-t.z();case SOUTH->-t.x();case WEST->t.z();default->t.x();};}
  static int dz(Tile t,Direction f){return switch(f){case EAST->t.x();case SOUTH->-t.z();case WEST->-t.x();default->t.z();};}
  static BlockState state(Tile t,Direction f){return t.block().defaultBlockState().setValue(Furniture.FurnitureBlock.FACING,f);}
@@ -225,7 +309,7 @@ for n,(it,en) in names.items():
  # Small pixel icon representing the sculpture.
  im=Image.new('RGBA',(32,32));d=ImageDraw.Draw(im);c=(173,175,190) if n=='guardian' else (235,221,197)
  d.rectangle((6,27,25,30),fill=(113,96,81));d.polygon([(12,11),(20,11),(22,27),(10,27)],fill=c);d.ellipse((12,3,20,12),fill=c)
- if n!='saint':d.polygon([(13,13),(3,5),(1,17),(9,23),(13,20),(19,20),(23,23),(31,17),(29,5),(19,13)],fill=c)
+ if n in ('angel','guardian'):d.polygon([(13,13),(3,5),(1,17),(9,23),(13,20),(19,20),(23,23),(31,17),(29,5),(19,13)],fill=c)
  d.rectangle((15,13,16,24),fill=(198,151,68));d.rectangle((12,16,19,17),fill=(198,151,68))
  p=assets/'textures/item'/f'statue_{n}.png';p.parent.mkdir(parents=True,exist_ok=True);im.save(p)
  dump(assets/'models/item'/f'statue_{n}.json',{'parent':'minecraft:item/generated','textures':{'layer0':'noctismagic:item/statue_'+n}})
@@ -236,7 +320,7 @@ for loc in ('it_it','en_us'):
  dump(p,d)
 p=java/'GothicEgg.java';s=p.read_text(encoding='utf-8')
 # Replace old cathedral statues with the detailed monuments at the original anchors.
-s=s.replace('lacrimosaAngel(p,x,1,z+3);','monument(p,x,1,z+3,"angel",Direction.NORTH);').replace('lacrimosaAngel(p,x,2,83);','monument(p,x,2,83,"saint",Direction.NORTH);').replace('lacrimosaAngel(p,x,1,5);','monument(p,x,1,5,"angel",Direction.NORTH);')
+s=s.replace('lacrimosaAngel(p,x,1,z+3);','monument(p,x,1,z+3,(z+x)%3==0?"mourner":(z+x)%3==1?"prayer":"martyr",Direction.NORTH);').replace('lacrimosaAngel(p,x,2,83);','monument(p,x,2,83,x<30?"mourner":"martyr",Direction.NORTH);').replace('lacrimosaAngel(p,x,1,5);','monument(p,x,1,5,x<30?"angel":"prayer",Direction.SOUTH);')
 helper='''    static void monument(Plan p,int x,int y,int z,String n,Direction f){
         for(MonumentItem.Tile t:MonumentItem.tiles(n))p.put(x+MonumentItem.dx(t,f),y+t.y(),z+MonumentItem.dz(t,f),MonumentItem.state(t,f));
     }
@@ -324,4 +408,66 @@ helper='''    static void monument(Plan p,int x,int y,int z,String n,Direction f
 a=s.index('    static Plan cathedral(){');s=s[:a]+helper+s[a:]
 a=s.index('    static Plan cathedral(){');b=s.index('        return p;',a);s=s[:b]+'        sacredDetails(p);\n'+s[b:]
 a=s.index('    static Plan castle(){');b=s.index('        return p;',a);s=s[:b]+'        draculaDetails(p);\n'+s[b:];p.write_text(s,encoding='utf-8')
+# Emit white falling tears from eye-bearing tiles, aligned with rotation.
+p=java/'Furniture.java';s=p.read_text(encoding='utf-8')
+a='public class Furniture{';assert a in s
+s=s.replace(a,a+'''
+    public static class WeepingStatueBlock extends FurnitureBlock{
+        WeepingStatueBlock(){super(0);}
+        @Override public void animateTick(BlockState s,Level l,BlockPos p,net.minecraft.util.RandomSource r){
+            for(int side:new int[]{-1,1}){
+                double x=side*3.15/16.0,z=14.4/16.0-.5,dx=x,dz=z;
+                switch(s.getValue(FACING)){
+                    case EAST:dx=-z;dz=x;break;
+                    case SOUTH:dx=-x;dz=-z;break;
+                    case WEST:dx=z;dz=-x;break;
+                    default:break;
+                }
+                l.addParticle(StatueTears.TEAR,p.getX()+.5+dx,p.getY()+7.2/16.0,p.getZ()+.5+dz,0,-.035,0);
+            }
+        }
+    }
+''',1);p.write_text(s,encoding='utf-8')
+(java/'StatueTears.java').write_text('''package it.noctis.magic;
+import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.RegisterEvent;
+import net.minecraftforge.registries.ForgeRegistries;
+@Mod.EventBusSubscriber(modid=Noctis.ID,bus=Mod.EventBusSubscriber.Bus.MOD)
+public final class StatueTears{
+ public static final SimpleParticleType TEAR=new SimpleParticleType(false);
+ @SubscribeEvent public static void register(RegisterEvent e){
+  e.register(ForgeRegistries.Keys.PARTICLE_TYPES,h->h.register(new ResourceLocation(Noctis.ID,"statue_tear"),TEAR));
+ }
+}''',encoding='utf-8')
+(java/'StatueTearsClient.java').write_text('''package it.noctis.magic;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.particle.*;
+import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+@Mod.EventBusSubscriber(modid=Noctis.ID,value=Dist.CLIENT,bus=Mod.EventBusSubscriber.Bus.MOD)
+public final class StatueTearsClient{
+ @SubscribeEvent public static void register(RegisterParticleProvidersEvent e){e.registerSpriteSet(StatueTears.TEAR,Provider::new);}
+ static final class Provider implements ParticleProvider<SimpleParticleType>{
+  private final SpriteSet sprites;
+  Provider(SpriteSet sprites){this.sprites=sprites;}
+  @Override public Particle createParticle(SimpleParticleType type,ClientLevel level,double x,double y,double z,double dx,double dy,double dz){return new Drop(level,x,y,z,sprites);}
+ }
+ static final class Drop extends TextureSheetParticle{
+  Drop(ClientLevel l,double x,double y,double z,SpriteSet s){
+   super(l,x,y,z,0,0,0);xd=0;yd=-.035;zd=0;gravity=.13f;friction=.99f;lifetime=38;quadSize=.065f;hasPhysics=false;pickSprite(s);
+  }
+  @Override public ParticleRenderType getRenderType(){return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;}
+ }
+}''',encoding='utf-8')
+im=Image.new('RGBA',(16,16));d=ImageDraw.Draw(im)
+d.polygon([(8,1),(6,6),(4,10),(5,13),(8,15),(11,13),(12,10),(10,6)],fill=(249,250,246,245))
+d.line((7,5,6,10),fill=(255,255,255,255),width=2);d.point((9,13),fill=(195,211,219,235))
+p=assets/'textures/particle/statue_tear.png';p.parent.mkdir(parents=True,exist_ok=True);im.save(p)
+dump(assets/'particles/statue_tear.json',{'textures':['noctismagic:statue_tear']})
 print('Santa Lacrimosa and Valdracula: new stone, mosaics, sacred objects, tapestry sets, balconies and three placeable monumental statues.')
