@@ -89,7 +89,7 @@ public class GothicHorror extends Monster{
     @Override protected void dropCustomDeathLoot(net.minecraft.world.damagesource.DamageSource s,int looting,boolean hit){super.dropCustomDeathLoot(s,looting,hit);if(kind()==1){spawnAtLocation(Items.COPPER_INGOT,12);spawnAtLocation(Items.NETHER_STAR);}else spawnAtLocation(kind()==0?Items.AMETHYST_SHARD:Items.BONE,3+random.nextInt(3));}
 }''')
 edit('NightGuests.java','if(l.dimension()!=Level.OVERWORLD)return;','''if(l.dimension()!=Level.OVERWORLD)return;
-        if(!l.isDay()&&l.getDifficulty()!=net.minecraft.world.Difficulty.PEACEFUL&&!p.isCreative()&&p.getRandom().nextInt(Eclipse.active(l)?3:12)==0&&l.getEntitiesOfClass(GothicHorror.class,p.getBoundingBox().inflate(72)).isEmpty()){
+        if((!l.isDay()||Eclipse.active(l))&&l.getDifficulty()!=net.minecraft.world.Difficulty.PEACEFUL&&!p.isCreative()&&p.getRandom().nextInt(Eclipse.active(l)?3:12)==0&&l.getEntitiesOfClass(GothicHorror.class,p.getBoundingBox().inflate(72)).isEmpty()){
             int roll=p.getRandom().nextInt(10);var type=roll<4?Noctis.CRIMSON_LADY.get():roll<6?Noctis.IRON_MIDWIFE.get():Noctis.SKULL_STALKER.get();
             BlockPos q=Eclipse.spot(p,18,30);if(q!=null){GothicHorror m=type.create(l);if(m!=null){m.moveTo(q.getX()+.5,q.getY(),q.getZ()+.5);if(l.noCollision(m))l.addFreshEntity(m);}}
         }''')
@@ -222,7 +222,7 @@ public class GothicHorrorClient{
                 }
             }
             if(k==0){for(int j=0;j<7;j++)h.getChild("lock"+j).xRot=breath+amount*.18f;b.getChild("skirt").zRot=breath;}
-            if(k==1){b.y+=0;for(int j=0;j<5;j++)b.getChild("chain"+j).xRot=(float)Math.sin(age*.14+j*.6)*(.07f+amount*.14f);}
+            if(k==1){for(int j=0;j<5;j++)b.getChild("chain"+j).xRot=(float)Math.sin(age*.14+j*.6)*(.07f+amount*.14f);}
             if(k==2){b.xRot=.28f+breath+a*.18f;ModelPart lure=b.getChild("lure");lure.xRot=-.7f+breath+a*.2f;lure.getChild("arch").zRot=(float)Math.sin(age*.13)*.1f;}
         }
         @Override public void renderToBuffer(PoseStack p,VertexConsumer v,int light,int overlay,float rr,float g,float bb,float a){r.render(p,v,light,overlay,rr,g,bb,a);}
