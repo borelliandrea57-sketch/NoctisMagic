@@ -5912,3 +5912,257 @@ for name,(*pattern,ingredients) in recipes.items():
   'rewards':{'recipes':['noctismagic:'+name]}
  })
 print('Natural structures: candidate every 16x16 chunks, 17 placement attempts; all four monument eggs craftable and usable in survival.')
+
+
+# Final face rebuild: remove the compounded head scaling, build matched mask/face surfaces.
+p=java/'JokerDetailedClient.java';s=p.read_text(encoding='utf-8')
+a=s.index(' static V maskV(');b=s.index(' static void curl(',a)
+s=s[:a]+''' // The same cross sections drive the skin and the raised mask. No guessed Z offset
+ // or independent face scaling that can turn the mask into floating spectacles.
+ static final float[] SKULL={
+  -7.80f,0,.12f,1.19f,1.43f,-7.28f,0,.07f,2.18f,2.10f,
+  -6.25f,0,0,2.65f,2.45f,-5.25f,0,-.02f,2.72f,2.50f,
+  -4.20f,0,-.08f,2.63f,2.45f,-3.45f,0,-.12f,2.55f,2.39f,
+  -2.55f,0,-.20f,2.20f,2.14f,-1.65f,0,-.29f,1.82f,1.84f,
+  -.76f,0,-.42f,1.24f,1.35f,-.16f,0,-.48f,.61f,.77f
+ };
+ static float frontZ(float x,float y){
+  int i=0;while(i+5<SKULL.length-5&&y>SKULL[i+5])i+=5;
+  float t=Math.max(0,Math.min(1,(y-SKULL[i])/(SKULL[i+5]-SKULL[i])));
+  float w=SKULL[i+3]+t*(SKULL[i+8]-SKULL[i+3]);
+  float d=SKULL[i+4]+t*(SKULL[i+9]-SKULL[i+4]);
+  float z=SKULL[i+2]+t*(SKULL[i+7]-SKULL[i+2]);
+  return z-d*(float)Math.sqrt(Math.max(.02f,1-x*x/(w*w)));
+ }
+ // Ordered, sharp outer contour and almond-shaped inner aperture, mirrored on both sides.
+ static final float[][] MASK_OUT={{2.53f,-5.22f},{2.47f,-4.72f},{2.39f,-4.21f},{2.12f,-3.76f},{1.76f,-3.42f},{1.23f,-3.21f},{.75f,-3.29f},{.36f,-3.57f},{.13f,-4.03f},{.36f,-4.40f},{.76f,-4.69f},{1.24f,-4.80f},{1.80f,-4.93f},{2.23f,-5.08f}};
+ static final float[][] MASK_IN={{1.88f,-4.29f},{1.85f,-4.13f},{1.70f,-3.99f},{1.50f,-3.89f},{1.26f,-3.82f},{1.04f,-3.80f},{.81f,-3.86f},{.58f,-3.97f},{.44f,-4.12f},{.63f,-4.26f},{.88f,-4.37f},{1.15f,-4.43f},{1.45f,-4.41f},{1.70f,-4.37f}};
+ static V maskPoint(int side,int i,float t,float r,float lift){
+  int j=(i+1)%MASK_IN.length;
+  float x1=MASK_IN[i][0]+(MASK_IN[j][0]-MASK_IN[i][0])*t;
+  float y1=MASK_IN[i][1]+(MASK_IN[j][1]-MASK_IN[i][1])*t;
+  float x2=MASK_OUT[i][0]+(MASK_OUT[j][0]-MASK_OUT[i][0])*t;
+  float y2=MASK_OUT[i][1]+(MASK_OUT[j][1]-MASK_OUT[i][1])*t;
+  float x=side*(x1+(x2-x1)*r),y=y1+(y2-y1)*r;
+  return new V(x,y,frontZ(x,y)-lift,.5f+x*.16f,.5f+(y+4.1f)*.36f,0,0,-1);
+ }
+ static void mask(Part p,int side){
+  float[] rings={0,.075f,.16f,.88f,.96f,1};
+  float[] lift={.045f,.10f,.145f,.145f,.09f,.03f};
+  int[] mats={11,8,8,8,11};
+  for(int i=0;i<MASK_IN.length;i++)for(int k=0;k<4;k++)for(int n=0;n<5;n++){
+   float t=k/4f,T=(k+1)/4f;
+   V A=maskPoint(side,i,t,rings[n],lift[n]),B=maskPoint(side,i,T,rings[n],lift[n]),C=maskPoint(side,i,T,rings[n+1],lift[n+1]),D=maskPoint(side,i,t,rings[n+1],lift[n+1]);
+   p.faces.add(side>0?new Q(A,B,C,D,mats[n]):new Q(D,C,B,A,mats[n]));
+   p.faces.add(side>0?new Q(D,C,B,A,mats[n]):new Q(A,B,C,D,mats[n]));
+  }
+ }
+'''+s[b:]
+a=s.index('   head.loft(7,48,');b=s.index('   for(int i=0;i<2;i++){int s=i==0?-1:1;',a)
+s=s[:a]+'''   // Angular but natural skull, with cheek planes and defined lips; no chibi squash.
+   head.loft(7,64,SKULL);project(head);
+   body.loft(1,24,-1.30f,0,.03f,.83f,.85f,-.42f,0,0,.98f,.98f,.45f,0,0,1.13f,1.08f);
+   head.loft(1,20,-4.45f,0,-2.46f,.12f,.07f,-3.69f,0,-2.66f,.22f,.19f,-2.95f,0,-2.89f,.33f,.30f,-2.70f,0,-2.70f,.24f,.13f);
+   for(int side:new int[]{-1,1}){
+    head.oval(1,side*2.55f,-3.62f,.05f,.29f,.63f,.42f);
+    head.oval(1,side*2.59f,-3.54f,-.18f,.13f,.36f,.13f);
+    mask(head,side);
+   }
+   head.loft(8,12,-4.30f,0,-2.48f,.22f,.08f,-4.12f,0,-2.61f,.33f,.10f,-3.90f,0,-2.56f,.18f,.07f);
+   // Dark messy hair: overlapping S-shaped locks sweep in multiple directions.
+   head.loft(9,40,-8.52f,0,.17f,1.02f,1.16f,-8.16f,0,.18f,2.34f,2.28f,-7.42f,0,.20f,2.86f,2.72f,-6.24f,0,.40f,2.86f,2.69f);
+   head.loft(9,32,-7.72f,0,1.02f,2.52f,1.96f,-5.56f,0,1.35f,2.73f,1.65f,-3.28f,0,1.67f,2.32f,1.25f,-1.78f,0,1.46f,1.37f,.18f);
+   for(int row=0;row<3;row++)for(int j=0;j<11;j++){
+    float t=j/10f,x=-2.50f+t*5.0f,drift=(j%3==0?.69f:-.68f)+(t-.5f)*.35f;
+    float y=-8.24f+row*.32f+(float)Math.sin(j*1.37f+row)*.23f;
+    float z=.88f-row*1.38f;
+    Part q=head.child(x,y,z);
+    float len=1.72f+(j%4)*.29f+(row==2?.26f:0),w=.43f+(j%3)*.08f;
+    q.loft(9,16,-.63f,0,.36f,w*.48f,w*.57f,.06f,-drift*.10f,0,w,w*.92f,.57f,drift*.17f,-.36f,w*.88f,w*.68f,1.08f,drift*.68f,-.62f,w*.64f,w*.46f,len*.77f,drift*.98f,-.76f,w*.35f,w*.25f,len,drift*.70f,-.47f,.022f,.030f);
+    q.blade(9,-w*.30f,.10f,-.43f,drift*.68f,len*.80f,-.83f,.10f);
+   }
+   for(int side:new int[]{-1,1})for(int j=0;j<7;j++){
+    Part q=head.child(side*(2.27f+.11f*(j%3)),-7.13f+j*.39f,.11f+j*.26f);
+    q.rz=-side*(.20f+j*.065f);
+    curl(q,0,0,0,side*(.40f+j*.07f),1.60f+(j%3)*.33f,.42f,.45f+(j%2)*.10f);
+   }
+'''+s[b:]
+s=s.replace('AngularHeads.apply(head,7,.86f,.96f,.94f,.17f);','',1)
+# Align the actual texture with the shared physical mask dimensions.
+a='f?cl(.5f+v.x()/5.8f):.025f,cl((v.y()+7.65f)/7.65f)'
+assert a in s
+s=s.replace(a,'f?cl(.5f+v.x()/6.1f):.025f,cl((v.y()+7.80f)/7.80f)',1)
+p.write_text(s,encoding='utf-8')
+
+# Paint skin and eyes in the same coordinates used by the open mask; no baked duplicate mask.
+p=assets/'textures/entity/joker_detailed.png';W,H,pix=read_rgba(p)
+def phantom_skin(u,v):
+ x=(u-.5)*6.1;y=v*7.8-7.8;f=abs(x)
+ def g(cx,cy,sx,sy):return math.exp(-((x-cx)/sx)**2-((y-cy)/sy)**2)
+ c=mix((242,205,183),(148,88,84),.28*sat2((f-1.15)/1.45)+.10*v)
+ c=mix(c,(255,228,209),.34*g(0,-4.35,.78,1.85))
+ for side in (-1,1):
+  dx=(x-side*1.13)/.72;out=side*dx
+  ey=-4.12-.08*out;dy=(y-ey)/.29
+  d=abs(dx)**1.65+abs(dy)**1.38
+  c=mix(c,(141,81,85),.26*g(side*1.15,-3.92,.81,.43))
+  if d<1.18:c=(37,24,34)
+  if d<.82:c=(241,234,226)
+  if d<.80 and (dx/.38)**2+(dy/.93)**2<1:
+   c=mix((51,48,61),(137,129,149),sat2((dy+.72)/1.44))
+   if (dx/.15)**2+(dy/.80)**2<1:c=(21,17,27)
+   if (dx+.13)**2+(dy+.19)**2<.055:c=(255,252,246)
+  if abs(dx)<1.05 and abs(y-(ey-.31+.05*out))<.055:c=(42,28,37)
+  c=mix(c,(174,101,101),.17*g(side*1.38,-2.83,.52,.35))
+  c=mix(c,(254,216,195),.16*g(side*.95,-2.60,.44,.32))
+ if f<.10 and abs(y+2.62)<.055:c=mix(c,(130,72,71),.68)
+ if f<.55:
+  lip=-1.82-.07*(1-f/.55)+.045*x
+  if abs(y-lip)<.051:c=(111,53,66)
+  if f<.42 and abs(y-lip-.12)<.044:c=mix(c,(212,135,129),.66)
+ c=mix(c,(148,83,81),.22*g(0,-1.36,.48,.14))
+ return c
+for y in range(128):
+ for x in range(128):
+  samples=[phantom_skin(sat2((x+dx-3)/121),sat2((y+dy-3)/121)) for dx,dy in ((-.28,-.28),(.28,-.28),(-.28,.28),(.28,.28))]
+  c=tuple(round(sum(z[k] for z in samples)/4) for k in range(3))
+  off=(y*W+7*128+x)*4;pix[off:off+4]=bytes((*c,255))
+  u=sat2((x-3)/121);v=sat2((y-3)/121)
+  # Black hair with restrained anisotropic sheen, no brown highlights.
+  wave=math.sin(u*math.pi*32+v*5.3+.55*math.sin(v*7))
+  c=mix((15,15,23),(69,68,88),.20+.42*max(0,wave)**7)
+  c=mix(c,(6,7,12),.36*max(0,-wave)**5)
+  off=((128+y)*W+128+x)*4;pix[off:off+4]=bytes((*c,255))
+png(p,W,H,pix)
+
+# Arsene's demonic face: a broad upper mask tapering to a pointed chin, red engraved
+# planes, distinct brow/cheek plates, split gold-red eye slits and hollow crown.
+p=java/'ArseneDetailedClient.java';s=p.read_text(encoding='utf-8')
+a=s.index('   // Narrow black mask');b=s.index('   for(int i=0;i<2;i++){',a)
+s=s[:a]+'''   body.loft(6,16,-1.15f,0,0,.66f,.65f,-.18f,0,0,.88f,.82f,.60f,0,0,1.06f,.97f);
+   head.loft(6,24,-6.90f,0,.16f,.93f,.93f,-6.35f,0,.04f,1.66f,1.42f,-5.50f,0,-.03f,2.02f,1.58f,-4.58f,0,-.10f,1.89f,1.59f,-3.36f,0,-.24f,1.45f,1.42f,-2.12f,0,-.38f,.93f,1.04f,-.92f,0,-.57f,.40f,.62f,-.55f,0,-.68f,.075f,.12f);
+   // Each side is built as shaped layered metal, not a blank cone.
+   for(int side:new int[]{-1,1}){
+    head.blade(14,side*1.90f,-5.58f,-.75f,side*.53f,-2.05f,-1.54f,1.15f);
+    head.blade(1,side*1.74f,-5.18f,-1.08f,side*.37f,-1.42f,-1.41f,.79f);
+    head.blade(15,side*1.42f,-4.85f,-1.46f,side*.20f,-1.25f,-1.53f,.45f);
+    head.blade(1,side*1.79f,-3.75f,-.90f,side*.32f,-.90f,-1.16f,.38f);
+    head.blade(14,side*1.70f,-5.85f,-.80f,side*.37f,-4.75f,-1.64f,.67f);
+    head.blade(6,side*.44f,-5.95f,-1.35f,side*1.94f,-5.37f,-.90f,.42f);
+    Part socket=head.child(side*.94f,-4.58f,-1.63f);socket.rz=-side*.35f;socket.ry=-side*.18f;
+    socket.oval(10,0,0,0,.83f,.39f,.16f);
+    socket.blade(1,-.72f,-.16f,-.19f,.74f,.10f,-.19f,.48f);
+    socket.blade(12,-.62f,-.03f,-.26f,.65f,.02f,-.26f,.29f);
+    socket.blade(13,-.48f,-.02f,-.34f,.47f,.01f,-.34f,.12f);
+    for(int j=0;j<3;j++){
+     head.blade(1,side*(1.51f-j*.21f),-3.95f+j*.58f,-1.05f-j*.11f,side*(.93f-j*.23f),-3.39f+j*.58f,-1.56f,.19f);
+    }
+    head.blade(6,side*.69f,-6.38f,.07f,side*3.78f,-8.90f,.32f,.77f);
+    head.blade(14,side*.96f,-6.53f,-.31f,side*3.58f,-8.58f,-.04f,.24f);
+    Part crest=head.child(side*3.29f,-7.92f,-.02f);crest.rz=side*.60f;crest.ry=-side*.12f;
+    crest.loft(6,20,-.41f,0,0,.26f,.30f,-.19f,0,0,1.18f,.66f,.03f,0,0,1.47f,.79f,.36f,0,0,.94f,.54f,.49f,0,0,.18f,.18f);
+    crest.blade(1,-1.18f,0,-.35f,1.22f,0,-.35f,.48f);
+    crest.blade(12,-.88f,.015f,-.46f,.91f,.015f,-.46f,.16f);
+    crest.blade(6,side*.30f,-.1f,.12f,side*.64f,-1.28f,.22f,.56f);
+   }
+   // Central raised nose/forehead ridge and a sharp red chin seam.
+   head.blade(14,0,-6.63f,-1.04f,0,-4.71f,-1.76f,.65f);
+   head.blade(6,0,-5.45f,-1.75f,0,-2.85f,-1.86f,.64f);
+   head.blade(1,0,-3.45f,-1.84f,0,-.76f,-1.25f,.28f);
+   head.blade(14,0,-3.08f,-1.94f,0,-1.17f,-1.44f,.12f);
+   // Faceted high crown, dark inner top and contrasting longitudinal ribs.
+   head.loft(6,8,-19.35f,0,.40f,1.29f,1.18f,-19.0f,0,.40f,1.30f,1.20f,-12.0f,0,.25f,1.08f,1.09f,-6.04f,0,.06f,.77f,.91f);
+   head.loft(10,8,-19.41f,0,.40f,1.04f,.95f,-19.36f,0,.40f,1.04f,.95f);
+   for(int j=0;j<8;j++){
+    float t=j*(float)Math.PI/4;
+    head.blade(14,1.27f*(float)Math.sin(t),-19.26f,.40f+1.17f*(float)Math.cos(t),.78f*(float)Math.sin(t),-6.27f,.06f+.88f*(float)Math.cos(t),.12f);
+   }
+'''+s[b:]
+# Give the two rows of wings less uniform silhouettes, without changing the rig.
+s=s.replace('11.6f-4.4f*t,1.55f,1.65f+1.0f*t','11.6f-4.4f*t+(float)Math.sin(j*1.4f)*.40f,1.55f,1.65f+1.0f*t',1)
+s=s.replace('12.8f+7.2f*t,1.40f+1.3f*t,2.35f-.54f*t','12.8f+7.2f*t+(float)Math.sin(j*1.6f)*.66f,1.40f+1.3f*t,2.35f-.54f*t',1)
+p.write_text(s,encoding='utf-8')
+p=assets/'textures/entity/arsene_detailed.png';W,H,pix=read_rgba(p)
+for tile,base in [(6,(24,25,35)),(10,(8,9,16)),(12,(255,68,36)),(13,(255,178,87)),(14,(83,89,111)),(15,(30,18,31))]:
+ for y in range(128):
+  for x in range(128):
+   u=sat2((x-3)/121);v=sat2((y-3)/121)
+   c=shade(base,.76+.24*math.sin(math.pi*u))
+   if tile in (6,14,15):
+    c=mix(c,(157,167,191) if tile==14 else (70,75,98),.28*math.exp(-((u-.30)/.12)**2))
+    c=mix(c,(9,10,18),.30*math.exp(-((u-.82)/.11)**2))
+    c=shade(c,.97+.03*math.sin(u*132+v*31))
+   if tile in (12,13):c=mix(base,(255,235,179),.52*math.sin(math.pi*u)**2)
+   off=((tile//8*128+y)*W+tile%8*128+x)*4;pix[off:off+4]=bytes((*c,255))
+png(p,W,H,pix)
+
+# Joker reacts immediately to damage, even when the attacker is not a normal low-HP Shadow.
+p=java/'Joker.java';s=p.read_text(encoding='utf-8')
+a=s.index('    @Override public void tick(){');b=s.index('    @Override public void handleEntityEvent',a)
+s=s[:a]+'''    private UUID retaliator;
+    private long defendUntil;
+    boolean defensiveTarget(LivingEntity e){
+        return e!=null&&e!=this&&e.isAlive()&&!(e instanceof Arsene)&&retaliator!=null&&retaliator.equals(e.getUUID())&&level().getGameTime()<defendUntil;
+    }
+    boolean personaTarget(LivingEntity e){
+        if(e==null||!e.isAlive()||e==this||e instanceof Arsene)return false;
+        if(e instanceof Player p&&(p.isCreative()||p.isSpectator()))return false;
+        return defensiveTarget(e)||shadow(e);
+    }
+    private void callPersona(ServerLevel l,LivingEntity t){
+        if(t==null||!t.isAlive())return;
+        Arsene a=persona==null?null:l.getEntity(persona) instanceof Arsene ar?ar:null;
+        // Recover our already-loaded Persona after rejoining, rather than duplicating it.
+        if(a==null||!a.isAlive())a=l.getEntitiesOfClass(Arsene.class,getBoundingBox().inflate(32),ar->ar.isAlive()&&getUUID().equals(ar.owner)).stream().findFirst().orElse(null);
+        if(a==null){
+            a=Noctis.ARSENE.get().create(l);
+            if(a!=null){
+                a.moveTo(getX(),getY()+.5,getZ(),getYRot(),0);
+                a.bind(this,t);
+                if(l.addFreshEntity(a)){
+                    persona=a.getUUID();say(l,"Persona! Arsene!");
+                    l.broadcastEntityEvent(this,(byte)90);
+                    l.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,getX(),getY()+1,getZ(),45,.6,.8,.6,.08);
+                }
+            }
+        }else{persona=a.getUUID();a.bind(this,t);}
+    }
+    @Override public boolean hurt(net.minecraft.world.damagesource.DamageSource source,float amount){
+        boolean hit=super.hurt(source,amount);
+        if(hit&&isAlive()&&level() instanceof ServerLevel l&&source.getEntity() instanceof LivingEntity attacker&&attacker!=this&&!(attacker instanceof Arsene)&&attacker.isAlive()){
+            retaliator=attacker.getUUID();defendUntil=l.getGameTime()+240;
+            getNavigation().stop();getLookControl().setLookAt(attacker,50,50);
+            callPersona(l,attacker);cd=12;
+        }
+        return hit;
+    }
+    @Override public void tick(){
+        super.tick();if(cd>0)cd--;if(speech>0)speech--;if(pose>0)pose--;
+        if(!(level() instanceof ServerLevel l)||!isAlive()||cd>0)return;
+        LivingEntity t=retaliator!=null&&l.getEntity(retaliator) instanceof LivingEntity e&&defensiveTarget(e)&&distanceTo(e)<40?e:null;
+        if(t==null)t=l.getEntitiesOfClass(LivingEntity.class,getBoundingBox().inflate(20),Joker::shadow).stream().filter(this::hasLineOfSight).min(java.util.Comparator.comparingDouble(this::distanceToSqr)).orElse(null);
+        if(t==null){cd=20;return;}
+        cd=75;getNavigation().stop();getLookControl().setLookAt(t,50,50);
+        callPersona(l,t);
+        if(personaTarget(t)&&distanceTo(t)<3&&hasLineOfSight(t)){t.hurt(damageSources().mobAttack(this),16);playSound(SoundEvents.PLAYER_ATTACK_SWEEP,.8f,1.4f);}
+    }
+'''+s[b:]
+p.write_text(s,encoding='utf-8')
+p=java/'Arsene.java';s=p.read_text(encoding='utf-8')
+a='!Joker.shadow(t)'
+assert a in s
+s=s.replace(a,'!j.personaTarget(t)',1)
+p.write_text(s,encoding='utf-8')
+# A bound Persona is limited by its owner instead of blocking another Joker's defense.
+p=java/'CharacterSpawnLimit.java';s=p.read_text(encoding='utf-8')
+a='  ChunkPos c=new ChunkPos(incoming.blockPosition());'
+assert a in s
+s=s.replace(a,'''  if(incoming instanceof Arsene a&&a.owner!=null){
+   boolean duplicate=!level.getEntitiesOfClass(Arsene.class,incoming.getBoundingBox().inflate(48),other->other.isAlive()&&other!=a&&a.owner.equals(other.owner)).isEmpty();
+   if(duplicate)event.setCanceled(true);
+   else incoming.getPersistentData().putBoolean(CHECKED,true);
+   return;
+  }
+'''+a,1)
+p.write_text(s,encoding='utf-8')
+print('Phantom faces: matched open mask, detailed eyes and hair, layered demonic metal face; Joker summons on damage and retargets his own Persona.')
