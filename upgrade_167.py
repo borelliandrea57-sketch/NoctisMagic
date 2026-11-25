@@ -2714,3 +2714,31 @@ for lang,it in [('it_it',True),('en_us',False)]:
  d['item.noctismagic.old_book']='Mein Kampf (libro maledetto)' if it else 'Mein Kampf (cursed book)'
  j(p,d)
 print('NPC pain sounds and absurd nonpolitical mustached dinosaur boss, secret loot book and animated transformation.')
+
+
+# Jesus instantly defeats the secret dinosaur boss when invoked nearby.
+edit('MiracleEncounter.java','if(s.equals("gesu aiutami")){','''if(s.equals("gesu aiutami")){
+            if(DivineRexJudgment.smite(p))return;''')
+write('DivineRexJudgment.java','''package it.noctis.magic;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.entity.EntityType;
+public final class DivineRexJudgment{
+ static boolean smite(ServerPlayer p){
+  var l=p.serverLevel();
+  var rex=l.getEntitiesOfClass(MustacheRex.class,p.getBoundingBox().inflate(80),x->x.isAlive()&&x.distanceToSqr(p)<=6400);
+  if(rex.isEmpty())return false;
+  for(MustacheRex boss:rex){
+   var bolt=EntityType.LIGHTNING_BOLT.create(l);
+   if(bolt!=null){bolt.moveTo(boss.getX(),boss.getY(),boss.getZ());bolt.setVisualOnly(true);l.addFreshEntity(bolt);}
+   l.sendParticles(ParticleTypes.END_ROD,boss.getX(),boss.getY()+2,boss.getZ(),100,1.1,1.8,1.1,.12);
+   boss.hurt(p.damageSources().genericKill(),Float.MAX_VALUE);
+  }
+  p.playSound(SoundEvents.NOTE_BLOCK_CHIME.value(),1,1);
+  p.sendSystemMessage(Component.literal("Gesu: Ue', ma che e' chistu? Mo ce penzo io."));
+  return true;
+ }
+}''')
+print('Jesus invocation instantly defeats nearby Baffosauro Rex with a visual lightning miracle.')
