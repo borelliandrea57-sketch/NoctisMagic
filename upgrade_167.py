@@ -2305,3 +2305,45 @@ edit('ExodiaRitual.java','l.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,boss.ge
   RitualQuests.award(p,"exodia");RitualQuests.complete(p,"exodia");
   p.connection.disconnect(Component.literal("Hai vinto il duello.").withStyle(ChatFormatting.GOLD,ChatFormatting.BOLD));''')
 print('Exodia successful invocation awards victory and disconnects summoner once, without banning or deleting the world.')
+
+
+# The same one-time duel victory when using Exodia's creative spawn egg.
+edit('Noctis.java','public static final RegistryObject<Item> CATHEDRAL_EGG=','''public static final RegistryObject<Item> EXODIA_EGG=ITEMS.register("exodia_spawn_egg",ExodiaEgg::new);
+    public static final RegistryObject<Item> CATHEDRAL_EGG=''')
+edit('Noctis.java','e.accept(CATHEDRAL_EGG.get());','e.accept(CATHEDRAL_EGG.get());e.accept(EXODIA_EGG.get());')
+write('ExodiaEgg.java','''package it.noctis.magic;
+import java.util.*;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.*;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.*;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
+import net.minecraftforge.common.ForgeSpawnEggItem;
+public class ExodiaEgg extends ForgeSpawnEggItem{
+ public ExodiaEgg(){super(Noctis.EXODIA,0x9c642a,0xf4d16b,new Item.Properties());}
+ static Set<UUID> before(Player p){Set<UUID> ids=new HashSet<>();for(Exodia x:p.level().getEntitiesOfClass(Exodia.class,p.getBoundingBox().inflate(32)))ids.add(x.getUUID());return ids;}
+ static void victory(ServerPlayer p,Set<UUID> ids){
+  Exodia boss=p.serverLevel().getEntitiesOfClass(Exodia.class,p.getBoundingBox().inflate(32),x->!ids.contains(x.getUUID())).stream().min(Comparator.comparingDouble(p::distanceToSqr)).orElse(null);
+  if(boss==null)return;
+  boss.bind(p);boss.setPersistenceRequired();
+  RitualQuests.award(p,"exodia");RitualQuests.complete(p,"exodia");
+  p.connection.disconnect(Component.literal("Hai vinto il duello.").withStyle(ChatFormatting.GOLD,ChatFormatting.BOLD));
+ }
+ @Override public InteractionResult useOn(UseOnContext ctx){
+  if(!(ctx.getPlayer() instanceof ServerPlayer p))return super.useOn(ctx);
+  Set<UUID> ids=before(p);InteractionResult result=super.useOn(ctx);
+  if(result.consumesAction())victory(p,ids);return result;
+ }
+ @Override public InteractionResultHolder<ItemStack> use(Level l,Player p,InteractionHand h){
+  if(!(p instanceof ServerPlayer sp))return super.use(l,p,h);
+  Set<UUID> ids=before(p);InteractionResultHolder<ItemStack> result=super.use(l,p,h);
+  if(result.getResult().consumesAction())victory(sp,ids);return result;
+ }
+}''')
+j(assets/'models/item/exodia_spawn_egg.json',{'parent':'minecraft:item/template_spawn_egg'})
+for lang,it in [('it_it',True),('en_us',False)]:
+ p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'));d['item.noctismagic.exodia_spawn_egg']='Uovo generatore: Exodia' if it else 'Exodia Spawn Egg';j(p,d)
+print('Exodia spawn egg triggers a one-time victory disconnect only when it spawns a new Exodia.')
