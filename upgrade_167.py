@@ -2454,3 +2454,47 @@ word(81,93,2)
 word(296,38,2)
 png(p,W,H,pix)
 print('Gennaro blue cap and shirt, red LETE lettering, golden 3D rosary and crucifix.')
+
+
+# Exclusive time manipulation spell for shesoldtheworld, authenticated on the server.
+edit('Noctis.java','GEASS("Geass - Controllo mentale",5,45);','GEASS("Geass - Controllo mentale",5,45),TIME_ACCELERATION("Accelerazione temporale",1,0);')
+edit('Noctis.java','case GEASS -> {if(!GeassMagic.cast(p))return;}','case TIME_ACCELERATION -> {if(!TimeAcceleration.cast(p))return;}\n            case GEASS -> {if(!GeassMagic.cast(p))return;}')
+write('TimeAcceleration.java','''package it.noctis.magic;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.Difficulty;
+public final class TimeAcceleration{
+ public static boolean allowed(ServerPlayer p){return "shesoldtheworld".equalsIgnoreCase(p.getGameProfile().getName());}
+ public static boolean cast(ServerPlayer p){
+  if(!allowed(p)){p.displayClientMessage(Component.translatable("message.noctismagic.time_forbidden"),true);return false;}
+  ServerLevel l=p.serverLevel();
+  if(l.dimension()!=Level.OVERWORLD||!p.isAlive()||p.isSpectator()){p.displayClientMessage(Component.translatable("message.noctismagic.time_overworld"),true);return false;}
+  if(l.getDifficulty()==Difficulty.PEACEFUL){p.displayClientMessage(Component.translatable("message.noctismagic.time_peaceful"),true);return false;}
+  if(Eclipse.active(l)){p.displayClientMessage(Component.translatable("message.noctismagic.time_eclipse"),true);return false;}
+  long now=l.getDayTime(),day=Math.floorDiv(now,24000L),next=Math.max(1,day+1),eclipse=(Math.floorDiv(Math.max(0,day),7)+1)*7;
+  // Advance to the next dawn; never skip the approaching eclipse.
+  long target=Math.min(next,eclipse)*24000L;
+  if(target<=now)return false;
+  l.setDayTime(target);
+  p.playSound(SoundEvents.BEACON_POWER_SELECT,1,.55f);
+  l.sendParticles(ParticleTypes.PORTAL,p.getX(),p.getY()+1,p.getZ(),65,.6,.9,.6,.2);
+  long remaining=Math.max(0,eclipse-Math.floorDiv(target,24000L));
+  p.displayClientMessage(Component.translatable(remaining==0?"message.noctismagic.time_arrived":"message.noctismagic.time_days",remaining).withStyle(ChatFormatting.LIGHT_PURPLE),false);
+  return true;
+ }
+}''')
+for lang,it in [('it_it',True),('en_us',False)]:
+ p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
+ d['message.noctismagic.time_forbidden']='Solo shesoldtheworld puo dominare il tempo.' if it else 'Only shesoldtheworld can command time.'
+ d['message.noctismagic.time_overworld']='Il tempo puo essere alterato solo nel mondo normale.' if it else 'Time can only be altered in the Overworld.'
+ d['message.noctismagic.time_peaceful']='Le eclissi non avvengono in modalita Pacifica.' if it else 'Eclipses do not occur in Peaceful mode.'
+ d['message.noctismagic.time_eclipse']='L’eclissi e gia in corso. Il tempo si rifiuta di avanzare.' if it else 'The eclipse is already underway. Time refuses to advance.'
+ d['message.noctismagic.time_days']='Il tempo avanza. Giorni mancanti all’eclissi: %s.' if it else 'Time advances. Days until the eclipse: %s.'
+ d['message.noctismagic.time_arrived']='Il tempo ha ceduto. L’eclissi e arrivata.' if it else 'Time has yielded. The eclipse has arrived.'
+ j(p,d)
+print('Exclusive server-validated time acceleration spell, advancing one dawn without skipping the eclipse.')
