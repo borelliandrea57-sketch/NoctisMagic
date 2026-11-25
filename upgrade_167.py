@@ -3152,3 +3152,125 @@ for m,base in enumerate(pal):
    off=((m//8*128+y)*W+m%8*128+x)*4;pix[off:off+4]=bytes((*c,255))
 png(assets/'textures/entity/lelouch_sculpted.png',W,H,pix)
 print('Lelouch rebuilt with angular face, sharp swept hair, layered Zero collar, dark uniform, crimson cape, gloves; Geass lasts one minute.')
+
+
+# Joker: dedicated sculpted domino mask with actual eye openings, swept curls, tailored coat.
+p=java/'JokerDetailedClient.java';s=p.read_text(encoding='utf-8')
+s=s.replace('import it.noctis.magic.SculptedGuestsClient.Part;','import it.noctis.magic.SculptedGuestsClient.Part;\nimport it.noctis.magic.SculptedGuestsClient.V;\nimport it.noctis.magic.SculptedGuestsClient.Q;',1)
+s=s.replace(' static class M extends EntityModel<Joker>{',''' static float cl(float a){return Math.max(.025f,Math.min(.975f,a));}
+ static V face(V v,boolean f){return new V(v.x(),v.y(),v.z(),f?cl(.5f+v.x()/6.4f):.025f,cl((v.y()+7.65f)/7.65f),v.nx(),v.ny(),v.nz());}
+ static void project(Part p){
+  for(int i=0;i<p.faces.size();i++){Q q=p.faces.get(i);if(q.tile()!=7)continue;boolean f=q.a().nz()+q.b().nz()+q.c().nz()+q.d().nz()<-.05f;
+   p.faces.set(i,new Q(face(q.a(),f),face(q.b(),f),face(q.c(),f),face(q.d(),f),7));}
+ }
+ // Shaped eyewear with open eye holes, not a painted band or opaque oval.
+ static V maskV(int side,float t,float r,float z){
+  float dx=(float)Math.cos(t),dy=(float)Math.sin(t);
+  float x=side*(1.12f+dx*(.77f+.53f*r));
+  float y=-3.98f+dy*(.34f+.29f*r)-.16f*dx-.38f*r*Math.max(0,dx);
+  return new V(x,y,-2.78f+.145f*x*x+z,.5f+.45f*dx,.5f+.45f*dy,0,0,-1);
+ }
+ static void mask(Part p,int side){
+  for(int i=0;i<40;i++){
+   float a=i*(float)Math.PI/20,b=(i+1)*(float)Math.PI/20;
+   p.faces.add(new Q(maskV(side,a,0,.03f),maskV(side,b,0,.03f),maskV(side,b,.18f,-.01f),maskV(side,a,.18f,-.01f),11));
+   p.faces.add(new Q(maskV(side,a,.18f,-.015f),maskV(side,b,.18f,-.015f),maskV(side,b,.86f,-.02f),maskV(side,a,.86f,-.02f),8));
+   p.faces.add(new Q(maskV(side,a,.86f,-.02f),maskV(side,b,.86f,-.02f),maskV(side,b,1,0),maskV(side,a,1,0),11));
+  }
+ }
+ static void curl(Part p,float x,float y,float z,float dx,float dy,float dz,float width){
+  Part q=p.child(x,y,z);
+  q.loft(9,24,-.65f,0,.38f,width*.50f,width*.58f,0,0,0,width,width*.85f,.65f,dx*.08f,-.24f,width*.91f,width*.70f,1.25f,dx*.40f,-.42f,width*.68f,width*.51f,1.70f,dx*.82f,dz*.75f,width*.38f,width*.28f,Math.max(1.75f,dy),dx,dz,.035f,.035f);
+  q.blade(12,-.15f,0,-width*.65f,dx*.73f,1.52f,-.37f,.17f);
+ }
+ static class M extends EntityModel<Joker>{''',1)
+a=s.index('   head.loft(7,32,');b=s.index('   for(int i=0;i<2;i++){int s=i==0?-1:1;',a)
+s=s[:a]+'''   head.loft(7,80,-7.65f,0,.12f,1.35f,1.5f,-7.1f,0,.04f,2.50f,2.34f,-5.4f,0,0,2.94f,2.72f,-4.0f,0,-.1f,2.85f,2.58f,-2.65f,0,-.2f,2.40f,2.24f,-1.25f,0,-.3f,1.48f,1.68f,-.2f,0,-.4f,.42f,.7f);
+   project(head);
+   head.loft(1,24,-4.8f,0,-2.50f,.15f,.12f,-3.9f,0,-2.72f,.25f,.23f,-3.02f,0,-3.00f,.40f,.32f,-2.77f,0,-2.82f,.25f,.17f);
+   head.oval(13,0,-1.9f,-1.94f,.47f,.11f,.12f);
+   for(int side:new int[]{-1,1}){
+    mask(head,side);
+    head.oval(1,side*2.77f,-3.54f,.05f,.35f,.77f,.52f);
+    head.blade(11,side*2.22f,-4.16f,-1.94f,side*2.86f,-4.64f,-.70f,.24f);
+   }
+   head.blade(8,-.50f,-4.12f,-2.79f,.50f,-4.12f,-2.79f,.26f);
+   head.loft(9,40,-9.05f,0,.35f,.60f,.55f,-8.70f,0,.23f,2.34f,2.10f,-7.6f,0,.20f,3.14f,2.93f,-6.25f,0,.30f,3.35f,3.01f);
+   head.loft(9,32,-7.65f,0,1.0f,2.75f,2.15f,-5.7f,0,1.35f,3.04f,1.85f,-3.2f,0,1.68f,2.60f,1.26f,-1.4f,0,1.55f,1.45f,.23f);
+   // Irregular layered wavy locks, individual sculpted tufts with bent tips.
+   for(int j=0;j<11;j++){
+    float x=-2.85f+j*.55f;float dx=(j%3==0?.8f:-.83f)+(j-5)*.07f;
+    float end=1.88f+(j%4)*.36f;
+    curl(head,x,-7.85f+(float)Math.sin(j*1.1)*.28f,-2.03f,dx,end,-.63f,.60f+(j%3)*.13f);
+   }
+   for(int j=0;j<9;j++){
+    float x=-2.65f+j*.64f;
+    curl(head,x,-8.9f+(float)Math.cos(j*.9)*.30f,.04f,(j%2==0?-.75f:.65f),1.55f+(j%3)*.25f,-1.50f,.77f);
+   }
+   for(int side:new int[]{-1,1}){
+    for(int j=0;j<5;j++){
+     Part q=head.child(side*(2.42f+j*.13f),-7.1f+j*.62f,.05f+j*.40f);q.rz=-side*(.46f+j*.14f);
+     curl(q,0,0,0,side*(.5f+j*.12f),1.85f+(j%2)*.35f,.54f,.63f);
+    }
+   }
+'''+s[b:]
+s=s.replace('body.blade(3,s*1.5f,-1.0f,-.7f,s*2.4f,-2.4f,.85f,1.8f);','''body.blade(3,s*1.5f,-1.0f,-.7f,s*3.6f,-3.0f,1.15f,2.9f);
+    body.blade(5,s*2.1f,-1.15f,-.35f,s*3.5f,-2.9f,.94f,.23f);
+    body.blade(14,s*2.5f,1.2f,-1.25f,s*1.6f,3.15f,-1.95f,.65f);
+    body.blade(14,s*2.25f,5.4f,-1.15f,s*.6f,7.05f,-1.48f,.36f);
+    body.blade(5,s*2.0f,8.0f,-.95f,s*2.55f,9.2f,-.85f,.25f);''',1)
+s=s.replace('for(int j=0;j<4;j++)elbow[i].oval(4,-.51f+j*.34f,5.95f,-.15f,.21f,.46f,.29f);','''for(int j=0;j<4;j++){
+     float x=-.48f+j*.32f;
+     elbow[i].loft(4,16,5.35f,x,-.13f,.17f,.23f,5.93f,x,-.22f,.16f,.18f,6.24f-(j==3?.16f:0),x,-.35f,.11f,.13f,6.39f-(j==3?.16f:0),x,-.38f,.04f,.05f);
+     elbow[i].blade(15,x,5.38f,-.48f,x,5.92f,-.42f,.10f);
+    }
+    elbow[i].blade(15,-.45f,4.45f,-.60f,.40f,4.65f,-.64f,.17f);
+    arm[i].blade(14,0,.7f,-1.28f,s*.55f,3.9f,-.92f,.46f);
+    elbow[i].blade(14,s*.48f,.5f,-.83f,0,3.55f,-.80f,.35f);''',1)
+s=s.replace('coat[i].loft(0,16,0,0,0,1.40f,.38f,3.4f,s*.28f,.35f,1.65f,.28f,7.5f,s*.50f,.85f,1.57f,.22f,12.0f,s*.95f,1.55f,.06f,.08f);','''coat[i].loft(0,32,0,0,0,1.65f,.34f,3.4f,s*.38f,.44f,2.02f,.28f,7.5f,s*.72f,1.10f,2.18f,.22f,12.6f,s*1.42f,2.5f,1.02f,.16f,14.1f,s*2.15f,2.9f,.035f,.045f);
+    coat[i].blade(14,s*.56f,1.0f,-.35f,s*1.33f,11.3f,1.60f,.4f);''',1)
+s=s.replace('coat[i+2].blade(0,0,0,0,s*1.5f,10.35f,2.4f,2.22f);','''coat[i+2].loft(3,24,0,0,0,.95f,.27f,3.6f,s*.33f,.72f,1.36f,.20f,7.0f,s*.85f,1.6f,1.45f,.18f,12.1f,s*1.8f,2.55f,.04f,.06f);''',1)
+s=s.replace('float cast=e.summoning();head.ry=yaw*.01745f;head.rx=pitch*.016f;body.ry=cast*.12f;','''float cast=e.summoning();float idle=amount<.08f?(float)Math.pow(Math.max(0,Math.sin(age*.024f)),10)*(1-cast):0;
+   head.ry=yaw*.01745f;head.rx=pitch*.016f;head.rz=-.055f-idle*.06f;body.ry=cast*.12f+idle*.12f;''',1)
+s=s.replace('arm[i].rz=-s*(.10f+(i==1?cast*.24f:0));','arm[i].rz=s*(.07f+(i==1?cast*.24f:0));if(i==0){arm[i].rx-=idle*.75f;arm[i].rz+=idle*.18f;}',1)
+s=s.replace('leg[i].rx=w*.65f;knee[i].rx=Math.max(0,-w)*.46f;','if(i==0)elbow[i].rx-=idle*1.40f;leg[i].rx=w*.65f;knee[i].rx=Math.max(0,-w)*.46f;',1)
+s=s.replace('  @Override public ResourceLocation getTextureLocation(Joker e)','  @Override protected void scale(Joker e,PoseStack p,float partial){p.scale(1.08f,1.10f,1.08f);}\n  @Override public ResourceLocation getTextureLocation(Joker e)',1)
+p.write_text(s,encoding='utf-8')
+W,H=1024,512;pix=bytearray(W*H*4)
+pal=[(24,23,30),(235,190,162),(70,65,79),(37,33,43),(183,12,35),(17,16,22),(150,146,158),(235,190,162),(236,235,230),(30,24,28),(185,190,200),(14,12,19),(105,78,73),(149,73,73),(65,60,75),(104,8,26)]
+def sat2(v):return max(0,min(1,v))
+for m,base in enumerate(pal):
+ for y in range(128):
+  for x in range(128):
+   u=sat2((x-3)/121);v=sat2((y-3)/121);f=abs(u-.5)
+   c=shade(base,.79+.21*math.sin(math.pi*u)+.06*math.sin(u*87+v*23)**2)
+   if m in (0,2,3,5,14):
+    ridge=math.sin(u*math.pi*4+v*6+math.sin(v*9)*.9)
+    c=mix(c,(91,79,102),.32*max(0,ridge)**8)
+    c=mix(c,(8,7,15),.30*max(0,-ridge)**7)
+    if m==2 and abs((u*4)%1-.5)<.024:c=mix(c,(111,102,119),.28)
+   if m==4:
+    c=mix(c,(249,52,65),.45*math.exp(-((u-.32)/.19)**2))
+    c=mix(c,(75,5,20),.30*(1-math.sin(u*math.pi)))
+   if m==9:
+    wave=math.sin(u*math.pi*14+v*3)
+    c=mix(c,(121,91,83),.32*max(0,wave)**5+.12*math.exp(-((v-.25)/.17)**2))
+   if m==7:
+    c=mix(base,(155,86,78),.28*sat2((f-.19)*4)+.15*v)
+    c=mix(c,(255,222,189),.30*math.exp(-((u-.5)/.14)**2))
+    for side in (-1,1):
+     dx=side*(u-(.5+side*.173))/.119;dy=(v-(.48-.024*dx))/.049
+     d=abs(dx)**1.8+abs(dy)**1.45
+     if d<1.17:c=(37,22,32)
+     if d<.80:c=(245,235,223)
+     if d<.78 and abs(dx+.045)<.44:c=(84,75,87)
+     if d<.76 and abs(dx+.045)<.18:c=(21,18,27)
+     if d<.76 and (dx+.18)**2+(dy+.22)**2<.046:c=(255,250,238)
+     if abs(dx)<.96 and abs(v-(.39-.035*dx))<.013:c=(49,32,36)
+    if f<.076 and abs(v-(.765-.018*(1-f/.076)+.025*(u-.5)))<.009:c=(105,48,55)
+    if f<.043 and abs(v-.782)<.008:c=(213,130,119)
+   if m==8:c=mix(base,(255,254,250),.55*math.sin(u*math.pi)**2)
+   if m==10:c=mix(base,(246,246,250),.60*math.exp(-((u-.58)/.15)**2))
+   q=((m//8*128+y)*W+m%8*128+x)*4;pix[q:q+4]=bytes((*c,255))
+png(assets/'textures/entity/joker_detailed.png',W,H,pix)
+print('Joker revised with open sculpted white mask, angular face, irregular curls, long layered coat and articulated red gloves.')
