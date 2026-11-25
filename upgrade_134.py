@@ -8,7 +8,7 @@ def dump(p,d):p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps
 def png(p,w,h,pix):
     p.parent.mkdir(parents=True,exist_ok=True)
     def ch(t,b):return struct.pack('>I',len(b))+t+b+struct.pack('>I',zlib.crc32(t+b)&0xffffffff)
-    p.write_bytes(b'\x89PNG\r\n\x1a\n'+ch(b'IHDR',struct.pack('>IIBBBBB',w,h,8,6,0,0))+ch(b'IDAT',zlib.compress(b''.join(b'\0'+pix[y*w*4:(y+1)*w*4] for y in range(h))))+ch(b'IEND',b''))
+    p.write_bytes(b'\x89PNG\r\n\x1a\n'+ch(b'IHDR',struct.pack('>IIBBBBB',w,h,8,6,0,0,0))+ch(b'IDAT',zlib.compress(b''.join(b'\0'+pix[y*w*4:(y+1)*w*4] for y in range(h))))+ch(b'IEND',b''))
 foods=[('salmon_nigiri','Nigiri al salmone','Salmon nigiri',5,(235,124,82)),('tuna_nigiri','Nigiri al tonno','Tuna nigiri',5,(167,46,63)),('maki_roll','Maki','Maki roll',6,(38,74,52)),('onigiri','Onigiri','Onigiri',6,(238,234,215)),('matcha_tea','Tè matcha','Matcha tea',2,(110,153,61))]
 decl='''public static final RegistryObject<Item> SUSHI_EGG=ITEMS.register("sushi_restaurant_egg",()->new GothicEgg(false,false,false,true));
     public static final RegistryObject<EntityType<SushiGuest>> MAOMAO=ENTITIES.register("maomao",()->EntityType.Builder.<SushiGuest>of(SushiGuest::new,MobCategory.CREATURE).sized(.6f,1.7f).clientTrackingRange(10).build(ID+":maomao"));
