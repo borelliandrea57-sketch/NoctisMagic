@@ -5455,3 +5455,68 @@ for rage in (False,True):
    off=(y*W+5*128+x)*4;pix[off:off+4]=bytes((*c,255))
  png(p,W,H,pix)
 print('Faputa: neck joins head and shoulders, feral crouched stance, angular face, narrow golden/red predatory eyes.')
+
+
+# Lucy: planar face UV projection prevents the cylindrical mesh from stretching the eyes outward.
+p=java/'LucySculptedClient.java';s=p.read_text(encoding='utf-8')
+assert 'import it.noctis.magic.SculptedGuestsClient.Part;' in s
+s=s.replace('import it.noctis.magic.SculptedGuestsClient.Part;','''import it.noctis.magic.SculptedGuestsClient.Part;
+import it.noctis.magic.SculptedGuestsClient.V;
+import it.noctis.magic.SculptedGuestsClient.Q;''',1)
+a=s.index('   head.loft(6,20,');b=s.index('   head.oval(7,0,-2.75f',a)
+s=s[:a]+'''   head.loft(6,64,-7.65f,0,.18f,1.2f,1.55f,-7.15f,0,.10f,2.40f,2.30f,-5.8f,0,0,3.02f,2.70f,-4.25f,0,-.05f,3.04f,2.74f,-3.0f,0,-.10f,2.73f,2.49f,-1.55f,0,-.16f,2.08f,1.99f,-.45f,0,-.25f,.95f,1.21f,0,0,-.30f,.42f,.65f);
+   for(int i=0;i<head.faces.size();i++){
+    Q q=head.faces.get(i);if(q.tile()!=6)continue;
+    boolean front=q.a().nz()+q.b().nz()+q.c().nz()+q.d().nz()<-.05f;
+    head.faces.set(i,new Q(faceUV(q.a(),front),faceUV(q.b(),front),faceUV(q.c(),front),faceUV(q.d(),front),6));
+   }
+'''+s[b:]
+s=s.replace('  M(){','''  static V faceUV(V v,boolean front){
+   float u=front?Math.max(.025f,Math.min(.975f,.5f+v.x()/6.5f)):.025f;
+   float y=Math.max(.025f,Math.min(.975f,(v.y()+7.65f)/7.65f));
+   return new V(v.x(),v.y(),v.z(),u,y,v.nx(),v.ny(),v.nz());
+  }
+  M(){''',1)
+# The original round raised nose looked like a button; replace with a small tapered bridge.
+s=s.replace('head.oval(7,0,-2.75f,-2.61f,.29f,.41f,.34f);','head.loft(7,16,-4.12f,0,-2.63f,.12f,.08f,-3.30f,0,-2.73f,.19f,.15f,-2.72f,0,-2.88f,.26f,.19f,-2.46f,0,-2.65f,.16f,.10f);',1)
+p.write_text(s,encoding='utf-8')
+
+p=assets/'textures/entity/lucy_sculpted.png';W,H,pix=read_rgba(p)
+# Both eye centers share exactly the same height and pupil offset, with mirror-symmetric makeup.
+# Supersample the face tile to soften aliasing while keeping the original atlas dimensions.
+def lucy_face(u,v):
+ f=abs(u-.5)
+ def g(cx,cy,sx,sy):return math.exp(-((u-cx)/sx)**2-((v-cy)/sy)**2)
+ c=mix((250,226,212),(169,111,128),.18*sat2((f-.17)*4)+.12*g(.5,.77,.25,.18))
+ c=mix(c,(255,241,227),.20*g(.5,.40,.18,.21))
+ for side in (-1,1):
+  ex=.5+side*.171
+  dx=(u-ex)/.116;out=side*dx
+  ey=.472-.018*out
+  dy=(v-ey)/.049
+  d=abs(dx)**1.65+abs(dy)**1.35
+  c=mix(c,(185,133,157),.20*g(ex,.45,.125,.077))
+  # Coral liner is narrow and follows the same mirrored lower lid on both sides.
+  if abs(dx)<1.02 and .86<dy<1.27-.26*abs(dx):
+   c=mix(c,(203,65,83),.86)
+  if d<1.12:c=(42,28,49)
+  if d<.81:c=(245,243,239)
+  # A matched centered gaze, not outward-facing pupils.
+  if d<.79 and (dx/.40)**2+(dy/.88)**2<1:
+   t=sat2((dy+.65)/1.3)
+   c=mix((99,91,160),(113,209,188),t)
+   if (dx/.155)**2+(dy/.74)**2<1:c=(30,29,54)
+   if (dx+.12)**2+(dy+.23)**2<.035:c=(255,254,249)
+  if abs(dx)<1.05 and abs(dy+.72-.12*out)<.11:c=(38,25,47)
+  if abs(dx)<.97 and abs(v-(.367-.017*out))<.010:c=(127,111,156)
+ if f<.027 and abs(v-.678)<.008:c=mix(c,(165,103,120),.55)
+ if f<.060 and abs(v-(.793-.011*(1-f/.06)))<.008:c=(139,65,86)
+ if f<.045 and abs(v-.810)<.008:c=mix(c,(213,118,139),.74)
+ return c
+for y in range(128):
+ for x in range(128):
+  samples=[lucy_face(sat2((x+dx-3)/121),sat2((y+dy-3)/121)) for dx,dy in ((-.25,-.25),(.25,-.25),(-.25,.25),(.25,.25))]
+  c=tuple(round(sum(t[k] for t in samples)/4) for k in range(3))
+  off=(y*W+6*128+x)*4;pix[off:off+4]=bytes((*c,255))
+png(p,W,H,pix)
+print('Lucy: projected face UVs, matched centered pupils, symmetrical smaller almond eyes and subtle coral makeup.')
