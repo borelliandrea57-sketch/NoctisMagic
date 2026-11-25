@@ -122,22 +122,20 @@ def cube(b):
  return f'.texOffs({u},{v}).addBox('+','.join(str(float(a))+'f' for a in (x,y,z,w,h,d))+')'
 def part(var,parent,name,pos,rot,boxes):
  lines.append(f'        PartDefinition {var}={parent}.addOrReplaceChild("{name}",CubeListBuilder.create()'+''.join(cube(b) for b in boxes)+',PartPose.offsetAndRotation('+','.join(str(float(a))+'f' for a in (*pos,*rot))+'));')
-# Limb-free caricature: continuous upright body, stepped contours and rounded base.
+# Non-coplanar stepped mesh: remove duplicate coplanar external faces.
 part('b','r','body',(0,24,0),(0,0,0),[
- (-3,-23,-3,6,20,6,'flesh'),
- (-4,-21,-4,8,17,8,'flesh'),
- (-4,-7,-4,8,7,8,'dark'),
- (-3,-22,-4,6,17,8,'flesh')])
+ (-4,-22,-4,8,15,8,'flesh'),
+ (-3,-7,-3,6,5,6,'dark')])
 part('h','b','crown',(0,-20,0),(0,0,0),[
- (-5,-4,-4,10,5,8,'crown'),
- (-4,-6,-3,8,2,6,'crown'),
- (-3,-7,-2,6,1,4,'crown'),
- (-5,1,-4,10,1,8,'rim')])
+ (-5,-4,-5,10,5,10,'crown'),
+ (-4,-6,-4,8,2,8,'crown'),
+ (-3,-7,-3,6,1,6,'crown'),
+ (-6,1,-6,12,1,12,'rim')])
 for i,side in enumerate((-1,1)):
- part('l'+str(i),'b','lobe'+str(i),(side*3,-3,0),(0,0,0),[
+ part('l'+str(i),'b','lobe'+str(i),(side*4,-3,0),(0,0,0),[
  (-3,-3,-3,6,6,6,'dark'),
- (-2,-4,-2,4,1,4,'flesh'),
- (-3,-2,-4,6,4,8,'dark')])
+ (-2,-4,-2,4,1,4,'flesh')])
+
 (java/'FallomorphClient.java').write_text('''package it.noctis.magic;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.model.EntityModel;
@@ -162,8 +160,9 @@ public final class FallomorphClient{
   @Override public void setupAnim(Fallomorph e,float limb,float amount,float age,float yaw,float pitch){
    float s=e.stretch(),c=e.compression();
    b.yScale=1+.14f*s-.22f*c;b.xScale=1-.07f*s+.13f*c;b.zScale=b.xScale;
-   b.xRot=-.13f*s+.07f*c;h.xRot=-b.xRot*.55f;h.zRot=(float)Math.sin(age*.16)*.045f;
-   for(int i=0;i<2;i++){ModelPart l=b.getChild("lobe"+i);l.yScale=1-.10f*c;l.xScale=1+.08f*c;}
+   b.xRot=-.13f*s+.07f*c;h.xRot=0;h.zRot=0;
+   // Animate the complete mesh as one unit; no independently overlapping pieces.
+   for(int i=0;i<2;i++){ModelPart l=b.getChild("lobe"+i);l.yScale=1;l.xScale=1;}
   }
   @Override public void renderToBuffer(PoseStack p,VertexConsumer v,int light,int overlay,float red,float green,float blue,float alpha){r.render(p,v,light,overlay,red,green,blue,alpha);}
  }
