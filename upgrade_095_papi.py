@@ -110,8 +110,12 @@ raw=b''.join(b'\0'+bytes(v for p in row for v in p) for row in pix)
 p=assets/'models/item/papi_spawn_egg.json';p.write_text('{"parent":"minecraft:item/template_spawn_egg"}',encoding='utf-8')
 for lang in ['it_it','en_us']:
     p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'));d['entity.noctismagic.papi']='Enrico Papi';d['item.noctismagic.papi_spawn_egg']='Uovo generatore: Enrico Papi' if lang=='it_it' else 'Enrico Papi Spawn Egg';p.write_text(json.dumps(d,ensure_ascii=False,indent=2),encoding='utf-8')
-sounds=assets/'sounds';wav=sounds/'papi_shout.wav'
-subprocess.run(['espeak-ng','-v','it','-s','165','-p','55','-a','145','-w',str(wav),'Vuoi sapere quanto vale la tua auto?'],check=True)
-subprocess.run(['ffmpeg','-loglevel','error','-y','-i',str(wav),'-c:a','libvorbis','-q:a','4',str(sounds/'papi_shout.ogg')],check=True);wav.unlink()
+sounds=assets/'sounds'
+sounds.mkdir(parents=True,exist_ok=True)
+audio=Path(__file__).resolve().parent/'enrico_papi.mp3'
+assert audio.is_file() and audio.stat().st_size>0, 'Missing enrico_papi.mp3 in repository'
+subprocess.run(['ffmpeg','-nostdin','-loglevel','error','-y','-i',str(audio),'-map','0:a:0','-vn','-ac','1','-ar','44100','-c:a','libvorbis','-q:a','5',str(sounds/'papi_shout.ogg')],check=True)
+assert (sounds/'papi_shout.ogg').stat().st_size>0
+print('Papi: repository voice converted to Vorbis; no speech synthesis')
 p=assets/'sounds.json';d=json.loads(p.read_text(encoding='utf-8'));d['papi_shout']={"sounds":[{"name":"noctismagic:papi_shout"}]};p.write_text(json.dumps(d),encoding='utf-8')
 print('Noctis: Papi encounter added')
