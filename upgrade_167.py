@@ -867,7 +867,7 @@ print('Cabaret stage poses and separate fully clothed Waifu mesh with contrastin
 
 
 # Lucy: angular anime silhouette, original-style netrunner jacket, occasional smoking animation.
-edit('MoonGuest.java','UUID owner,aggressor;long expires;int rage,cd=20,witch=0,pose,animation,speech;','UUID owner,aggressor;long expires;int rage,cd=20,witch=0,pose,animation,speech;\n    private int smokeTicks=0,smokeCooldown=700;public int smokeTicks(){return smokeTicks;}')
+edit('MoonGuest.java','public MoonGuest(EntityType<? extends PathfinderMob> t,Level l){super(t,l);}','public MoonGuest(EntityType<? extends PathfinderMob> t,Level l){super(t,l);}\n    private int smokeTicks=0,smokeCooldown=700;public int smokeTicks(){return smokeTicks;}')
 edit('MoonGuest.java','super.tick();if(pose>0)pose--;','super.tick();if(smokeTicks>0)smokeTicks--;if(smokeCooldown>0)smokeCooldown--;if(pose>0)pose--;')
 edit('MoonGuest.java','}else if(k==1){\n            if(tickCount%100','''}else if(k==1){
             boolean calm=onGround()&&!isInWater()&&hurtTime==0&&getTarget()==null;
@@ -1457,3 +1457,57 @@ for lang,it in [('it_it',True),('en_us',False)]:
  d['message.noctismagic.maomao_already']='Sei gia immune al veleno.' if it else 'You are already immune to poison.'
  j(p,d)
 print('Maomao herbal remedy: five common plants, permanent poison immunity saved across death.')
+
+
+# Double the friendship points earned per blood bucket, retain old progress, cap at ten.
+p=java/'Vampire.java';s=p.read_text(encoding='utf-8')
+a='friendship.putInt(key,++points);'
+assert a in s
+s=s.replace(a,'points=Math.min(10,points+2);friendship.putInt(key,points);',1)
+s=s.replace('if(points==10&&!VampireLife.isVampire(p))','if(points>=10&&!VampireLife.isVampire(p))')
+p.write_text(s,encoding='utf-8')
+# Register a collectible Behelit and guaranteed creature-specific drops.
+a='public static final RegistryObject<Item> CATHEDRAL_EGG='
+edit('Noctis.java',a,'''public static final RegistryObject<Item> BEHELIT=ITEMS.register("behelit",()->new Item(new Item.Properties().stacksTo(1).rarity(net.minecraft.world.item.Rarity.EPIC).fireResistant()));
+    '''+a)
+a='e.accept(CATHEDRAL_EGG.get());'
+edit('Noctis.java',a,a+'e.accept(BEHELIT.get());')
+edit('GemGuest.java','    @Override public void handleEntityEvent(byte id){','''    @Override protected void dropCustomDeathLoot(net.minecraft.world.damagesource.DamageSource source,int looting,boolean hit){
+        super.dropCustomDeathLoot(source,looting,hit);
+        int amount=phos()?4+random.nextInt(5):6+random.nextInt(7);
+        amount+=Math.max(0,looting)*2;
+        spawnAtLocation(new net.minecraft.world.item.ItemStack(phos()?net.minecraft.world.item.Items.EMERALD:net.minecraft.world.item.Items.REDSTONE,amount));
+    }
+    @Override public void handleEntityEvent(byte id){''')
+edit('Griffith.java','    @Override public void handleEntityEvent(byte id){','''    @Override protected void dropCustomDeathLoot(net.minecraft.world.damagesource.DamageSource source,int looting,boolean hit){
+        super.dropCustomDeathLoot(source,looting,hit);spawnAtLocation(Noctis.BEHELIT.get());
+    }
+    @Override public void handleEntityEvent(byte id){''')
+# Hand-painted crimson egg with disordered human features, in Minecraft item format.
+W=64;H=64;pix=bytearray(W*H*4)
+for y in range(H):
+ for x in range(W):
+  u=(x-31.5)/20;v=(y-32)/27
+  shape=(u/(.90+.16*v))**2+v*v
+  if shape>1:continue
+  light=max(0,1-((u+.34)**2+(v+.35)**2)*.8)
+  c=mix((108,12,27),(227,77,77),light*.88)
+  c=shade(c,1-.19*math.sin(u*31+v*9)**2-.055*math.sin(v*42)**2)
+  if shape>.91:c=shade(c,.64)
+  # Two displaced eyes, a nose ridge and a crooked mouth.
+  for ex,ey in [(-.42,-.30),(.30,.06)]:
+   dx=(u-ex)/.26;dy=(v-ey)/.105
+   if dx*dx+dy*dy<1:c=(68,15,25)
+   if dx*dx+(dy+.10)**2<.66:c=(218,165,135)
+   if (dx+.04)**2+dy*dy<.26:c=(44,21,22)
+  if abs(u+.08)<.11 and -.05<v<.44:c=mix(c,(235,114,97),.38)
+  if abs(u+.08)<.36 and abs(v-(.62+.10*math.sin((u+.08)*7)))<.065:c=(62,14,25)
+  off=(y*W+x)*4;pix[off:off+4]=bytes((*c,255))
+png(assets/'textures/item/behelit.png',W,H,pix)
+j(assets/'models/item/behelit.json',{'parent':'minecraft:item/generated','textures':{'layer0':'noctismagic:item/behelit'}})
+for lang,it in [('it_it',True),('en_us',False)]:
+ p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
+ d['item.noctismagic.behelit']='Behelit scarlatto' if it else 'Crimson Behelit'
+ d['advancement.noctismagic.rituals.vampire_complete.description']='Cinque doni del colore della vita possono conquistare una fiducia immortale. Una scelta ti attende.' if it else 'Five gifts the color of life may earn immortal trust. A choice awaits you.'
+ j(p,d)
+print('Blood gifts earn two hearts; Phos emeralds, Cinnabar redstone, Griffith guaranteed Crimson Behelit.')
