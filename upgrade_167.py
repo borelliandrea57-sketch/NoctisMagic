@@ -5,7 +5,7 @@ root=Path(sys.argv[1]);java=root/'src/main/java/it/noctis/magic';res=root/'src/m
 def edit(n,a,b):
  p=java/n;s=p.read_text(encoding='utf-8');assert a in s,(n,a);p.write_text(s.replace(a,b,1),encoding='utf-8')
 def write(n,s):(java/n).write_text(s,encoding='utf-8')
-def j(p,d):p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(d,ensure_ascii=False,indent=2),encoding='utf-8')
+def write_noctis_json_resource(p,d):p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(d,ensure_ascii=False,indent=2),encoding='utf-8')
 # New items and magic.
 a='public static final RegistryObject<Item> CATHEDRAL_EGG='
 edit('Noctis.java',a,'''public static final RegistryObject<Item> GUTS_EGG=ITEMS.register("guts_spawn_egg",()->new ForgeSpawnEggItem(GUTS,0x202027,0x9c9693,new Item.Properties()));
@@ -256,7 +256,7 @@ clues={
 'cabaret':('Le tre lanterne','The three lanterns','Tre rose nella notte, una moneta dorata apre le porte.','Three roses in the night, a golden coin opens doors.'),
 'cabaret_complete':('Tre benedizioni','Three blessings','Tre mani diverse possono alleviare lo stesso dolore.','Three different hands can ease the same pain.')}
 for id,icon,parent,xp in [('guts','noctismagic:dragon_slayer','root',100),('lelouch','minecraft:ender_eye','root',50),('lelouch_complete','minecraft:ender_eye','lelouch',200),('joker','noctismagic:calling_card','root',50),('joker_complete','noctismagic:calling_card','joker',180),('lucy','minecraft:phantom_membrane','root',50),('lucy_complete','minecraft:phantom_membrane','lucy',150),('cabaret','minecraft:gold_nugget','root',50),('cabaret_complete','minecraft:gold_nugget','cabaret',150)]:
- j(base/(id+'.json'),{'parent':'noctismagic:rituals/'+parent,'display':{'icon':{'item':icon},'title':{'translate':'advancement.noctismagic.rituals.'+id+'.title'},'description':{'translate':'advancement.noctismagic.rituals.'+id+'.description'},'frame':'goal','show_toast':True,'announce_to_chat':True,'hidden':False},'criteria':{'ritual':{'trigger':'minecraft:impossible'}},'rewards':{'experience':xp}})
+ write_noctis_json_resource(base/(id+'.json'),{'parent':'noctismagic:rituals/'+parent,'display':{'icon':{'item':icon},'title':{'translate':'advancement.noctismagic.rituals.'+id+'.title'},'description':{'translate':'advancement.noctismagic.rituals.'+id+'.description'},'frame':'goal','show_toast':True,'announce_to_chat':True,'hidden':False},'criteria':{'ritual':{'trigger':'minecraft:impossible'}},'rewards':{'experience':xp}})
 # Art atlas and item icon.
 def chunk(t,b):return struct.pack('>I',len(b))+t+b+struct.pack('>I',zlib.crc32(t+b)&0xffffffff)
 def png(p,W,H,pix):
@@ -296,8 +296,8 @@ for y in range(H):
   if 2<t<5 and abs(d)<3:c=(145,136,115)
   if c:pix[(y*W+x)*4:(y*W+x)*4+4]=bytes((*c,255))
 png(assets/'textures/item/dragon_slayer.png',W,H,pix)
-j(assets/'models/item/dragon_slayer.json',{'parent':'minecraft:item/handheld','textures':{'layer0':'noctismagic:item/dragon_slayer'},'display':{'thirdperson_righthand':{'rotation':[0,-90,55],'translation':[0,4,0],'scale':[1.65,1.65,1.65]},'thirdperson_lefthand':{'rotation':[0,90,-55],'translation':[0,4,0],'scale':[1.65,1.65,1.65]}}})
-j(assets/'models/item/guts_spawn_egg.json',{'parent':'minecraft:item/template_spawn_egg'})
+write_noctis_json_resource(assets/'models/item/dragon_slayer.json',{'parent':'minecraft:item/handheld','textures':{'layer0':'noctismagic:item/dragon_slayer'},'display':{'thirdperson_righthand':{'rotation':[0,-90,55],'translation':[0,4,0],'scale':[1.65,1.65,1.65]},'thirdperson_lefthand':{'rotation':[0,90,-55],'translation':[0,4,0],'scale':[1.65,1.65,1.65]}}})
+write_noctis_json_resource(assets/'models/item/guts_spawn_egg.json',{'parent':'minecraft:item/template_spawn_egg'})
 for i,lang in enumerate(('it_it','en_us')):
  p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
  for id,t in clues.items():
@@ -305,7 +305,7 @@ for i,lang in enumerate(('it_it','en_us')):
   d['advancement.noctismagic.rituals.'+id+'.description']=t[i+2]
  d['item.noctismagic.guts_spawn_egg']='Uovo generatore: Guts' if i==0 else 'Guts Spawn Egg'
  d['item.noctismagic.dragon_slayer']='Dragon Slayer'
- j(p,d)
+ write_noctis_json_resource(p,d)
 print('Guts detailed model, safe eclipse arrival, Dragon Slayer, Geass and enigmatic quests installed.')
 
 
@@ -582,7 +582,7 @@ qtexts={
 for idx,lang in enumerate(('it_it','en_us')):
  p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
  for key,desc in qtexts.items():d['advancement.noctismagic.rituals.'+key+'.description']=desc[idx]
- j(p,d)
+ write_noctis_json_resource(p,d)
 edit('Joker.java','Take your time. Cinque ombre custodiscono la strada per il mio covo.','Take your time. La Calling Card reclama cinque ombre: sconfiggi cinque creature ostili, poi torna da me.')
 edit('Joker.java','Le Ombre non si sconfiggono da sole.','La Calling Card non e ancora pronta. Sconfiggi altre creature ostili, poi torna qui.')
 print('Black Rose and Joker dedicated detailed meshes, improved mounted flight, clarified quest hints.')
@@ -606,7 +606,7 @@ for ident,icon,parent,xp in [
  ('vampire_complete','noctismagic:blood_bucket','vampire',200),
  ('cthulhu','minecraft:ink_sac','root',75),
  ('cthulhu_complete','minecraft:nether_star','cthulhu',450)]:
- j(base/(ident+'.json'),{'parent':'noctismagic:rituals/'+parent,'display':{'icon':{'item':icon},'title':{'translate':'advancement.noctismagic.rituals.'+ident+'.title'},'description':{'translate':'advancement.noctismagic.rituals.'+ident+'.description'},'frame':'challenge' if ident=='cthulhu_complete' else 'goal','show_toast':True,'announce_to_chat':True,'hidden':False},'criteria':{'ritual':{'trigger':'minecraft:impossible'}},'rewards':{'experience':xp}})
+ write_noctis_json_resource(base/(ident+'.json'),{'parent':'noctismagic:rituals/'+parent,'display':{'icon':{'item':icon},'title':{'translate':'advancement.noctismagic.rituals.'+ident+'.title'},'description':{'translate':'advancement.noctismagic.rituals.'+ident+'.description'},'frame':'challenge' if ident=='cthulhu_complete' else 'goal','show_toast':True,'announce_to_chat':True,'hidden':False},'criteria':{'ritual':{'trigger':'minecraft:impossible'}},'rewards':{'experience':xp}})
 mysteries={
  'sephiroth':('Una sola ala','One wing','Incidi un nome nel legno. Non tutti gli angeli possiedono due ali.','Carve a name into wood. Not every angel has two wings.'),
  'sephiroth_complete':('Il silenzio dopo il canto','Silence after the song','Fa che il canto dell angelo si spenga per sempre.','Let the angel song fall silent forever.'),
@@ -624,7 +624,7 @@ for idx,lang in enumerate(('it_it','en_us')):
  for key,t in mysteries.items():
   d['advancement.noctismagic.rituals.'+key+'.title']=t[idx]
   d['advancement.noctismagic.rituals.'+key+'.description']=t[idx+2]
- j(p,d)
+ write_noctis_json_resource(p,d)
 edit('Joker.java','Take your time. La Calling Card reclama cinque ombre: sconfiggi cinque creature ostili, poi torna da me.','Take your time. Cinque ombre gravano sulla lettera. Quando avra ripreso vita, sai dove trovarmi.')
 edit('Joker.java','La Calling Card non e ancora pronta. Sconfiggi altre creature ostili, poi torna qui.','Le ombre non hanno ancora restituito il cuore della lettera.')
 print('Mystery quest journal expanded: vampire blood pact, Miaugusto, Cthulhu and subtler Joker/Sephiroth hints.')
@@ -1381,7 +1381,7 @@ for lang,it in [('it_it',True),('en_us',False)]:
  d['message.noctismagic.pony_tame']='Offrimi mele, carote o zucchero per diventare amici!' if it else 'Offer apples, carrots or sugar to become friends!'
  d['message.noctismagic.pony_tamed']='Amicizia conquistata! Tasto destro a mano vuota per cavalcare.' if it else 'Friendship gained! Right-click with an empty hand to ride.'
  d['message.noctismagic.pony_ride']='Premi %s per il potere speciale. Shift per scendere.' if it else 'Press %s to use the special power. Shift to dismount.'
- j(p,d)
+ write_noctis_json_resource(p,d)
 print('Dedicated rebindable P pony power key, server ownership validation and localized taming/riding hints.')
 
 
@@ -1455,7 +1455,7 @@ for lang,it in [('it_it',True),('en_us',False)]:
  d['message.noctismagic.maomao_herbs']='Erbe consegnate a Maomao: %s/%s' if it else 'Herbs delivered to Maomao: %s/%s'
  d['message.noctismagic.maomao_immunity']='Rimedio di Maomao: immunita permanente al veleno!' if it else 'Maomao remedy: permanent poison immunity!'
  d['message.noctismagic.maomao_already']='Sei gia immune al veleno.' if it else 'You are already immune to poison.'
- j(p,d)
+ write_noctis_json_resource(p,d)
 print('Maomao herbal remedy: five common plants, permanent poison immunity saved across death.')
 
 
@@ -1504,12 +1504,12 @@ for y in range(H):
   if abs(u+.08)<.36 and abs(v-(.62+.10*math.sin((u+.08)*7)))<.065:c=(62,14,25)
   off=(y*W+x)*4;pix[off:off+4]=bytes((*c,255))
 png(assets/'textures/item/behelit.png',W,H,pix)
-j(assets/'models/item/behelit.json',{'parent':'minecraft:item/generated','textures':{'layer0':'noctismagic:item/behelit'}})
+write_noctis_json_resource(assets/'models/item/behelit.json',{'parent':'minecraft:item/generated','textures':{'layer0':'noctismagic:item/behelit'}})
 for lang,it in [('it_it',True),('en_us',False)]:
  p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
  d['item.noctismagic.behelit']='Behelit scarlatto' if it else 'Crimson Behelit'
  d['advancement.noctismagic.rituals.vampire_complete.description']='Cinque doni del colore della vita possono conquistare una fiducia immortale. Una scelta ti attende.' if it else 'Five gifts the color of life may earn immortal trust. A choice awaits you.'
- j(p,d)
+ write_noctis_json_resource(p,d)
 print('Blood gifts earn two hearts; Phos emeralds, Cinnabar redstone, Griffith guaranteed Crimson Behelit.')
 
 
@@ -1692,12 +1692,12 @@ for m,base in enumerate([(72,48,57),(189,178,155),(20,12,24),(147,139,129)]):
    if m==2:c=mix(c,(134,74,100),.24*math.exp(-((u-.48)/.28)**2))
    off=(yy*W+m*128+xx)*4;pix[off:off+4]=bytes((*c,255))
 png(assets/'textures/entity/ossuary_crawler.png',W,H,pix)
-j(assets/'models/item/ossuary_crawler_spawn_egg.json',{'parent':'minecraft:item/template_spawn_egg'})
+write_noctis_json_resource(assets/'models/item/ossuary_crawler_spawn_egg.json',{'parent':'minecraft:item/template_spawn_egg'})
 for lang,it in [('it_it',True),('en_us',False)]:
  p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
  d['entity.noctismagic.ossuary_crawler']='Ossario Strisciante' if it else 'Crawling Ossuary'
  d['item.noctismagic.ossuary_crawler_spawn_egg']='Uovo generatore: Ossario Strisciante' if it else 'Crawling Ossuary Spawn Egg'
- j(p,d)
+ write_noctis_json_resource(p,d)
 print('Neutral retaliatory Xenomorph and new six-legged Crawling Ossuary horror.')
 
 
@@ -1820,12 +1820,12 @@ for y in range(H):
   if c is not None:
    off=(y*W+x)*4;pix[off:off+4]=bytes((*c,255))
 png(assets/'textures/item/jotaro_cap.png',W,H,pix)
-j(assets/'models/item/jotaro_cap.json',{'parent':'minecraft:item/generated','textures':{'layer0':'noctismagic:item/jotaro_cap'}})
+write_noctis_json_resource(assets/'models/item/jotaro_cap.json',{'parent':'minecraft:item/generated','textures':{'layer0':'noctismagic:item/jotaro_cap'}})
 for lang,it in [('it_it',True),('en_us',False)]:
  p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
  d['item.noctismagic.jotaro_cap']='Cappello di Jotaro' if it else "Jotaro's Cap"
  d['item.noctismagic.jotaro_cap.desc']='Forza II mentre indossato.' if it else 'Strength II while worn.'
- j(p,d)
+ write_noctis_json_resource(p,d)
 print('Jotaro guaranteed wearable epic cap with gold chain, 7 armor and Strength II.')
 
 
@@ -2051,7 +2051,7 @@ for lang,it in [('it_it',True),('en_us',False)]:
  d['message.noctismagic.geass_progress']='Geass: %s/200 blocchi percorsi' if it else 'Geass: %s/200 blocks walked'
  d['message.noctismagic.geass_free']='Il comando e terminato. Hai ripreso il controllo.' if it else 'The command is over. You are in control again.'
  d['message.noctismagic.geass_break']='Il comando del Geass si interrompe.' if it else 'The Geass command is interrupted.'
- j(p,d)
+ write_noctis_json_resource(p,d)
 print('Defensive Lelouch Geass: controlled 200-block walk, safe terrain and temporary input override.')
 
 
@@ -2190,7 +2190,7 @@ for name in ['leon_jacket','leon_pistol','hope']:
    if c is not None:
     off=(y*W+x)*4;pix[off:off+4]=bytes((*c,255))
  png(assets/'textures/item'/f'{name}.png',W,H,pix)
- j(assets/'models/item'/f'{name}.json',{'parent':'minecraft:item/generated','textures':{'layer0':f'noctismagic:item/{name}'}})
+ write_noctis_json_resource(assets/'models/item'/f'{name}.json',{'parent':'minecraft:item/generated','textures':{'layer0':f'noctismagic:item/{name}'}})
 for lang,it in [('it_it',True),('en_us',False)]:
  p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
  d['item.noctismagic.leon_jacket']='Giubbotto di Leon' if it else "Leon's Jacket"
@@ -2199,7 +2199,7 @@ for lang,it in [('it_it',True),('en_us',False)]:
  d['item.noctismagic.hope.desc']='Non ha alcun potere.' if it else 'It has no power.'
  d['item.noctismagic.leon_pistol.desc']='Tasto destro per sparare. Consuma una pepita di ferro.' if it else 'Right-click to fire. Uses one iron nugget.'
  d['message.noctismagic.leon_ammo']='Servono pepite di ferro.' if it else 'Iron nuggets required.'
- j(p,d)
+ write_noctis_json_resource(p,d)
 print('Character loot, colored court suits, Leon jacket and pistol, medicinal herbs, gifts, and Hope.')
 
 
@@ -2225,7 +2225,7 @@ edit('CharacterLoot.java','  }else if(m instanceof Vincent)add(e,Noctis.HOPE.get
   }''')
 # Food can be cooked in a furnace, smoker or campfire.
 for name,kind,time in [('smelt_horse_meat','smelting',200),('smoke_horse_meat','smoking',100),('campfire_horse_meat','campfire_cooking',600)]:
- j(res/'data/noctismagic/recipes'/f'{name}.json',{'type':'minecraft:'+kind,'category':'food','ingredient':{'item':'noctismagic:horse_meat'},'result':'noctismagic:cooked_horse_meat','experience':.35,'cookingtime':time})
+ write_noctis_json_resource(res/'data/noctismagic/recipes'/f'{name}.json',{'type':'minecraft:'+kind,'category':'food','ingredient':{'item':'noctismagic:horse_meat'},'result':'noctismagic:cooked_horse_meat','experience':.35,'cookingtime':time})
 for cooked,name in [(False,'horse_meat'),(True,'cooked_horse_meat')]:
  W,H=64,64;pix=bytearray(W*H*4)
  for y in range(H):
@@ -2239,12 +2239,12 @@ for cooked,name in [(False,'horse_meat'),(True,'cooked_horse_meat')]:
    c=shade(c,.94+.07*math.sin(x*1.7+y*2.3))
    off=(y*W+x)*4;pix[off:off+4]=bytes((*c,255))
  png(assets/'textures/item'/f'{name}.png',W,H,pix)
- j(assets/'models/item'/f'{name}.json',{'parent':'minecraft:item/generated','textures':{'layer0':f'noctismagic:item/{name}'}})
+ write_noctis_json_resource(assets/'models/item'/f'{name}.json',{'parent':'minecraft:item/generated','textures':{'layer0':f'noctismagic:item/{name}'}})
 for lang,it in [('it_it',True),('en_us',False)]:
  p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
  d['item.noctismagic.horse_meat']='Carne di cavallo cruda' if it else 'Raw Horse Meat'
  d['item.noctismagic.cooked_horse_meat']='Carne di cavallo cotta' if it else 'Cooked Horse Meat'
- j(p,d)
+ write_noctis_json_resource(p,d)
 print('Maelle easel, Verso piano, pony leather and edible horse meat, randomized Synchro dragon treasure.')
 
 
@@ -2276,12 +2276,12 @@ for name in ['garlic','blood_vial']:
    if c is not None:
     off=(y*W+x)*4;pix[off:off+4]=bytes((*c,255))
  png(assets/'textures/item'/f'{name}.png',W,H,pix)
- j(assets/'models/item'/f'{name}.json',{'parent':'minecraft:item/generated','textures':{'layer0':f'noctismagic:item/{name}'}})
+ write_noctis_json_resource(assets/'models/item'/f'{name}.json',{'parent':'minecraft:item/generated','textures':{'layer0':f'noctismagic:item/{name}'}})
 for lang,it in [('it_it',True),('en_us',False)]:
  p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
  d['item.noctismagic.garlic']='Aglio' if it else 'Garlic'
  d['item.noctismagic.blood_vial']='Ampolla di sangue' if it else 'Blood Vial'
- j(p,d)
+ write_noctis_json_resource(p,d)
 print('Hostile vampire garlic drops and friendly vampire blood vials.')
 
 
@@ -2343,9 +2343,9 @@ public class ExodiaEgg extends ForgeSpawnEggItem{
   if(result.getResult().consumesAction())victory(sp,ids);return result;
  }
 }''')
-j(assets/'models/item/exodia_spawn_egg.json',{'parent':'minecraft:item/template_spawn_egg'})
+write_noctis_json_resource(assets/'models/item/exodia_spawn_egg.json',{'parent':'minecraft:item/template_spawn_egg'})
 for lang,it in [('it_it',True),('en_us',False)]:
- p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'));d['item.noctismagic.exodia_spawn_egg']='Uovo generatore: Exodia' if it else 'Exodia Spawn Egg';j(p,d)
+ p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'));d['item.noctismagic.exodia_spawn_egg']='Uovo generatore: Exodia' if it else 'Exodia Spawn Egg';write_noctis_json_resource(p,d)
 print('Exodia spawn egg triggers a one-time victory disconnect only when it spawns a new Exodia.')
 
 
@@ -2496,7 +2496,7 @@ for lang,it in [('it_it',True),('en_us',False)]:
  d['message.noctismagic.time_eclipse']='L’eclissi e gia in corso. Il tempo si rifiuta di avanzare.' if it else 'The eclipse is already underway. Time refuses to advance.'
  d['message.noctismagic.time_days']='Il tempo avanza. Giorni mancanti all’eclissi: %s.' if it else 'Time advances. Days until the eclipse: %s.'
  d['message.noctismagic.time_arrived']='Il tempo ha ceduto. L’eclissi e arrivata.' if it else 'Time has yielded. The eclipse has arrived.'
- j(p,d)
+ write_noctis_json_resource(p,d)
 print('Exclusive server-validated time acceleration spell, advancing one dawn without skipping the eclipse.')
 
 
@@ -2705,14 +2705,14 @@ for m,base in enumerate([(102,113,70),(154,143,97),(47,28,18),(230,170,43),(231,
    if m==3 and abs(u-.5)<.13:c=(16,12,8)
    off=(y*W+m*128+x)*4;pix[off:off+4]=bytes((*c,255))
 png(assets/'textures/entity/mustache_rex.png',W,H,pix)
-j(assets/'models/item/mustache_rex_spawn_egg.json',{'parent':'minecraft:item/template_spawn_egg'})
-j(assets/'models/item/old_book.json',{'parent':'minecraft:item/generated','textures':{'layer0':'minecraft:item/book'}})
+write_noctis_json_resource(assets/'models/item/mustache_rex_spawn_egg.json',{'parent':'minecraft:item/template_spawn_egg'})
+write_noctis_json_resource(assets/'models/item/old_book.json',{'parent':'minecraft:item/generated','textures':{'layer0':'minecraft:item/book'}})
 for lang,it in [('it_it',True),('en_us',False)]:
  p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
  d['entity.noctismagic.mustache_rex']='Baffosauro Rex'
  d['item.noctismagic.mustache_rex_spawn_egg']='Uovo generatore: Baffosauro Rex' if it else 'Mustache Rex Spawn Egg'
  d['item.noctismagic.old_book']='Mein Kampf (libro maledetto)' if it else 'Mein Kampf (cursed book)'
- j(p,d)
+ write_noctis_json_resource(p,d)
 print('NPC pain sounds and absurd nonpolitical mustached dinosaur boss, secret loot book and animated transformation.')
 
 
@@ -2864,8 +2864,8 @@ for name,label,color in [('vaffanculo','Vaffanculo',(231,49,45)),('suca','Suca',
     if c:
      q=(y*W+x)*4;pix[q:q+4]=bytes((*c,255))
   p=assets/'textures/block'/f'{tex}.png';p.parent.mkdir(parents=True,exist_ok=True);png(p,W,H,pix)
-  j(assets/'models/block'/f'{tex}.json',{'parent':'minecraft:block/crop','textures':{'crop':f'noctismagic:block/{tex}'}})
- j(assets/'blockstates'/f'{crop}.json',{'variants':{f'age={i}':{'model':f'noctismagic:block/{crop}_{i}'} for i in range(8)}})
+  write_noctis_json_resource(assets/'models/block'/f'{tex}.json',{'parent':'minecraft:block/crop','textures':{'crop':f'noctismagic:block/{tex}'}})
+ write_noctis_json_resource(assets/'blockstates'/f'{crop}.json',{'variants':{f'age={i}':{'model':f'noctismagic:block/{crop}_{i}'} for i in range(8)}})
  for item,isfruit in [(seed,False),(fruit,True)]:
   W=H=32;pix=bytearray(W*H*4)
   for y in range(H):
@@ -2881,17 +2881,17 @@ for name,label,color in [('vaffanculo','Vaffanculo',(231,49,45)),('suca','Suca',
     if c:
      q=(y*W+x)*4;pix[q:q+4]=bytes((*c,255))
   png(assets/'textures/item'/f'{item}.png',W,H,pix)
-  j(assets/'models/item'/f'{item}.json',{'parent':'minecraft:item/generated','textures':{'layer0':f'noctismagic:item/{item}'}})
+  write_noctis_json_resource(assets/'models/item'/f'{item}.json',{'parent':'minecraft:item/generated','textures':{'layer0':f'noctismagic:item/{item}'}})
  mature={'condition':'minecraft:block_state_property','block':f'noctismagic:{crop}','properties':{'age':'7'}}
- j(res/'data/noctismagic/loot_tables/blocks'/f'{crop}.json',{'type':'minecraft:block','pools':[{'rolls':1,'entries':[{'type':'minecraft:item','name':f'noctismagic:{seed}'}]},{'rolls':{'type':'minecraft:uniform','min':1,'max':3},'conditions':[mature],'entries':[{'type':'minecraft:item','name':f'noctismagic:{fruit}'}]},{'rolls':{'type':'minecraft:uniform','min':1,'max':2},'conditions':[mature],'entries':[{'type':'minecraft:item','name':f'noctismagic:{seed}'}]}]})
+ write_noctis_json_resource(res/'data/noctismagic/loot_tables/blocks'/f'{crop}.json',{'type':'minecraft:block','pools':[{'rolls':1,'entries':[{'type':'minecraft:item','name':f'noctismagic:{seed}'}]},{'rolls':{'type':'minecraft:uniform','min':1,'max':3},'conditions':[mature],'entries':[{'type':'minecraft:item','name':f'noctismagic:{fruit}'}]},{'rolls':{'type':'minecraft:uniform','min':1,'max':2},'conditions':[mature],'entries':[{'type':'minecraft:item','name':f'noctismagic:{seed}'}]}]})
  snd='fruit_vaffanculo' if name=='vaffanculo' else 'fruit_suca';target=assets/'sounds'/f'{snd}.ogg';target.parent.mkdir(parents=True,exist_ok=True)
  wav=root/f'{snd}.wav'
  subprocess.run(['espeak-ng','-v','it','-s','148','-p','38','-a','170','-w',str(wav),label+'!'],check=True)
  subprocess.run(['ffmpeg','-nostdin','-loglevel','error','-y','-i',str(wav),'-ac','1','-c:a','libvorbis','-q:a','5',str(target)],check=True);wav.unlink()
  sd[snd]={'subtitle':f'subtitles.noctismagic.{snd}','sounds':[f'noctismagic:{snd}']}
  for lang in ('it_it','en_us'):
-  p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'));d[f'item.noctismagic.{seed}']=f'Semi di {label}';d[f'block.noctismagic.{crop}']=f'Pianta di {label}';d[f'item.noctismagic.{fruit}']=f'Frutto di {label}';d[f'subtitles.noctismagic.{snd}']=label+'!';j(p,d)
-j(sounds,sd)
+  p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'));d[f'item.noctismagic.{seed}']=f'Semi di {label}';d[f'block.noctismagic.{crop}']=f'Pianta di {label}';d[f'item.noctismagic.{fruit}']=f'Frutto di {label}';d[f'subtitles.noctismagic.{snd}']=label+'!';write_noctis_json_resource(p,d)
+write_noctis_json_resource(sounds,sd)
 print('Vaffanculo and Suca crops, renewable fruits, mob seed drops, aimed area attacks and synthesized Italian voice clips.')
 
 
@@ -3043,7 +3043,7 @@ edit('GeassExile.java','Math.min(200,(int)o.walked)','(o.ticks+19)/20')
 for lang,it in [('it_it',True),('en_us',False)]:
  p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
  d['message.noctismagic.geass_progress']='Geass: %s secondi rimanenti' if it else 'Geass: %s seconds remaining'
- j(p,d)
+ write_noctis_json_resource(p,d)
 # Lelouch: preserve C.C. and paired animations, rebuild the male costume and hair.
 p=java/'GeassSculptedClient.java';s=p.read_text(encoding='utf-8')
 a='            float w=cc?3.08f:3.02f;'
@@ -3762,13 +3762,13 @@ p=assets/'models/item/dragon_slayer.json';d=json.loads(p.read_text(encoding='utf
 for hand,angle in [('righthand',55),('lefthand',-55)]:
  d['display']['thirdperson_'+hand]={'rotation':[0,-90 if angle>0 else 90,angle],'translation':[0,5,0],'scale':[3.4,3.4,3.4]}
  d['display']['firstperson_'+hand]={'rotation':[0,-90 if angle>0 else 90,angle*.45],'translation':[1.1 if angle>0 else -1.1,1.5,0],'scale':[1.7,1.7,1.7]}
-j(p,d)
+write_noctis_json_resource(p,d)
 import base64,subprocess
 encoded='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'
 tmp=root/'guts_griffith_recording.mp3';tmp.write_bytes(base64.b64decode(encoded,validate=True))
 subprocess.run(['ffmpeg','-nostdin','-loglevel','error','-y','-i',str(tmp),'-ac','1','-c:a','libvorbis','-q:a','4',str(assets/'sounds/guts_griffith.ogg')],check=True)
 tmp.unlink()
-p=assets/'sounds.json';d=json.loads(p.read_text(encoding='utf-8'));d['guts_griffith']={'sounds':[{'name':'noctismagic:guts_griffith'}]};j(p,d)
+p=assets/'sounds.json';d=json.loads(p.read_text(encoding='utf-8'));d['guts_griffith']={'sounds':[{'name':'noctismagic:guts_griffith'}]};write_noctis_json_resource(p,d)
 print('Guts uploaded Griffith scream, 140 melee and 85 splash damage, enormous Dragon Slayer with worn steel bevels.')
 
 
@@ -3800,7 +3800,7 @@ voice_b64='/+MYxAAHeAFcMAhEKCMh////mjNaDbv/36TD9Pm3RU0ZFRVBt38w8WaZNDP///9lJkVmR
 tmp=root/'waifu_recording.mp3';tmp.write_bytes(base64.b64decode(voice_b64,validate=True))
 subprocess.run(['ffmpeg','-nostdin','-loglevel','error','-y','-i',str(tmp),'-ac','1','-c:a','libvorbis','-q:a','4',str(assets/'sounds/waifu_voice.ogg')],check=True)
 tmp.unlink()
-p=assets/'sounds.json';d=json.loads(p.read_text(encoding='utf-8'));d['waifu_voice']={'sounds':[{'name':'noctismagic:waifu_voice'}]};j(p,d)
+p=assets/'sounds.json';d=json.loads(p.read_text(encoding='utf-8'));d['waifu_voice']={'sounds':[{'name':'noctismagic:waifu_voice'}]};write_noctis_json_resource(p,d)
 print('Shared uploaded Waifu voice on interaction, with three-second cooldown.')
 
 
@@ -4408,14 +4408,14 @@ for f in sorted(base.glob('*_complete.json')):
  if 'display' not in first or 'display' not in last:continue
  # Non-displayed discovery advancement still grants its original reward and gates existing logic.
  first.pop('display');last['parent']='noctismagic:rituals/root'
- j(start,first);j(f,last)
+ write_noctis_json_resource(start,first);write_noctis_json_resource(f,last)
  for lang in ('it_it','en_us'):
   lp=assets/'lang'/f'{lang}.json';d=json.loads(lp.read_text(encoding='utf-8'))
   pre='advancement.noctismagic.rituals.'
   first_desc=d.get(pre+ident+'.description','');last_desc=d.get(pre+ident+'_complete.description','')
   d[pre+ident+'_complete.title']=d.get(pre+ident+'.title',d.get(pre+ident+'_complete.title',ident))
   d[pre+ident+'_complete.description']=' '.join(dict.fromkeys(x for x in (first_desc,last_desc) if x))
-  j(lp,d)
+  write_noctis_json_resource(lp,d)
 
 # Giorno: visibly angular adult head, slimmer temples, smaller swept crown and tighter signature rolls.
 p=java/'GiornoSculptedClient.java';s=p.read_text(encoding='utf-8')
@@ -5814,12 +5814,12 @@ preset={'dimensions':{
  'minecraft:the_nether':{'type':'minecraft:the_nether','generator':{'type':'minecraft:noise','settings':'minecraft:nether','biome_source':{'type':'minecraft:multi_noise','preset':'minecraft:nether'}}},
  'minecraft:the_end':{'type':'minecraft:the_end','generator':{'type':'minecraft:noise','settings':'minecraft:end','biome_source':{'type':'minecraft:the_end'}}}
 }}
-j(res/'data/noctismagic/worldgen/world_preset/open_plains.json',preset)
-j(res/'data/minecraft/tags/worldgen/world_preset/normal.json',{'replace':False,'values':['noctismagic:open_plains']})
+write_noctis_json_resource(res/'data/noctismagic/worldgen/world_preset/open_plains.json',preset)
+write_noctis_json_resource(res/'data/minecraft/tags/worldgen/world_preset/normal.json',{'replace':False,'values':['noctismagic:open_plains']})
 for lang in ('it_it','en_us'):
  p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
  d['generator.noctismagic.open_plains']='Noctis - Grandi pianure' if lang=='it_it' else 'Noctis - Open plains'
- j(p,d)
+ write_noctis_json_resource(p,d)
 
 # A candidate may try several neighboring footprints instead of being discarded at
 # the first unsuitable height sample. Keep the original 24-chunk region and seed.
@@ -5903,9 +5903,9 @@ for name,(*pattern,ingredients) in recipes.items():
  recipe={'type':'minecraft:crafting_shaped','category':'misc','pattern':pattern,'key':{k:{'item':v} for k,v in ingredients.items()},'result':{'item':'noctismagic:'+name,'count':1}}
  assert all(len(row)==3 for row in pattern) and len(pattern)==3
  assert set(''.join(pattern))==set(ingredients)
- j(res/'data/noctismagic/recipes'/f'{name}.json',recipe)
+ write_noctis_json_resource(res/'data/noctismagic/recipes'/f'{name}.json',recipe)
  # Recipe book discovers it upon collecting an egg; these internal advancements have no visible tab.
- j(res/'data/noctismagic/advancements/recipes/misc'/f'{name}.json',{
+ write_noctis_json_resource(res/'data/noctismagic/advancements/recipes/misc'/f'{name}.json',{
   'parent':'minecraft:recipes/root',
   'criteria':{'has_egg':{'trigger':'minecraft:inventory_changed','conditions':{'items':[{'items':['minecraft:egg']}]}},'has_recipe':{'trigger':'minecraft:recipe_unlocked','conditions':{'recipe':'noctismagic:'+name}}},
   'requirements':[['has_egg','has_recipe']],
