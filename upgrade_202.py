@@ -6,10 +6,11 @@ root=Path(sys.argv[1]);java=root/'src/main/java/it/noctis/magic';assets=root/'sr
 def edit(file,a,b):
  p=java/file;s=p.read_text(encoding='utf-8');assert a in s,(file,a);p.write_text(s.replace(a,b,1),encoding='utf-8')
 edit('Noctis.java','public static final RegistryObject<Item> CATHEDRAL_EGG=','''public static final RegistryObject<EntityType<Kakyoin>> KAKYOIN=ENTITIES.register("kakyoin",()->EntityType.Builder.<Kakyoin>of(Kakyoin::new,MobCategory.CREATURE).sized(.76f,2.20f).clientTrackingRange(10).build(ID+":kakyoin"));
+    public static final RegistryObject<Item> KAKYOIN_CHERRY=ITEMS.register("kakyoin_cherry",()->new Item(new Item.Properties().food(new net.minecraft.world.food.FoodProperties.Builder().nutrition(2).saturationMod(.2f).fast().build())));
     public static final RegistryObject<Item> KAKYOIN_EGG=ITEMS.register("kakyoin_spawn_egg",()->new ForgeSpawnEggItem(KAKYOIN,0x235943,0xb14c36,new Item.Properties()));
     public static final RegistryObject<Item> CATHEDRAL_EGG=''')
 edit('Noctis.java','e.put(SCRAP_THIEF.get(),ScrapThief.attributes().build());','e.put(KAKYOIN.get(),Kakyoin.attributes().build());e.put(SCRAP_THIEF.get(),ScrapThief.attributes().build());')
-edit('Noctis.java','e.accept(CATHEDRAL_EGG.get());','e.accept(CATHEDRAL_EGG.get());e.accept(KAKYOIN_EGG.get());')
+edit('Noctis.java','e.accept(CATHEDRAL_EGG.get());','e.accept(CATHEDRAL_EGG.get());e.accept(KAKYOIN_EGG.get());e.accept(KAKYOIN_CHERRY.get());')
 (java/'Kakyoin.java').write_text('''package it.noctis.magic;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.*;
@@ -60,7 +61,7 @@ public final class KakyoinClient{
  }
  static class Model extends EntityModel<Kakyoin>{
   final Part root=new Part(0,0,0),body=root.child(0,0,0),head=body.child(0,-.5f,0);
-  final Part bang=head.child(-1.65f,-7.5f,-2.05f),bangTip=bang.child(-.48f,3.2f,-.45f);
+  final Part bang=head.child(-1.12f,-8.25f,-2.32f),bangMid=bang.child(-1.34f,2.30f,-.94f),bangTip=bangMid.child(.35f,2.45f,-.24f),bangEnd=bangTip.child(.45f,1.85f,.10f);
   final Part jaw=head.child(0,-1.24f,-1.2f),tongue=head.child(0,-1.9f,-2.35f),cherry=head.child(0,-2.1f,-3.52f),stem=cherry.child(0,0,0);
   final Part[] arms=new Part[2],fore=new Part[2],legs=new Part[2],shins=new Part[2],earrings=new Part[2],coatFront=new Part[2],coatBack=new Part[2];
   void shape(Part p,int m,int f,float width,float... a){CinnabarClient.Model.angular(p,m,f,width,a[0],a[a.length-5],a);}
@@ -100,9 +101,15 @@ public final class KakyoinClient{
     head.loft(i%2==0?12:5,6,-10.05f+offset,x,-.03f,.44f,.49f,-9.35f+offset,x*.93f,.55f,.77f,.84f,-8.48f+offset,x,.98f,.84f,1.05f,-7.48f+offset,x*1.06f,2.05f,.64f,.88f,-6.88f+offset,x*1.17f,3.24f,.38f,.43f,-6.63f+offset,x*1.24f,3.84f,.035f,.035f);
     head.loft(i%2==0?5:11,6,-6.5f,x,1.77f,.56f,.71f,-4.7f,x*.97f,2.40f,.54f,.65f,-3.0f,x*.78f,2.59f,.40f,.52f,-1.0f+offset,x*.56f,2.39f,.025f,.035f);
    }
-   // Iconic long red forelock: connected curved sections with independent tip movement.
-   bang.loft(5,12,-.6f,0,.3f,.6f,.68f,.2f,-.65f,-.20f,1.12f,.72f,1.5f,-.86f,-.63f,.97f,.65f,2.8f,-.56f,-.55f,.72f,.48f,3.4f,-.48f,-.45f,.56f,.36f);
-   bangTip.loft(5,12,-.35f,0,0,.59f,.38f,.45f,.24f,-.05f,.50f,.30f,1.25f,.76f,.02f,.39f,.24f,2.12f,1.01f,.11f,.23f,.15f,2.7f,.58f,.20f,.035f,.045f);
+   // Oversized continuous S-shaped forelock: raised crest, broad outward curve, inward bend and curling tip.
+   // Overlapping sections retain volume during the independent wave animation.
+   bang.loft(12,12,-.86f,.42f,.54f,.71f,.73f,-.45f,.18f,.13f,1.19f,.96f,.25f,-.48f,-.36f,1.53f,1.07f,1.04f,-1.06f,-.78f,1.48f,1.00f,1.85f,-1.43f,-.99f,1.24f,.88f,2.64f,-1.34f,-.94f,1.02f,.76f);
+   bangMid.loft(5,12,-.43f,0,0,1.10f,.81f,.28f,-.16f,-.12f,1.03f,.75f,1.05f,-.06f,-.25f,.91f,.68f,1.85f,.19f,-.29f,.79f,.58f,2.79f,.35f,-.24f,.65f,.48f);
+   bangTip.loft(12,12,-.40f,0,0,.71f,.52f,.22f,.17f,-.02f,.68f,.48f,.86f,.60f,.05f,.55f,.40f,1.42f,.69f,.14f,.46f,.33f,2.14f,.45f,.10f,.36f,.27f);
+   bangEnd.loft(5,10,-.39f,0,0,.41f,.31f,.35f,-.21f,-.05f,.36f,.27f,.88f,-.60f,-.08f,.26f,.19f,1.12f,-.96f,-.02f,.16f,.12f,.84f,-1.24f,.06f,.035f,.045f);
+   // Raised streaks on the front, following the curl rather than floating above it.
+   bang.blade(5,.13f,-.32f,-.65f,-1.15f,1.28f,-1.81f,.24f);
+   bangMid.blade(12,-.38f,.10f,-.72f,-.18f,2.14f,-.76f,.19f);
    for(int i=0;i<2;i++){
     int s=i==0?-1:1;
     head.oval(4,s*2.75f,-3.6f,.04f,.53f,.84f,.48f);
@@ -155,8 +162,16 @@ public final class KakyoinClient{
    tongue.x=.46f*(float)Math.sin(phase);tongue.y=-1.9f+.10f*(float)Math.cos(phase);tongue.rz=.25f*(float)Math.sin(phase);tongue.rx=-.10f+.16f*(float)Math.cos(phase);
    cherry.x=.64f*(float)Math.sin(phase);cherry.y=-1.96f-.22f*(float)Math.cos(phase);cherry.z=-3.48f-.12f*(float)Math.cos(phase);
    cherry.ry=phase;cherry.rz=.42f*(float)Math.sin(phase);stem.rx=.17f*(float)Math.sin(phase);
-   bang.rz=.06f+.075f*(float)Math.sin(age*.18f);bang.rx=.045f*(float)Math.cos(age*.18f);
-   bangTip.rz=.12f+.09f*(float)Math.sin(age*.18f-.55f);bangTip.rx=.05f*(float)Math.cos(age*.18f-.55f);
+   float wave=age*.19f+(e.getId()%11)*.24f;
+   float lick=(float)Math.sin(phase)*.025f;
+   bang.rz=.035f+.13f*(float)Math.sin(wave)+lick;
+   bang.rx=.06f+.08f*(float)Math.cos(wave);bang.ry=.07f*(float)Math.sin(wave);
+   bangMid.rz=.12f+.19f*(float)Math.sin(wave-.60f);
+   bangMid.rx=.11f*(float)Math.cos(wave-.60f);bangMid.ry=.08f*(float)Math.sin(wave-.60f);
+   bangTip.rz=-.08f+.25f*(float)Math.sin(wave-1.15f);
+   bangTip.rx=.13f*(float)Math.cos(wave-1.15f);
+   bangEnd.rz=.13f+.30f*(float)Math.sin(wave-1.70f);
+   bangEnd.rx=.16f*(float)Math.cos(wave-1.70f);
    for(int i=0;i<2;i++){
     int s=i==0?-1:1;float walk=(float)Math.cos(limb*.666f+i*Math.PI)*amount;
     arms[i].rx=-walk*.55f;arms[i].rz=-s*.13f;
@@ -219,9 +234,25 @@ for m,base in pal.items():
     c=mix(c,(255,225,226),.92*g(.28,.21,.09,.11))
    im.putpixel((m%8*128+x,m//8*128+y),(*c,255))
 im.save(assets/'textures/entity/kakyoin_cherry.png')
+# Guaranteed cherry drop on death, using the standard vanilla loot pipeline.
+loot=root/'src/main/resources/data/noctismagic/loot_tables/entities/kakyoin.json'
+loot.parent.mkdir(parents=True,exist_ok=True)
+loot.write_text(json.dumps({"type":"minecraft:entity","pools":[{"rolls":1,"entries":[{"type":"minecraft:item","name":"noctismagic:kakyoin_cherry"}]}]}),encoding='utf-8')
+(assets/'models/item/kakyoin_cherry.json').write_text(json.dumps({"parent":"minecraft:item/generated","textures":{"layer0":"noctismagic:item/kakyoin_cherry"}}),encoding='utf-8')
+from PIL import ImageDraw
+icon=Image.new('RGBA',(32,32))
+d=ImageDraw.Draw(icon)
+d.line([(15,12),(16,8),(19,5),(22,3)],fill=(77,91,39,255),width=3)
+d.polygon([(19,6),(23,2),(28,3),(25,7)],fill=(76,139,48,255))
+d.polygon([(9,11),(14,9),(20,10),(24,14),(25,20),(22,25),(17,28),(11,27),(7,23),(5,17)],fill=(83,13,34,255))
+d.polygon([(10,12),(16,10),(21,12),(23,16),(22,23),(17,26),(11,25),(8,21),(7,16)],fill=(192,26,57,255))
+d.polygon([(9,14),(13,11),(16,12),(14,15),(10,17)],fill=(255,134,138,255))
+d.rectangle((9,14,11,15),fill=(255,229,217,255))
+d.polygon([(17,23),(22,18),(22,23),(17,26),(12,25)],fill=(125,15,47,255))
+icons=assets/'textures/item';icons.mkdir(parents=True,exist_ok=True);icon.save(icons/'kakyoin_cherry.png')
 (assets/'models/item/kakyoin_spawn_egg.json').write_text('{"parent":"minecraft:item/template_spawn_egg"}',encoding='utf-8')
 for loc in ('it_it','en_us'):
- p=assets/'lang'/f'{loc}.json';d=json.loads(p.read_text(encoding='utf-8'));d['entity.noctismagic.kakyoin']='Noriaki Kakyoin';d['item.noctismagic.kakyoin_spawn_egg']='Uovo di Noriaki Kakyoin' if loc=='it_it' else 'Noriaki Kakyoin Spawn Egg';p.write_text(json.dumps(d,ensure_ascii=False),encoding='utf-8')
+ p=assets/'lang'/f'{loc}.json';d=json.loads(p.read_text(encoding='utf-8'));d['item.noctismagic.kakyoin_cherry']='Ciliegia di Kakyoin' if loc=='it_it' else 'Kakyoin Cherry';d['entity.noctismagic.kakyoin']='Noriaki Kakyoin';d['item.noctismagic.kakyoin_spawn_egg']='Uovo di Noriaki Kakyoin' if loc=='it_it' else 'Noriaki Kakyoin Spawn Egg';p.write_text(json.dumps(d,ensure_ascii=False),encoding='utf-8')
 # Rare natural encounter via existing nighttime guest logic, with same global per-type limit.
 p=java/'NightGuests.java';s=p.read_text(encoding='utf-8')
 a='if(l.dimension()!=Level.OVERWORLD)return;'
