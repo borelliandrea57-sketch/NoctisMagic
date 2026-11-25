@@ -5852,3 +5852,63 @@ s=s[:a]+'''   int x0=cp.getMinBlockX(),z0=cp.getMinBlockZ();
 # Persist successful/failed candidate once; do not overwrite existing structures.
 p.write_text(s,encoding='utf-8')
 print('Open plains world preset and multiple safe natural monument placement candidates.')
+
+
+# Denser natural monuments: one deterministic candidate per 16x16 chunk region.
+# Keep a safety margin for the largest (91x101) building and the alternate footprints.
+p=java/'NaturalMonuments.java';s=p.read_text(encoding='utf-8')
+def monuments_change(a,b):
+ global s
+ assert a in s,a
+ s=s.replace(a,b,1)
+monuments_change('static final int REGION=24;','static final int REGION=16;')
+monuments_change('Random r=random(l,rx,rz);if(r.nextInt(100)>=76)return null;','Random r=random(l,rx,rz);')
+monuments_change('rx*REGION+4+r.nextInt(12),rz*REGION+4+r.nextInt(12),r.nextInt(4)','rx*REGION+3+r.nextInt(4),rz*REGION+3+r.nextInt(4),r.nextInt(4)')
+# More possible nearby footprints within the same region (including diagonals).
+monuments_change('int[][] offsets={{0,0},{16,0},{0,16},{-16,0},{0,-16},{32,16},{-32,16},{16,-32},{-16,-32}};',
+'''int[][] offsets={{0,0},{16,0},{0,16},{-16,0},{0,-16},{16,16},{-16,16},{16,-16},{-16,-16},{32,0},{0,32},{-32,0},{0,-32},{32,16},{-32,16},{16,-32},{-16,-32}};''')
+# Keep all candidate placements in their own region, even for pending entries from older saves.
+monuments_change('    if(!loaded(l,x,z,p.w,p.d)){waiting=true;continue;}',
+'''    int regionX=Math.floorDiv(cp.x,REGION)*REGION*16,regionZ=Math.floorDiv(cp.z,REGION)*REGION*16;
+    if(x<regionX||z<regionZ||x+p.w>regionX+REGION*16||z+p.d>regionZ+REGION*16)continue;
+    if(!loaded(l,x,z,p.w,p.d)){waiting=true;continue;}''')
+# Skip a suspended preflight when a player leaves; keep the candidate pending for a later visit.
+monuments_change('if(!loaded(l,job.origin.getX(),job.origin.getZ(),job.p.w,job.p.d))return;',
+'''if(!loaded(l,job.origin.getX(),job.origin.getZ(),job.p.w,job.p.d)){
+    if(!job.ready){active.remove(l);activeKey.remove(l);}return;
+   }''')
+p.write_text(s,encoding='utf-8')
+
+# Allow crafted building eggs to be used in survival without operator privileges.
+# Existing placement validation, no-overwrite behavior, consumption and refund remain intact.
+p=java/'GothicEgg.java';s=p.read_text(encoding='utf-8')
+a='        if(!p.isCreative()&&!p.hasPermissions(2)){p.sendSystemMessage(Component.literal("Per evocare un monumento serve la modalita Creativa o il permesso operatore."));return InteractionResult.FAIL;}'
+assert a in s,a
+s=s.replace(a,'',1)
+# Prevent simultaneous natural and manually triggered jobs.
+a='if(!Jobs.queue.isEmpty()){'
+assert a in s,a
+s=s.replace(a,'if(!Jobs.queue.isEmpty()||NaturalMonuments.active.containsKey(l)){',1)
+p.write_text(s,encoding='utf-8')
+
+# Survival recipes, all nine slots use ordinary obtainable vanilla ingredients.
+# More expensive materials for larger monuments; one consumed egg per building.
+recipes={
+ 'bakery_egg':('SWS','WEW','SBS',{'S':'minecraft:stone_bricks','W':'minecraft:wheat','E':'minecraft:egg','B':'minecraft:bread'}),
+ 'pastry_egg':('SCS','WEW','SPS',{'S':'minecraft:stone_bricks','C':'minecraft:cake','W':'minecraft:wheat','E':'minecraft:egg','P':'minecraft:pumpkin_pie'}),
+ 'cathedral_egg':('DGD','QEQ','DAD',{'D':'minecraft:deepslate_bricks','G':'minecraft:gold_block','Q':'minecraft:quartz_block','E':'minecraft:egg','A':'minecraft:amethyst_block'}),
+ 'castle_egg':('DOD','IEI','DGD',{'D':'minecraft:deepslate_bricks','O':'minecraft:obsidian','I':'minecraft:iron_block','E':'minecraft:egg','G':'minecraft:gold_block'})
+}
+for name,(*pattern,ingredients) in recipes.items():
+ recipe={'type':'minecraft:crafting_shaped','category':'misc','pattern':pattern,'key':{k:{'item':v} for k,v in ingredients.items()},'result':{'item':'noctismagic:'+name,'count':1}}
+ assert all(len(row)==3 for row in pattern) and len(pattern)==3
+ assert set(''.join(pattern))==set(ingredients)
+ j(res/'data/noctismagic/recipes'/f'{name}.json',recipe)
+ # Recipe book discovers it upon collecting an egg; these internal advancements have no visible tab.
+ j(res/'data/noctismagic/advancements/recipes/misc'/f'{name}.json',{
+  'parent':'minecraft:recipes/root',
+  'criteria':{'has_egg':{'trigger':'minecraft:inventory_changed','conditions':{'items':[{'items':['minecraft:egg']}]}},'has_recipe':{'trigger':'minecraft:recipe_unlocked','conditions':{'recipe':'noctismagic:'+name}}},
+  'requirements':[['has_egg','has_recipe']],
+  'rewards':{'recipes':['noctismagic:'+name]}
+ })
+print('Natural structures: candidate every 16x16 chunks, 17 placement attempts; all four monument eggs craftable and usable in survival.')
