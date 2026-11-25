@@ -3274,3 +3274,103 @@ for m,base in enumerate(pal):
    q=((m//8*128+y)*W+m%8*128+x)*4;pix[q:q+4]=bytes((*c,255))
 png(assets/'textures/entity/joker_detailed.png',W,H,pix)
 print('Joker revised with open sculpted white mask, angular face, irregular curls, long layered coat and articulated red gloves.')
+
+
+# Guts: muscular asymmetrical Black Swordsman armor, cropped spiky hair, enormous slab sword.
+p=java/'GutsSculptedClient.java';s=p.read_text(encoding='utf-8')
+s=s.replace('f?.5f+v.x()/7.6f:.04f,v.v()','f?Math.max(.03f,Math.min(.97f,.5f+v.x()/6.9f)):.03f,Math.max(.03f,Math.min(.97f,(v.y()+7.7f)/7.7f))',1)
+a=s.index('   head.loft(5,64,');b=s.index('   for(int i=0;i<2;i++){',a)
+s=s[:a]+'''   head.loft(5,80,-7.7f,0,.12f,1.6f,1.6f,-7.05f,0,.05f,2.7f,2.45f,-5.45f,0,0,3.25f,2.75f,-3.8f,0,-.1f,3.02f,2.68f,-2.1f,0,-.21f,2.75f,2.34f,-.65f,0,-.36f,2.24f,1.76f,-.10f,0,-.40f,1.12f,1.12f);project(head);
+   head.loft(2,24,-4.95f,0,-2.58f,.21f,.16f,-3.95f,0,-2.88f,.38f,.31f,-2.92f,0,-3.27f,.52f,.44f,-2.62f,0,-3.0f,.38f,.20f);
+   for(int side:new int[]{-1,1}){
+    head.blade(13,side*.70f,-4.70f,-2.63f,side*2.36f,-5.0f,-1.85f,.32f);
+    head.blade(14,side*1.86f,-3.15f,-2.02f,side*2.38f,-2.55f,-1.39f,.24f);
+   }
+   head.loft(7,40,-8.42f,0,.15f,1.45f,1.5f,-7.95f,0,.12f,2.77f,2.54f,-7.02f,0,.35f,3.36f,2.96f,-6.05f,0,.55f,3.25f,2.85f);
+   // Dense short irregular spikes, positive ring order, no crown of long identical cones.
+   for(int row=0;row<5;row++)for(int col=0;col<9;col++){
+    float x=(col-4)*.72f,z=-1.75f+row*.92f;
+    if(x*x/10.1f+z*z/8.7f>1.05f)continue;
+    float y=-7.62f+.32f*Math.abs(col-4)+.14f*Math.abs(row-2);
+    float h=.76f+.22f*((row*7+col*3)%5);
+    int mat=row<2&&col==3?12:7;
+    Part q=head.child(x,y,z);q.rz=(col-4)*.065f;q.rx=.24f;
+    q.loft(mat,12,-h, .16f*(col-4)/4f,.24f,.04f,.04f,-h*.47f,0,.13f,.30f,.37f,.18f,0,0,.47f,.49f);
+   }
+   for(int side:new int[]{-1,1})for(int k=0;k<5;k++)head.blade(7,side*2.8f,-7.35f+k*.20f,-1.9f+k*.69f,side*3.35f,-6.0f+k*.18f,-1.2f+k*.69f,.83f);
+'''+s[b:]
+s=s.replace('arms[i].loft(0,28,-.9f,0,0,1.70f,1.72f,.8f,0,0,2.30f,2.15f,3.1f,0,0,1.94f,1.80f,4.9f,0,0,1.4f,1.43f);','''arms[i].loft(i==1?2:0,36,-.9f,0,0,1.92f,1.94f,.8f,0,0,2.50f,2.32f,2.8f,0,0,2.26f,2.14f,4.9f,0,0,1.5f,1.55f);
+    if(i==1){
+     arms[i].oval(2,-.28f,2.85f,-1.23f,1.63f,1.70f,.98f);
+     arms[i].blade(14,.10f,1.35f,-2.05f,.62f,4.1f,-1.48f,.44f);
+    }
+    Part pauldron=arms[i].child(0,-.8f,0);
+    pauldron.loft(1,36,-.95f,s*.35f,0,.64f,.70f,-.48f,s*.22f,0,2.14f,1.96f,.42f,s*.37f,0,2.88f,2.48f,1.0f,s*.42f,0,2.60f,2.20f);
+    pauldron.blade(4,s*.4f,-.55f,-1.98f,s*2.85f,.25f,-1.15f,.30f);
+    for(int j=0;j<4;j++)pauldron.oval(4,s*(.2f+j*.61f),.40f,-2.05f+j*.12f,.13f,.13f,.13f);''',1)
+s=s.replace('for(int j=0;j<3;j++)arms[i].loft(1,28,-.8f+j*1.18f,0,0,2.25f-j*.18f,2.12f-j*.12f,.2f+j*1.18f,0,0,2.45f-j*.23f,2.32f-j*.19f);','''for(int j=0;j<(i==1?2:4);j++)arms[i].loft(1,32,-.6f+j*.89f,0,0,2.45f-j*.12f,2.32f-j*.12f,.32f+j*.89f,0,0,2.65f-j*.17f,2.44f-j*.14f);''',1)
+s=s.replace('fore[i].loft(i==0?1:0,32','fore[i].loft(i==0?1:10,32',1)
+s=s.replace('for(int j=0;j<3;j++)fore[i].loft(i==0?4:3,24','for(int j=0;j<5;j++)fore[i].loft(i==0?4:10,24',1)
+s=s.replace('for(int j=0;j<4;j++)fore[i].oval(i==0?4:0,-.85f+j*.55f,5.6f,-.62f,.26f,.53f,.34f);','''for(int j=0;j<4;j++){
+     float x=-.84f+j*.55f;
+     fore[i].loft(i==0?4:2,16,5.20f,x,-.52f,.26f,.38f,5.86f,x,-.66f,.25f,.31f,6.18f,x,-.82f,.14f,.19f);
+     if(i==0)fore[i].oval(4,x,5.25f,-.91f,.23f,.25f,.17f);
+    }
+    if(i==0){
+     fore[i].loft(11,24,.15f,0,0,1.51f,1.53f,.50f,0,0,1.58f,1.61f);
+     fore[i].blade(11,-.92f,.6f,-1.29f,-.95f,3.7f,-1.16f,.41f);
+     fore[i].blade(11,.92f,.6f,-1.29f,.95f,3.7f,-1.16f,.41f);
+     for(int j=0;j<4;j++)fore[i].oval(4,1.27f,.70f+j*.79f,-.48f,.19f,.17f,.17f);
+    }''',1)
+s=s.replace('sword.loft(8,8,2.1f,0,0,2.18f,.45f,5.2f,0,0,2.52f,.55f,22.0f,0,0,2.52f,.55f,25.6f,0,0,.08f,.12f);','sword.loft(8,8,2.1f,0,0,3.25f,.50f,5.0f,0,0,3.92f,.62f,30.0f,0,0,3.92f,.62f,34.0f,0,0,.08f,.12f);',1)
+s=s.replace('sword.loft(9,8,2.3f,0,-.36f,1.72f,.12f,22.0f,0,-.42f,1.92f,.13f,25.0f,0,-.07f,.07f,.06f);','''sword.loft(9,8,2.3f,0,-.49f,2.62f,.13f,30.0f,0,-.52f,3.05f,.14f,33.6f,0,-.07f,.07f,.06f);
+   sword.loft(9,8,2.3f,0,.49f,2.62f,.13f,30.0f,0,.52f,3.05f,.14f,33.6f,0,.07f,.07f,.06f);
+   for(int i=0;i<11;i++)sword.loft(10,16,-2.8f+i*.43f,0,0,.53f,.54f,-2.58f+i*.43f,0,0,.52f,.53f);
+   for(int side:new int[]{-1,1}){
+    Part pouch=body.child(side*2.85f,9.15f,-.85f);pouch.rz=side*.18f;
+    pouch.loft(3,24,0,0,0,.85f,.65f,.4f,0,0,1.1f,.82f,3.65f,0,0,1.15f,.85f,4.2f,0,0,.85f,.61f);
+    pouch.loft(11,20,.40f,0,-.05f,1.16f,.88f,.72f,0,-.05f,1.13f,.89f);
+    pouch.oval(4,0,1.10f,-.86f,.22f,.27f,.12f);
+   }''',1)
+s=s.replace('arms[i].rz=-s*.14f+(i==1?hit*.80f:0);','arms[i].rz=s*.08f+(i==1?hit*.65f:0);',1)
+s=s.replace('p.scale(1.23f,1.22f,1.23f);','p.scale(1.36f,1.29f,1.29f);',1)
+p.write_text(s,encoding='utf-8')
+W,H=1024,512;pix=bytearray(W*H*4)
+pal=[(34,37,42),(75,79,87),(193,137,99),(99,63,39),(145,148,150),(192,136,99),(25,22,29),(31,28,27),(155,158,165),(74,78,86),(161,151,133),(115,119,123),(166,165,157),(50,35,32),(127,76,61)]
+for m,base in enumerate(pal):
+ for y in range(128):
+  for x in range(128):
+   u=sat2((x-3)/121);v=sat2((y-3)/121);f=abs(u-.5)
+   c=shade(base,.78+.24*math.sin(math.pi*u)+.07*math.sin(u*83+v*21)**2)
+   if m in (0,1,4,8,9,11):
+    c=mix(c,(184,190,199),(.31 if m in (1,8,11) else .14)*math.exp(-((u-.3)/.10)**2))
+    c=shade(c,.88+.12*math.sin(u*17+v*4)**2)
+    if math.sin(u*127+v*38)>.96 and math.sin(v*112-u*8)>.70:c=mix(c,(199,200,205),.40)
+    if v<.024 or v>.97:c=shade(c,.57)
+   if m==6:
+    c=mix((22,19,26) if f>.20 else (65,23,31),(88,67,78),.23*math.sin(u*math.pi*7+v*3)**2)
+   if m==7:c=mix(c,(100,83,69),.33*max(0,math.sin(u*math.pi*16+v*3))**5)
+   if m==10:
+    if abs(v*12-round(v*12))<.075:c=shade(c,.57)
+   if m==5:
+    c=mix(base,(92,47,39),.34*sat2((f-.17)*4)+.18*v)
+    c=mix(c,(235,185,139),.32*math.exp(-((u-.49)/.13)**2))
+    for side in (-1,1):
+     dx=side*(u-(.5+side*.175))/.126;dy=(v-(.474-.045*dx))/.047
+     if side==1:
+      d=abs(dx)**1.8+abs(dy)**1.25
+      if d<1.13:c=(42,26,24)
+      if d<.76:c=(224,216,197)
+      if d<.73 and abs(dx)<.43:c=(81,69,58)
+      if d<.70 and abs(dx)<.20:c=(20,17,18)
+     elif abs(dx)<.95 and abs(v-(.479-.012*dx))<.012:c=(61,33,30)
+     if abs(dx)<1.10 and abs(v-(.365-.038*dx))<.020:c=(36,28,27)
+     if abs(dx)<1.0 and abs(v-(.394-.032*dx))<.009:c=(103,55,44)
+    if abs(u-(.32+.045*(v-.50)))<.010 and .36<v<.68:c=(117,58,47)
+    if abs(u-(.68-.025*(v-.5)))<.008 and .51<v<.67:c=mix(c,(111,55,43),.6)
+    if f<.074 and abs(v-(.78-.008*(1-f/.074)))<.010:c=(71,38,32)
+    if f<.055 and abs(v-.801)<.008:c=(153,89,70)
+    if v>.78 and math.sin(u*115+v*99)>.67:c=shade(c,.79)
+   q=((m//8*128+y)*W+m%8*128+x)*4;pix[q:q+4]=bytes((*c,255))
+png(assets/'textures/entity/guts_sculpted.png',W,H,pix)
+print('Guts revised: shorter irregular hair, scarred angular face, asymmetric armor, prosthetic arm and much wider Dragon Slayer.')
