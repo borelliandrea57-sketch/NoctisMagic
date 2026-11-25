@@ -56,14 +56,19 @@ final class ArcaneShading{
   float len=(float)Math.sqrt(nx*nx+ny*ny+nz*nz);
   if(len<.0001f)return 1;
   nx/=len;ny/=len;nz/=len;
+  // Two broad light lobes, soft rim and material-specific metallic sheen.
   float key=Math.max(0,nx*.42f+ny*.76f+nz*.49f);
   float fill=Math.max(0,-nx*.70f+ny*.21f+nz*.68f);
+  float upper=Math.max(0,ny);
   float rim=1-Math.abs(nz);rim*=rim;
   float h=Math.max(0,nx*.25f+ny*.45f+nz*.856f);
+  float h2=Math.max(0,-nx*.55f+ny*.35f+nz*.758f);
   float spec=h*h;spec*=spec;spec*=spec;spec*=spec;
-  float shade=metal?.64f+.23f*key+.07f*fill+.06f*rim+.18f*spec:
-      .84f+.11f*key+.04f*fill+.035f*rim+.025f*spec;
-  return Math.max(.58f,Math.min(1,shade));
+  float soft=h2*h2;soft*=soft;soft*=soft;
+  // Preserve the painted atlas colors: do not dim gold and silver to brown/gray.
+  float shade=metal?.77f+.12f*key+.035f*fill+.025f*upper+.045f*rim+.10f*spec+.035f*soft:
+      .87f+.08f*key+.025f*fill+.025f*upper+.025f*rim+.025f*spec;
+  return Math.max(.72f,Math.min(1,shade));
  }
 }''',encoding='utf-8')
 for file,style in [('GoldExperienceClient.java',1),('StickyFingersClient.java',2),('WitchHunterClient.java',3),('SushiGuestClient.java',4)]:
