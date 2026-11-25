@@ -26,6 +26,13 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - name: Cache dipendenze Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/wrapper/dists
+          key: ${{ runner.os }}-java17-forge-deps-${{ hashFiles('*.zip', 'upgrade_166.py') }}
       - name: Prepara convertitore audio
         run: |
           if ! command -v ffmpeg >/dev/null; then
@@ -177,7 +184,19 @@ jobs:
       - name: Compila Forge
         run: |
           cd "$PROJECT_DIR"
-          bash gradlew --no-daemon build --stacktrace
+          for attempt in 1 2 3; do
+            log="$RUNNER_TEMP/noctis-gradle-$attempt.log"
+            set +e
+            bash gradlew --no-daemon build --stacktrace 2>&1 | tee "$log"
+            rc=${PIPESTATUS[0]}
+            set -e
+            if [ "$rc" -eq 0 ]; then exit 0; fi
+            if [ "$attempt" -eq 3 ] || ! grep -Eiq 'status code (429|502|503|504)|Too Many Requests|Read timed out|Connection reset' "$log"; then
+              exit "$rc"
+            fi
+            echo "Temporary dependency download failure; retry $attempt/3"
+            sleep "$((attempt * 60))"
+          done
       - name: Verifica musica nel JAR
         run: |
           python3 - <<'PY'
