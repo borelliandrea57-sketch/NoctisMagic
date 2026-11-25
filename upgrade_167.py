@@ -864,3 +864,146 @@ for m,b in enumerate(pal):
    off=(((m//8)*128+yy)*W+(m%8)*128+xx)*4;pix[off:off+4]=bytes((*c,255))
 png(assets/'textures/entity/waifu_tailored.png',W,H,pix)
 print('Cabaret stage poses and separate fully clothed Waifu mesh with contrasting dress and skin.')
+
+
+# Lucy: angular anime silhouette, original-style netrunner jacket, occasional smoking animation.
+edit('MoonGuest.java','UUID owner,aggressor;long expires;int rage,cd=20,witch=0,pose,animation,speech;','UUID owner,aggressor;long expires;int rage,cd=20,witch=0,pose,animation,speech;\n    private int smokeTicks=0,smokeCooldown=700;public int smokeTicks(){return smokeTicks;}')
+edit('MoonGuest.java','super.tick();if(pose>0)pose--;','super.tick();if(smokeTicks>0)smokeTicks--;if(smokeCooldown>0)smokeCooldown--;if(pose>0)pose--;')
+edit('MoonGuest.java','}else if(k==1){\n            if(tickCount%100','''}else if(k==1){
+            boolean calm=onGround()&&!isInWater()&&hurtTime==0&&getTarget()==null;
+            if(smokeTicks>0&&!calm){smokeTicks=0;l.broadcastEntityEvent(this,(byte)111);}
+            if(smokeTicks==0&&smokeCooldown==0&&calm&&getDeltaMovement().horizontalDistanceSqr()<.003&&random.nextInt(60)==0){
+                smokeTicks=150;smokeCooldown=1300+random.nextInt(2000);l.broadcastEntityEvent(this,(byte)110);
+            }
+            if(smokeTicks>0){
+                getNavigation().stop();setDeltaMovement(0,getDeltaMovement().y,0);
+                Vec3 at=getEyePosition().add(getLookAngle().scale(.35)).add(0,-.20,0);
+                if(smokeTicks==122){l.playSound(null,blockPosition(),SoundEvents.FLINTANDSTEEL_USE,net.minecraft.sounds.SoundSource.NEUTRAL,.4f,1.15f);l.sendParticles(ParticleTypes.SMALL_FLAME,at.x,at.y,at.z,2,.025,.025,.025,.01);}
+                if(smokeTicks<122&&smokeTicks%8==0)l.sendParticles(ParticleTypes.SMOKE,at.x,at.y,at.z,2,.025,.045,.025,.012);
+            }
+            if(tickCount%100''')
+edit('MoonGuest.java','if(id==118||id==119){pose=24;','if(id==110){smokeTicks=150;return;}if(id==111){smokeTicks=0;return;}if(id==118||id==119){pose=24;')
+edit('MoonGuest.java','return owner==null&&getTarget()==null&&super.canUse();','return smokeTicks==0&&owner==null&&getTarget()==null&&super.canUse();')
+edit('MoonGuest.java','return owner==null&&getTarget()==null&&super.canContinueToUse();','return smokeTicks==0&&owner==null&&getTarget()==null&&super.canContinueToUse();')
+edit('LucySculptedClient.java','final List<Part> strands=new ArrayList<>(); final Part longlock;','final List<Part> strands=new ArrayList<>(); final Part longlock;\n  final Part cigarette=new Part(.48f,-1.6f,-2.12f),lighter=new Part(.1f,5.1f,-.65f);')
+edit('LucySculptedClient.java','head.loft(6,40,','head.loft(6,20,')
+edit('LucySculptedClient.java','-3.0f,0,-.1f,2.95f,2.56f,-1.55f,0,-.16f,2.25f,2.08f,-.45f,0,-.25f,1.15f,1.33f','-3.0f,0,-.1f,2.92f,2.54f,-1.55f,0,-.16f,2.08f,1.99f,-.45f,0,-.25f,.95f,1.21f')
+edit('LucySculptedClient.java','head.loft(9,36,','head.loft(9,18,')
+edit('LucySculptedClient.java','back.loft(10,28,','back.loft(10,14,')
+edit('LucySculptedClient.java','q.loft(9,18,','q.loft(9,8,')
+edit('LucySculptedClient.java','longlock.loft(12,24,','longlock.loft(12,10,')
+edit('LucySculptedClient.java','body.loft(0,32,','body.loft(0,20,')
+edit('LucySculptedClient.java','body.blade(3,0,1.3f,-1.83f,0,4.7f,-1.9f,.28f);','''body.blade(3,0,1.3f,-1.83f,0,4.7f,-1.9f,.28f);
+   body.blade(2,-1.13f,1.0f,-1.89f,-.22f,2.7f,-2.05f,.23f);
+   body.blade(2,1.13f,1.0f,-1.89f,.22f,2.7f,-2.05f,.23f);
+   for(int s:new int[]{-1,1}){
+    body.blade(5,s*2.7f,2.4f,-.65f,s*1.8f,5.8f,-1.62f,.43f);
+    body.blade(2,s*1.5f,6.5f,-1.50f,s*.65f,7.7f,-1.60f,.28f);
+    body.blade(4,s*2.9f,1.2f,.15f,s*3.3f,4.6f,.35f,1.25f);
+   }
+   body.oval(3,0,5.15f,-1.54f,.39f,.22f,.09f);''')
+edit('LucySculptedClient.java','arms[i].loft(4,22,1.3f,0,0,1.32f,1.32f,2.1f,0,0,1.53f,1.45f,4.2f,0,0,1.3f,1.31f,5.1f,0,0,1.12f,1.1f);','''arms[i].loft(4,12,1.3f,0,0,1.45f,1.43f,2.1f,0,0,1.76f,1.65f,4.2f,0,0,1.48f,1.45f,5.1f,0,0,1.16f,1.14f);
+    arms[i].blade(5,s*.8f,2.0f,-1.24f,s*.78f,4.3f,-1.2f,.32f);
+    arms[i].blade(3,-s*.65f,2.1f,-1.20f,-s*.58f,4.6f,-1.15f,.22f);''')
+edit('LucySculptedClient.java','fore[i].loft(4,20,-.2f,0,0,1.15f,1.13f,1.55f,0,0,1.27f,1.22f,3.95f,0,0,.79f,.81f);','''fore[i].loft(4,12,-.2f,0,0,1.26f,1.22f,1.55f,0,0,1.42f,1.35f,3.95f,0,0,.79f,.81f);
+    fore[i].blade(5,s*.72f,.4f,-1.05f,s*.48f,3.45f,-.83f,.32f);''')
+edit('LucySculptedClient.java','legs[i].loft(13,22,-.25f,0,0,1.51f,1.47f,2.35f,0,0,1.43f,1.32f,5.8f,0,0,.96f,.98f);','''legs[i].loft(4,16,-.25f,0,0,1.56f,1.49f,1.5f,0,0,1.50f,1.41f,2.2f,0,0,1.43f,1.32f);
+    legs[i].loft(13,16,2.18f,0,0,1.39f,1.29f,3.0f,0,0,1.28f,1.20f,5.8f,0,0,.96f,.98f);
+    legs[i].loft(5,16,2.2f,0,0,1.45f,1.37f,2.55f,0,0,1.42f,1.34f);''')
+edit('LucySculptedClient.java','  @Override public void setupAnim(MoonGuest e,','''  @Override public void setupAnim(MoonGuest e,''')
+edit('LucySculptedClient.java','   for(int i=0;i<strands.size();i++)strands.get(i).rx=(float)Math.sin(age*.10+i*.6)*.009f;','''   for(int i=0;i<strands.size();i++)strands.get(i).rx=(float)Math.sin(age*.10+i*.6)*.009f;
+   int sm=e.smokeTicks();head.children.remove(cigarette);fore[1].children.remove(lighter);
+   if(sm>0){
+    if(cigarette.faces.isEmpty()){
+      cigarette.rx=-(float)Math.PI/2;cigarette.loft(14,10,0,0,0,.105f,.105f,1.50f,0,0,.105f,.105f);
+      cigarette.loft(15,10,1.50f,0,0,.11f,.11f,1.78f,0,0,.08f,.08f);
+      lighter.loft(3,8,-.6f,0,0,.37f,.23f,.30f,0,0,.37f,.23f,.45f,0,0,.30f,.20f);
+      lighter.loft(5,8,-.86f,0,0,.31f,.22f,-.60f,0,0,.33f,.23f);
+    }
+    head.children.add(cigarette);
+    float raise=sm>112?Math.min(1,(150-sm)/10f):sm>60&&sm<83?.88f:.15f;
+    arms[1].rx=-.40f-raise*.95f;arms[1].rz=-.20f;fore[1].rx=-.18f-raise*1.32f;
+    head.rx=-.08f-raise*.12f;head.ry=0;
+    if(sm>112)fore[1].children.add(lighter);
+   }''')
+# Add two independent texture swatches for the cigarette to the existing custom Lucy atlas.
+p=assets/'textures/entity/lucy_sculpted.png';blob=p.read_bytes();i=8;compressed=b''
+while i<len(blob):
+ size=struct.unpack('>I',blob[i:i+4])[0];typ=blob[i+4:i+8];data=blob[i+8:i+8+size];i+=size+12
+ if typ==b'IDAT':compressed+=data
+raw=zlib.decompress(compressed);W,H=1024,512;stride=W*4+1
+assert len(raw)==H*stride and all(raw[y*stride]==0 for y in range(H))
+pix=bytearray(b''.join(raw[y*stride+1:(y+1)*stride] for y in range(H)))
+for tile,col in [(14,(237,229,213)),(15,(188,61,27))]:
+ for yy in range(128):
+  for xx in range(128):
+   c=shade(col,.78+.22*math.sin(xx/127*math.pi))
+   if tile==14 and yy<22:c=(170,123,77)
+   if tile==15 and yy>60:c=(248,101,40)
+   off=(((tile//8)*128+yy)*W+(tile%8)*128+xx)*4;pix[off:off+4]=bytes((*c,255))
+png(p,W,H,pix)
+
+# Friendly vampire: a rare idle red-liquid goblet, rendered as an independent held prop.
+edit('Vampire.java','private int bowTicks=0;','''private int bowTicks=0,gobletTicks=0,gobletCooldown=500;
+        public int gobletTicks(){return gobletTicks;}
+        private void gobletTick(net.minecraft.server.level.ServerLevel l){
+            if(gobletCooldown>0)gobletCooldown--;
+            if(gobletTicks>0&&(hurtTime>0||bowTicks>0||isInWater()||getTarget()!=null)){
+                gobletTicks=0;l.broadcastEntityEvent(this,(byte)64);
+            }
+            if(gobletTicks==0&&gobletCooldown==0&&onGround()&&!isInWater()&&hurtTime==0&&bowTicks==0&&getTarget()==null&&getDeltaMovement().horizontalDistanceSqr()<.003&&random.nextInt(55)==0){
+                gobletTicks=180;gobletCooldown=1600+random.nextInt(2200);l.broadcastEntityEvent(this,(byte)63);
+            }
+        }''')
+edit('Vampire.java','if(id==61){bowTicks=32;return;}','if(id==63){gobletTicks=180;return;}if(id==64){gobletTicks=0;return;}if(id==61){bowTicks=32;gobletTicks=0;return;}')
+edit('Vampire.java','if(bowTicks>0)bowTicks--;','if(bowTicks>0)bowTicks--;if(gobletTicks>0)gobletTicks--;')
+# Run the goblet logic after the established ServerLevel guard.
+edit('Vampire.java','if(bowTicks>0){getNavigation().stop();return;}','gobletTick(l);if(bowTicks>0){getNavigation().stop();return;}')
+edit('Client.java','rightArm.xRot=b*.7f;leftArm.xRot=b*.7f;rightArm.zRot=-.12f;leftArm.zRot=.12f;','''rightArm.xRot=b*.7f;leftArm.xRot=b*.7f;rightArm.zRot=-.12f;leftArm.zRot=.12f;
+                if(f.gobletTicks()>0){rightArm.xRot=-1.36f;rightArm.zRot=-.10f;rightArm.yRot=-.12f;}else rightArm.yRot=0;''')
+p=java/'Client.java';s=p.read_text(encoding='utf-8')
+# The existing friendly-vampire renderer is a ZombieModel MobRenderer.
+a=re.search(r'super\([^;]*?new BowZombieModel\(c\.bakeLayer\(f\?FRIENDLY:VAMPIRE\)\)[^;]*?\);',s)
+assert a,'VampRenderer constructor not found'
+s=s[:a.end()]+'if(f)addLayer(new VampireGobletLayer(this));'+s[a.end():]
+p.write_text(s,encoding='utf-8')
+write('VampireGobletLayer.java','''package it.noctis.magic;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
+import net.minecraft.client.model.ZombieModel;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.entity.RenderLayerParent;
+import net.minecraft.client.renderer.entity.layers.RenderLayer;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.monster.Zombie;
+import it.noctis.magic.SculptedGuestsClient.Part;
+public class VampireGobletLayer extends RenderLayer<Zombie,ZombieModel<Zombie>>{
+ static final ResourceLocation TEX=new ResourceLocation(Noctis.ID,"textures/entity/vampire_goblet.png");
+ final Part cup=new Part(0,0,0);
+ public VampireGobletLayer(RenderLayerParent<Zombie,ZombieModel<Zombie>> p){super(p);
+  cup.loft(0,24,-.2f,0,0,.82f,.82f,0,0,0,.86f,.86f,.15f,0,0,.72f,.72f);
+  cup.loft(0,16,-2.1f,0,0,.15f,.15f,-.2f,0,0,.16f,.16f);
+  cup.loft(0,24,-4.7f,0,0,1.02f,1.02f,-4.5f,0,0,1.06f,1.06f,-3.4f,0,0,1.0f,1.0f,-2.5f,0,0,.64f,.64f,-2.0f,0,0,.22f,.22f);
+  cup.loft(1,24,-4.56f,0,0,.91f,.91f,-3.35f,0,0,.91f,.91f,-2.65f,0,0,.57f,.57f);
+  // Visible red surface and silver rim, independent materials.
+  cup.oval(1,0,-4.54f,0,.91f,.045f,.91f);
+  cup.loft(2,24,-4.73f,0,0,1.04f,1.04f,-4.61f,0,0,1.09f,1.09f);
+ }
+ @Override public void render(PoseStack p,MultiBufferSource buffers,int light,Zombie e,float limb,float amount,float partial,float age,float yaw,float pitch){
+  if(!(e instanceof Vampire.Friendly f)||f.gobletTicks()==0)return;
+  p.pushPose();var arm=getParentModel().rightArm;arm.translateAndRotate(p);
+  p.translate(0,10.1f/16f,-.55f/16f);p.mulPose(Axis.XP.rotation(-arm.xRot));
+  cup.draw(p,buffers.getBuffer(RenderType.entityTranslucent(TEX)),light,OverlayTexture.NO_OVERLAY,1,1,1,1);p.popPose();
+ }
+}''')
+W,H=1024,512;pix=bytearray(W*H*4)
+for m,col in [(0,(145,180,194)),(1,(137,12,35)),(2,(223,230,226))]:
+ for yy in range(128):
+  for xx in range(128):
+   u=xx/127;c=shade(col,.70+.30*math.sin(u*math.pi)**2)
+   if m==1:c=mix(c,(229,50,61),.32*math.exp(-((u-.28)/.11)**2))
+   off=(yy*W+m*128+xx)*4;pix[off:off+4]=bytes((*c,130 if m==0 else 255))
+png(assets/'textures/entity/vampire_goblet.png',W,H,pix)
+print('Lucy angular anime netrunner outfit and occasional cigarette; friendly vampire goblet prop.')
