@@ -6591,3 +6591,99 @@ assert a in s
 s=s.replace(a,'  if(!(level() instanceof ServerLevel l))return;\n  leaveTrace(l);\n  LivingEntity t=getTarget();',1)
 p.write_text(s,encoding='utf-8')
 print('Ossuary Crawler: detailed skeletal horror, animated entrails and transient red trail; 3 normal / 6 eclipse local cap and increased spawn attempts.')
+
+
+# Ogre: genuinely protruding voxel tusks, with a stepped taper and ivory atlas.
+# Keep a covered fantasy bodice and skirt; expose shoulders, arms, waist and upper legs.
+p=java/'GlamourClient.java';s=p.read_text(encoding='utf-8')
+a='add(h,"tusk"+i,c(112,16).addBox(-.5f,-2,-.5f,1,2,1),s*2,0,-4.2f);'
+assert a in s,a
+s=s.replace(a,'''PartDefinition tusk=h.addOrReplaceChild("tusk"+i,c(112,108).addBox(-.65f,-1.05f,-.65f,1.30f,1.65f,1.30f),PartPose.offsetAndRotation(s*1.95f,-.95f,-4.47f,-.15f,0,s*.34f));
+                PartDefinition mid=tusk.addOrReplaceChild("middle",c(112,108).addBox(-.48f,-1.15f,-.47f,.96f,1.40f,.94f),PartPose.offsetAndRotation(0,-.93f,-.03f,.11f,0,-s*.21f));
+                mid.addOrReplaceChild("tip",c(112,108).addBox(-.25f,-.91f,-.26f,.50f,1.07f,.52f),PartPose.offsetAndRotation(0,-1.05f,0,.14f,0,-s*.12f));''',1)
+a='add(b,"hip"+i,c(56,64).addBox(-3.2f,0,-2.5f,6.4f,4.6f,6.5f),s*2.6f,8.6f,.3f);'
+assert a in s
+s=s.replace(a,'add(b,"hip"+i,c(56,64).addBox(-3.2f,0,-2.5f,6.4f,k==1?3.1f:4.6f,6.5f),s*2.6f,k==1?9.4f:8.6f,.3f);',1)
+a='add(b,"backPanel"+i,c(56,64).addBox(-2.6f,0,0,5.2f,4,3),s*2.65f,9,2.5f);'
+assert a in s
+s=s.replace(a,'add(b,"backPanel"+i,c(56,64).addBox(-2.6f,0,0,5.2f,k==1?2.9f:4,3),s*2.65f,9,2.5f);',1)
+a='add(b,"skirt",c(0,82).addBox(-5.8f,11,-3.2f,11.6f,3.7f,7.3f),0,0,0);'
+assert a in s
+s=s.replace(a,'add(b,"skirt",c(0,82).addBox(-5.8f,11,-3.2f,11.6f,k==1?2.6f:3.7f,7.3f),0,0,0);',1)
+a='arm.addOrReplaceChild("puff",c(0,108).addBox(-2.2f,-2,-2.2f,4.4f,4,4.4f),PartPose.ZERO);'
+assert a in s
+s=s.replace(a,'''if(k!=1)arm.addOrReplaceChild("puff",c(0,108).addBox(-2.2f,-2,-2.2f,4.4f,4,4.4f),PartPose.ZERO);
+                else arm.addOrReplaceChild("upperBand",c(96,40).addBox(-2.12f,1.8f,-2.12f,4.24f,.7f,4.24f),PartPose.ZERO);''',1)
+p.write_text(s,encoding='utf-8')
+
+p=assets/'textures/entity/glamour_ogre.png';W,H,pix=read_rgba(p)
+scale=W//128
+assert scale>=1 and H==128*scale
+def ogre_area(x0,y0,x1,y1,base,kind):
+ for y in range(y0*scale,y1*scale):
+  for x in range(x0*scale,x1*scale):
+   u=(x-x0*scale)/max(1,(x1-x0)*scale-1);v=(y-y0*scale)/max(1,(y1-y0)*scale-1)
+   px=x//max(1,scale//2);py=y//max(1,scale//2)
+   grain=.5+.5*math.sin(px*17.31+py*3.71)*math.cos(px*5.17-py*13.11)
+   if kind=='ivory':
+    c=mix(base,(153,113,68),.30*v+.12*grain)
+    c=mix(c,(255,246,211),.28*math.sin(math.pi*u)**2)
+   else:
+    c=shade(base,.92+.10*math.sin(math.pi*u)+.07*grain)
+    c=mix(c,(77,104,54),.15*math.exp(-((u-.88)/.14)**2))
+   off=(y*W+x)*4;pix[off:off+4]=bytes((*c,255))
+ogre_area(112,108,128,124,(238,218,169),'ivory')
+# Vanilla humanoid arm and leg islands: retain gauntlets and lower boots.
+for x0,y0 in ((40,16),(32,48)):
+ ogre_area(x0,y0,x0+16,y0+12,(134,170,96),'skin')
+for x0,y0 in ((0,16),(16,48)):
+ ogre_area(x0,y0,x0+16,y0+10,(134,170,96),'skin')
+# The belt and existing bodice overlap the upper/lower edges of this midriff.
+ogre_area(16,26,40,29,(134,170,96),'skin')
+png(p,W,H,pix)
+
+# Leon alone gets more health. Shared lawyer defaults are unchanged.
+p=java/'Noctis.java';s=p.read_text(encoding='utf-8')
+a='e.put(LEON_KENNEDY.get(),CrossoverGuest.attributes().build());'
+assert a in s,a
+s=s.replace(a,'e.put(LEON_KENNEDY.get(),CrossoverGuest.attributes().add(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH,240.0).build());',1)
+p.write_text(s,encoding='utf-8')
+p=java/'CrossoverGuest.java';s=p.read_text(encoding='utf-8')
+a='    @Override public void tick(){'
+assert a in s
+s=s.replace(a,'''    private void upgradeLeonHealth(){
+        if(kind()!=0||level().isClientSide||getPersistentData().getBoolean("LeonHealth240"))return;
+        var hp=getAttribute(Attributes.MAX_HEALTH);
+        if(hp!=null&&hp.getBaseValue()<240){
+            double old=getMaxHealth();float current=getHealth();hp.setBaseValue(240);
+            if(current>0)setHealth(Math.min(getMaxHealth(),current+(float)(getMaxHealth()-old)));
+        }
+        getPersistentData().putBoolean("LeonHealth240",true);
+    }
+    @Override public void tick(){
+        upgradeLeonHealth();''',1)
+p.write_text(s,encoding='utf-8')
+
+# Leon's face: moderately beveled block planes and a wider jaw, not a perfect cube.
+# Preserve his long swept fringe, clothing, weapon pivots and combat animation.
+p=java/'LeonSculptedClient.java';s=p.read_text(encoding='utf-8')
+a=s.index('            head.loft(7,24,-7.75f,');b=s.index('            // Low asymmetric crown',a)
+s=s[:a]+'''            VoxelPortrait.head(head,7,3,5.8f,7.75f,
+                -7.75f,1.82f,1.70f,.10f,.52f,
+                -7.10f,2.31f,2.23f,.06f,.60f,
+                -5.65f,2.58f,2.43f,0,.66f,
+                -4.35f,2.55f,2.42f,-.06f,.63f,
+                -2.10f,2.32f,2.20f,-.13f,.61f,
+                -1.10f,2.03f,1.97f,-.20f,.58f,
+                -.18f,1.55f,1.53f,-.28f,.48f);
+            head.loft(3,8,-4.55f,0,-2.39f,.14f,.09f,-3.79f,0,-2.52f,.22f,.15f,-3.00f,0,-2.75f,.31f,.21f,-2.72f,0,-2.55f,.22f,.11f);
+            for(int side:new int[]{-1,1})head.oval(3,side*2.52f,-3.35f,.10f,.29f,.61f,.38f);
+'''+s[b:]
+# Moderate faceting of torso, shoulders, sleeves and legs rather than changing their dimensions.
+for a,b in [('body.loft(0,28,','body.loft(0,12,'),('arms[i].loft(0,20,','arms[i].loft(0,12,'),('fore[i].loft(0,20,','fore[i].loft(0,12,'),('legs[i].loft(10,20,','legs[i].loft(10,12,'),('calves[i].loft(10,18,','calves[i].loft(10,12,'),('calves[i].loft(5,20,','calves[i].loft(5,12,')]:
+ assert a in s,a
+ s=s.replace(a,b,1)
+# Hair retains its recognizable sweeping silhouette with fewer, more defined planes per lock.
+s=s.replace('lock.loft(j%3==0?8:9,12,','lock.loft(j%3==0?8:9,8,',1)
+p.write_text(s,encoding='utf-8')
+print('Ogre: sculpted ivory voxel tusks and exposed shoulders/midriff/upper legs; Leon 240 HP and lightly faceted Minecraft-style geometry.')
