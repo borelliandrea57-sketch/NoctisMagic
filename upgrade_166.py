@@ -210,3 +210,34 @@ for id,w,h in [('jotaro',.88,2.42),('bucciarati',.78,2.28),('giorno',.78,2.28),(
  assert n==1,id
 p.write_text(s,encoding='utf-8')
 print('Stand users enlarged and detailed, custom Giorno, ranged-only Leon, Xenomorph crouched skitter.')
+
+
+# GitHub Actions: public dependencies should come directly from Maven Central
+# rather than the Forge Maven proxy, which has repeatedly returned partial files.
+import os
+from pathlib import Path
+if os.environ.get('GITHUB_ACTIONS')=='true':
+    initdir=Path(os.environ.get('GRADLE_USER_HOME',str(Path.home()/'.gradle')))/'init.d'
+    initdir.mkdir(parents=True,exist_ok=True)
+    (initdir/'noctis-public-repositories.gradle').write_text('''
+def configureNoctisRepositories = { repos ->
+    repos.mavenCentral()
+    repos.configureEach { repo ->
+        if (repo instanceof org.gradle.api.artifacts.repositories.MavenArtifactRepository &&
+            repo.url?.host == 'maven.minecraftforge.net') {
+            repo.content {
+                excludeGroup('org.lwjgl')
+                excludeGroup('com.google.errorprone')
+            }
+        }
+    }
+}
+gradle.beforeSettings { settings ->
+    configureNoctisRepositories(settings.pluginManagement.repositories)
+}
+gradle.beforeProject { project ->
+    configureNoctisRepositories(project.buildscript.repositories)
+    configureNoctisRepositories(project.repositories)
+}
+''',encoding='utf-8')
+    print('CI: Maven Central for LWJGL and Error Prone annotations.')
