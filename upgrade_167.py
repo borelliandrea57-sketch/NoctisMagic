@@ -1281,3 +1281,46 @@ for a,b in {
 }.items():s=s.replace(a,b)
 p.write_text(s,encoding='utf-8')
 print('All six ponies rideable with distinctive powers, flight and fear; neutral Malfoid dialogues.')
+
+
+# Ace Attorney: recurring courtroom objections with a held, dramatic pointing pose.
+edit('CrossoverGuest.java','int cooldown=40,speech=0,pose=0,animation=0,aimTicks=0;','int cooldown=40,speech=0,pose=0,animation=0,aimTicks=0,objectionCooldown=500;')
+edit('CrossoverGuest.java','speech=180;lastVisitor=p.getUUID();l.broadcastEntityEvent(this,(byte)102);','''speech=180;objectionCooldown=700+random.nextInt(1000);lastVisitor=p==null?null:p.getUUID();
+        pose=42;animation=0;getNavigation().stop();if(p!=null)getLookControl().setLookAt(p,40,40);
+        l.broadcastEntityEvent(this,(byte)102);''')
+edit('CrossoverGuest.java','say(l,"OBIEZIONE!");','say(l,"OBJECTION!");')
+edit('CrossoverGuest.java','if(aimTicks>0)aimTicks--;if(pose>0)pose--;','if(aimTicks>0)aimTicks--;if(objectionCooldown>0)objectionCooldown--;if(pose>0)pose--;')
+edit('CrossoverGuest.java','if(p==null){lastVisitor=null;}else if(speech==0&&!p.getUUID().equals(lastVisitor)){object(l,p);}','''if(p==null){lastVisitor=null;}else if(speech==0&&!p.getUUID().equals(lastVisitor)){object(l,p);}
+            if(pose==0&&speech==0&&objectionCooldown==0&&onGround()&&!isInWater()&&hurtTime==0&&random.nextInt(65)==0){object(l,p);}
+            if(pose>0&&animation==0){getNavigation().stop();return;}''')
+edit('CrossoverGuest.java','pose=id==103?34:18;','pose=id==102?42:id==103?34:18;')
+edit('CrossoverGuest.java','return pose<=0?0:(float)Math.sin(pose*Math.PI/(animation==1?34:18));','return pose<=0?0:animation==0?Math.min(1f,Math.min((42-pose)/7f,pose/8f)):(float)Math.sin(pose*Math.PI/(animation==1?34:18));')
+edit('CrossoverClient.java','ModelPart arm=r.getChild("arm1");','ModelPart arm=r.getChild("arm1");arm.yRot=0;arm.zRot=-.08f;')
+edit('CrossoverClient.java','if(a>0&&e.animation()==0){arm.xRot=-1.7f*a;r.getChild("arm0").xRot=-.3f;b.yRot=a*.14f;}','''if(a>0&&e.animation()==0){
+                    arm.xRot=-.45f-1.10f*a;arm.yRot=-.12f*a;arm.zRot=-.08f-.10f*a;
+                    r.getChild("arm0").xRot=-.26f*a;b.yRot=(k==1?.16f:-.10f)*a;
+                    h.xRot=-.04f*a;h.yRot*=.3f;
+                }''')
+# Satirical baker: an occasional objection to the baking, with a distinct left-arm
+# lateral gesticulation (not a salute), no political slogans or symbols.
+edit('BakeryClerk.java','private int cooldown;','private int cooldown,bakerGesture=0,bakerGestureCd=600;\n    public float bakerGesture(){return bakerGesture<=0?0:Math.min(1f,Math.min((40-bakerGesture)/7f,bakerGesture/8f));}\n    @Override public void handleEntityEvent(byte id){if(id==107){bakerGesture=40;return;}super.handleEntityEvent(id);}')
+edit('BakeryClerk.java','super.tick();if(cooldown>0)cooldown--;','''super.tick();if(bakerGesture>0)bakerGesture--;if(bakerGestureCd>0)bakerGestureCd--;if(cooldown>0)cooldown--;
+        if(!stalin()&&level() instanceof ServerLevel l&&bakerGestureCd==0&&onGround()&&!isInWater()&&hurtTime==0&&l.getNearestPlayer(this,10)!=null&&random.nextInt(90)==0){
+            bakerGesture=40;bakerGestureCd=900+random.nextInt(1400);cooldown=180;
+            l.broadcastEntityEvent(this,(byte)107);say(l,"OBJECTION! Quel pane non e ancora pronto!");
+            playSound(SoundEvents.VILLAGER_NO,.65f,1.1f);
+        }''')
+edit('BakeryClient.java','    static class Renderer extends MobRenderer<BakeryClerk,HumanoidModel<BakeryClerk>>{','''    static class GestureModel extends HumanoidModel<BakeryClerk>{
+        GestureModel(ModelPart p){super(p);}
+        @Override public void setupAnim(BakeryClerk e,float limb,float amount,float age,float yaw,float pitch){
+            super.setupAnim(e,limb,amount,age,yaw,pitch);
+            float a=e.bakerGesture();
+            if(!e.stalin()&&a>0){
+                leftArm.xRot=-.62f*a;leftArm.zRot=-1.18f*a;leftArm.yRot=.32f*a;
+                rightArm.xRot=-.28f*a;head.zRot=.12f*a;
+            }
+        }
+    }
+    static class Renderer extends MobRenderer<BakeryClerk,HumanoidModel<BakeryClerk>>{''')
+edit('BakeryClient.java','new HumanoidModel<>(c.bakeLayer(L))','new GestureModel(c.bakeLayer(L))')
+print('Recurring Phoenix and Miles objections, plus distinct satirical baker protest gesture.')
