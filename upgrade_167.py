@@ -3733,3 +3733,35 @@ subprocess.run(['ffmpeg','-nostdin','-loglevel','error','-y','-i',str(tmp),'-ac'
 tmp.unlink()
 p=assets/'sounds.json';d=json.loads(p.read_text(encoding='utf-8'));d['guts_griffith']={'sounds':[{'name':'noctismagic:guts_griffith'}]};j(p,d)
 print('Guts uploaded Griffith scream, 140 melee and 85 splash damage, enormous Dragon Slayer with worn steel bevels.')
+
+
+# Shared uploaded Waifu voice on interaction.
+edit('FallenEncounter.java','static final RegistryObject<SoundEvent> PHOENIX_OBJECTION=','''static final RegistryObject<SoundEvent> WAIFU_VOICE=SOUNDS.register("waifu_voice",()->SoundEvent.createVariableRangeEvent(new ResourceLocation(Noctis.ID,"waifu_voice")));
+    static final RegistryObject<SoundEvent> PHOENIX_OBJECTION=''')
+write('AdmirerVoice.java','''package it.noctis.magic;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.ForgeRegistries;
+@Mod.EventBusSubscriber(modid=Noctis.ID)
+public final class AdmirerVoice{
+ @SubscribeEvent public static void interact(PlayerInteractEvent.EntityInteract e){
+  if(e.getHand()!=InteractionHand.MAIN_HAND||!(e.getTarget().level() instanceof ServerLevel l))return;
+  var m=e.getTarget();var key=ForgeRegistries.ENTITY_TYPES.getKey(m.getType());
+  if(key==null||!key.getNamespace().equals(Noctis.ID))return;
+  String path=key.getPath();
+  if(m.getType()!=Noctis.WAIFU.get()&&m.getType()!=Noctis.SLIME_LADY.get()&&!path.contains("ogre")&&!path.contains("ogress"))return;
+  var tag=m.getPersistentData();if(tag.getLong("NoctisVoiceUntil")>l.getGameTime())return;
+  tag.putLong("NoctisVoiceUntil",l.getGameTime()+60);
+  l.playSound(null,m.getX(),m.getY(),m.getZ(),FallenEncounter.WAIFU_VOICE.get(),net.minecraft.sounds.SoundSource.NEUTRAL,1f,1f);
+ }
+}''')
+import base64,subprocess
+voice_b64='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'
+tmp=root/'waifu_recording.mp3';tmp.write_bytes(base64.b64decode(voice_b64,validate=True))
+subprocess.run(['ffmpeg','-nostdin','-loglevel','error','-y','-i',str(tmp),'-ac','1','-c:a','libvorbis','-q:a','4',str(assets/'sounds/waifu_voice.ogg')],check=True)
+tmp.unlink()
+p=assets/'sounds.json';d=json.loads(p.read_text(encoding='utf-8'));d['waifu_voice']={'sounds':[{'name':'noctismagic:waifu_voice'}]};j(p,d)
+print('Shared uploaded Waifu voice on interaction, with three-second cooldown.')
