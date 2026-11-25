@@ -5365,3 +5365,93 @@ s=s.replace('arms[i].rx=-w*.55f*(1-pose)+pose*(i==1?-1.47f+aimPitch:-1.03f+aimPi
 s=s.replace('legs[i].rx=w*.65f;calves[i].rx=Math.max(0,-w)*.35f;','legs[i].rx=w*.58f-.33f*crouch;calves[i].rx=Math.max(0,-w)*.35f+.60f*crouch;',1)
 p.write_text(s,encoding='utf-8')
 print('Dedicated Arsene, narrower non-chibi heads, refined facial and hair textures, Leon combat crouch/approach/flank.')
+
+
+# Faputa: connected neck, lower feral stance, angular face and narrower predatory eyes.
+p=java/'FaputaSculptedClient.java';s=p.read_text(encoding='utf-8')
+def fap_replace(a,b):
+ global s
+ assert a in s,a
+ s=s.replace(a,b,1)
+fap_replace('import it.noctis.magic.SculptedGuestsClient.Part;', '''import it.noctis.magic.SculptedGuestsClient.Part;
+import it.noctis.magic.SculptedGuestsClient.V;
+import it.noctis.magic.SculptedGuestsClient.Q;''')
+fap_replace('  M(){','''  static V faceV(V v,boolean front){
+   float u=front?Math.max(.025f,Math.min(.975f,.5f+v.x()/6.4f)):.025f;
+   float y=Math.max(.025f,Math.min(.975f,(v.y()+6.9f)/6.9f));
+   return new V(v.x(),v.y(),v.z(),u,y,v.nx(),v.ny(),v.nz());
+  }
+  static void projectFace(Part p){
+   for(int i=0;i<p.faces.size();i++){
+    Q q=p.faces.get(i);if(q.tile()!=5)continue;
+    boolean front=q.a().nz()+q.b().nz()+q.c().nz()+q.d().nz()<-.05f;
+    p.faces.set(i,new Q(faceV(q.a(),front),faceV(q.b(),front),faceV(q.c(),front),faceV(q.d(),front),5));
+   }
+  }
+  M(){
+   // Continuous neck reaches inside the skull and blends into the shoulder girdle.
+   body.loft(0,24,-4.40f,0,-.40f,.76f,.82f,-3.75f,0,-.36f,.91f,.95f,-3.0f,0,-.22f,1.05f,1.08f,-2.15f,0,-.05f,1.46f,1.20f,-1.30f,0,.05f,1.80f,1.40f);
+   for(int side:new int[]{-1,1}){
+    body.loft(0,16,-3.72f,side*.48f,-.24f,.37f,.45f,-2.44f,side*.85f,-.12f,.59f,.55f,-1.15f,side*1.72f,.16f,.73f,.73f);
+   }''')
+a=s.index('   head.loft(5,48,');b=s.index('   // Cream crown',a)
+s=s[:a]+'''   // Tapered cheekbones, less spherical muzzle and a pointed chin.
+   head.loft(5,32,-6.8f,0,.15f,1.08f,1.22f,-6.2f,0,.09f,2.23f,2.12f,-4.85f,0,0,2.82f,2.52f,-3.40f,0,-.09f,2.73f,2.49f,-2.25f,0,-.17f,2.29f,2.19f,-1.18f,0,-.32f,1.68f,1.74f,-.33f,0,-.39f,.96f,1.04f,0,0,-.40f,.49f,.63f);
+   projectFace(head);
+   head.oval(0,0,-2.35f,-2.48f,.23f,.18f,.20f);
+   for(int side:new int[]{-1,1}){
+    // Small sculpted outer brow ridge adds a permanent predatory expression.
+    head.blade(0,side*.56f,-3.82f,-2.45f,side*1.91f,-4.40f,-1.91f,.24f);
+   }
+'''+s[b:]
+fap_replace('body.y=8+(float)Math.sin(limb*1.32)*move*.22f;body.rx=rage?.09f:0;', '''// Hunched shoulders and lowered hips at rest; deeper crouch when enraged.
+   body.y=9.25f+(rage?.45f:0)+(float)Math.sin(limb*1.32)*move*.24f;
+   body.rx=rage?-.32f:-.20f-move*.06f;
+   head.z=-.35f-(rage?.38f:.14f);
+   head.y=-3.5f;''')
+# Model coordinates: negative local Z is forward, so positive torso rotation brings the upper torso forward.
+# Pivot is high on the torso; set a positive lean, not a backward lean.
+s=s.replace('body.rx=rage?-.32f:-.20f-move*.06f;','body.rx=rage?.32f:.20f+move*.06f;')
+fap_replace('head.ry=yaw*.01745f;head.rx=pitch*.012f-(rage?.13f:0);','head.ry=yaw*.01745f;head.rx=pitch*.010f-body.rx+(rage?.06f:.02f);head.rz=(float)Math.sin(age*.065f)*.025f;')
+fap_replace('legs[i].rx=w*.72f;feet[i].rx=Math.max(0,-w)*.32f;', '''legs[i].rx=w*.57f-.40f-(rage?.12f:0);
+    legs[i].rz=s*.11f;
+    feet[i].rx=.62f+Math.max(0,-w)*.24f-body.rx;''')
+fap_replace('arms[k].rx=-w*(j==0?.26f:-.24f)-hit*(j==0?1.25f:.80f)-(rage?.35f:0);','arms[k].rx=-.30f-w*(j==0?.26f:-.24f)-hit*(j==0?1.25f:.80f)-(rage?.32f:0);')
+fap_replace('fore[k].rx=-hit*.75f+(j==0?-.12f:-.35f);','fore[k].rx=-hit*.75f+(j==0?-.28f:-.52f);')
+p.write_text(s,encoding='utf-8')
+# Repaint only the facial tile; retain the existing fur, markings, claws, jewelry and other materials.
+for rage in (False,True):
+ p=assets/'textures/entity'/('faputa_rage.png' if rage else 'faputa_sculpted.png')
+ W,H,pix=read_rgba(p)
+ for y in range(128):
+  v=sat2((y-3)/121)
+  for x in range(128):
+   u=sat2((x-3)/121);f=abs(u-.5)
+   def g(cx,cy,sx,sy):return math.exp(-((u-cx)/sx)**2-((v-cy)/sy)**2)
+   c=mix((128,99,76),(73,47,43),.23*sat2((f-.14)*4)+.10*v)
+   c=mix(c,(173,133,95),.22*g(.50,.47,.13,.24))
+   for side in (-1,1):
+    ex=.5+side*.184;dx=side*(u-ex)/.108
+    ey=.515-.067*dx
+    dy=(v-ey)/(.066 if rage else .077)
+    d=abs(dx)**1.65+abs(dy)**1.35
+    c=mix(c,(58,36,35),.38*g(ex,.50,.13,.088))
+    c=mix(c,(162,115,84),.20*g(.5+side*.22,.64,.075,.065))
+    if d<1.15:c=(44,23,26)
+    if d<.82:c=(229,210,170)
+    if d<.79 and abs(dx+.045)<.46:
+     c=mix((143,28,24) if rage else (149,97,26),(255,144,53) if rage else (248,202,82),sat2((dy+.75)/1.5))
+     if abs(dx+.045)<(.085 if rage else .12):c=(27,19,19)
+     if (dx+.18)**2+(dy+.24)**2<.032:c=(255,243,209)
+    if abs(dx)<1.08 and abs(v-(ey-.050))<.017:c=(46,27,27)
+    if abs(dx)<1.13 and abs(v-(.421-.067*dx))<.017:c=(67,40,37)
+    if abs(dx)<.90 and abs(v-(ey+.074))<.008:c=mix(c,(72,42,38),.63)
+   if f<.036 and abs(v-.677)<.010:c=mix(c,(69,39,35),.70)
+   # Tight asymmetric snarl; berserk exposes a small sharp ivory fang.
+   mouth=.783-.023*(1-min(1,f/.11))+.042*(u-.5)
+   if f<.112 and abs(v-mouth)<(.027 if rage else .012):c=(49,23,27)
+   if rage and .047<f<.083 and mouth-.015<v<mouth+.018:c=(241,226,195)
+   if f<.072 and abs(v-.821)<.009:c=mix(c,(174,109,83),.68)
+   off=(y*W+5*128+x)*4;pix[off:off+4]=bytes((*c,255))
+ png(p,W,H,pix)
+print('Faputa: neck joins head and shoulders, feral crouched stance, angular face, narrow golden/red predatory eyes.')
