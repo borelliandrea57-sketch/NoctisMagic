@@ -2303,6 +2303,5 @@ print('Both Nether demon variants now drop a mixed selection of Nether minerals.
 # Exodia's joke victory: one-time disconnect on a successful invocation, not a ban.
 edit('ExodiaRitual.java','l.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,boss.getX(),boss.getY()+4,boss.getZ(),180,2.7,4,2.7,.18);','''l.sendParticles(ParticleTypes.TOTEM_OF_UNDYING,boss.getX(),boss.getY()+4,boss.getZ(),180,2.7,4,2.7,.18);
   RitualQuests.award(p,"exodia");RitualQuests.complete(p,"exodia");
-  boss.discard();
   p.connection.disconnect(Component.literal("Hai vinto il duello.").withStyle(ChatFormatting.GOLD,ChatFormatting.BOLD));''')
 print('Exodia successful invocation awards victory and disconnects summoner once, without banning or deleting the world.')
