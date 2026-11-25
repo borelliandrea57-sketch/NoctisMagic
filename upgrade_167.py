@@ -1933,3 +1933,123 @@ public final class JojoWorldPowers{
  }
 }''')
 print('Bucciarati spatial zipper teleportation with opening particles and Giorno rare vegetation growth.')
+
+
+# Lelouch's defensive Geass: force an aggressor to walk away, never damage them or teleport them.
+edit('VampireLife.java','public static final RegistryObject<MobEffect> BAT=EFFECTS.register','''public static final RegistryObject<MobEffect> GEASS_EXILE=EFFECTS.register("geass_exile",()->new MobEffect(MobEffectCategory.NEUTRAL,0xb52b64){});
+    public static final RegistryObject<MobEffect> BAT=EFFECTS.register''')
+write('GeassExile.java','''package it.noctis.magic;
+import java.util.*;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.*;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.living.LivingAttackEvent;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+@Mod.EventBusSubscriber(modid=Noctis.ID)
+public class GeassExile{
+ static class Order{
+  final UUID caster;final ServerLevel level;final Vec3 origin;Vec3 last;double walked;int ticks=2400,dir=-1,blocked;
+  Order(DramaGuest g,ServerPlayer p){caster=g.getUUID();level=p.serverLevel();origin=g.position();last=p.position();}
+ }
+ static final Map<UUID,Order> orders=new HashMap<>();
+ static boolean valid(ServerPlayer p){return p.isAlive()&&!p.isCreative()&&!p.isSpectator();}
+ @SubscribeEvent public static void defend(LivingAttackEvent e){
+  if(!(e.getEntity() instanceof DramaGuest victim)||victim.kind()==0||!(victim.level() instanceof ServerLevel l)||!(e.getSource().getEntity() instanceof ServerPlayer p)||!valid(p))return;
+  DramaGuest lelouch=victim.kind()==1?victim:victim.partner!=null&&l.getEntity(victim.partner) instanceof DramaGuest q&&q.kind()==1&&q.isAlive()?q:null;
+  if(lelouch==null||!lelouch.isAlive()||lelouch.distanceTo(p)>24)return;
+  e.setCanceled(true);
+  if(orders.containsKey(p.getUUID()))return;
+  lelouch.getNavigation().stop();lelouch.getLookControl().setLookAt(p,60,60);
+  lelouch.say(l,"Io, Lelouch vi Britannia, ti ordino: vattene!");
+  l.sendParticles(ParticleTypes.WITCH,lelouch.getX(),lelouch.getEyeY(),lelouch.getZ(),30,.18,.12,.18,.025);
+  p.playSound(SoundEvents.BEACON_POWER_SELECT,1,.65f);p.stopRiding();
+  orders.put(p.getUUID(),new Order(lelouch,p));
+  p.displayClientMessage(Component.translatable("message.noctismagic.geass_order"),false);
+ }
+ static Vec3 direction(int i){double a=i*Math.PI/8;return new Vec3(-Math.sin(a),0,Math.cos(a));}
+ static boolean safe(ServerPlayer p,Vec3 d){
+  ServerLevel l=p.serverLevel();
+  for(double step:new double[]{.65,1.25}){
+   Vec3 q=p.position().add(d.scale(step));BlockPos b=BlockPos.containing(q);
+   if(!l.hasChunkAt(b)||!l.getWorldBorder().isWithinBounds(b))return false;
+   boolean ok=false;
+   for(int dy:new int[]{0,1,-1}){
+    BlockPos v=b.offset(0,dy,0),floor=v.below();var state=l.getBlockState(floor);
+    if(!state.isFaceSturdy(l,floor,Direction.UP)||state.is(Blocks.MAGMA_BLOCK)||state.is(Blocks.CAMPFIRE)||state.is(Blocks.SOUL_CAMPFIRE)||state.is(Blocks.CACTUS))continue;
+    if(!l.getFluidState(v).isEmpty()||!l.getFluidState(v.above()).isEmpty())continue;
+    if(l.noCollision(p,p.getBoundingBox().move(d.x*step,dy,d.z*step))){ok=true;break;}
+   }if(!ok)return false;
+  }return true;
+ }
+ static void release(ServerPlayer p,boolean done){
+  orders.remove(p.getUUID());p.removeEffect(VampireLife.GEASS_EXILE.get());
+  p.displayClientMessage(Component.translatable(done?"message.noctismagic.geass_free":"message.noctismagic.geass_break"),false);
+ }
+ @SubscribeEvent public static void tick(TickEvent.PlayerTickEvent e){
+  if(e.phase!=TickEvent.Phase.END||!(e.player instanceof ServerPlayer p))return;
+  Order o=orders.get(p.getUUID());
+  if(o==null){if(p.hasEffect(VampireLife.GEASS_EXILE.get()))p.removeEffect(VampireLife.GEASS_EXILE.get());return;}
+  if(!valid(p)||p.serverLevel()!=o.level||--o.ticks<=0){release(p,false);return;}
+  Vec3 now=p.position(),delta=now.subtract(o.last);o.last=now;
+  double moved=Math.sqrt(delta.x*delta.x+delta.z*delta.z);
+  if(moved<1.2&&o.dir>=0&&delta.dot(direction(o.dir))>0)o.walked+=moved;
+  if(o.walked>=200){release(p,true);return;}
+  if(p.isPassenger())p.stopRiding();
+  if(p.getAbilities().flying){p.getAbilities().flying=false;p.onUpdateAbilities();}
+  if(o.dir<0||p.tickCount%5==0||!safe(p,direction(o.dir))){
+   Vec3 away=now.subtract(o.origin);away=new Vec3(away.x,0,away.z);
+   if(away.lengthSqr()<.01)away=p.getLookAngle();
+   away=away.normalize();
+   int best=-1;double score=-2;
+   for(int i=0;i<16;i++){
+    Vec3 d=direction(i);double s=d.dot(away)+(i==o.dir?.22:0);
+    if(s>score&&safe(p,d)){best=i;score=s;}
+   }
+   if(best<0){o.blocked++;if(o.blocked>80){release(p,false);return;}best=16;}
+   else o.blocked=0;
+   if(o.dir!=best||!p.hasEffect(VampireLife.GEASS_EXILE.get())){
+    o.dir=best;p.removeEffect(VampireLife.GEASS_EXILE.get());p.addEffect(new MobEffectInstance(VampireLife.GEASS_EXILE.get(),o.ticks+20,best,false,false,false));
+   }
+  }
+  if(o.dir<16){p.setYRot(o.dir*22.5f);p.setYHeadRot(o.dir*22.5f);}
+  if(p.tickCount%20==0){p.displayClientMessage(Component.translatable("message.noctismagic.geass_progress",Math.min(200,(int)o.walked)),true);}
+ }
+ @SubscribeEvent public static void preventAttack(AttackEntityEvent e){if(e.getEntity() instanceof ServerPlayer p&&orders.containsKey(p.getUUID()))e.setCanceled(true);}
+ @SubscribeEvent public static void logout(PlayerEvent.PlayerLoggedOutEvent e){orders.remove(e.getEntity().getUUID());if(e.getEntity() instanceof ServerPlayer p)p.removeEffect(VampireLife.GEASS_EXILE.get());}
+}''')
+write('GeassExileClient.java','''package it.noctis.magic;
+import net.minecraft.client.Minecraft;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.MovementInputUpdateEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+@Mod.EventBusSubscriber(modid=Noctis.ID,value=Dist.CLIENT)
+public class GeassExileClient{
+ @SubscribeEvent public static void move(MovementInputUpdateEvent e){
+  var p=Minecraft.getInstance().player;if(p==null||e.getEntity()!=p)return;
+  var effect=p.getEffect(VampireLife.GEASS_EXILE.get());if(effect==null)return;
+  int dir=effect.getAmplifier();var input=e.getInput();
+  input.leftImpulse=0;input.forwardImpulse=dir<16?1:0;input.up=dir<16;input.down=false;input.left=false;input.right=false;input.shiftKeyDown=false;input.jumping=dir<16&&p.horizontalCollision&&p.onGround();
+  if(dir<16){p.setYRot(dir*22.5f);p.setYHeadRot(dir*22.5f);}
+ }
+}''')
+for lang,it in [('it_it',True),('en_us',False)]:
+ p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
+ d['effect.noctismagic.geass_exile']='Ordine del Geass' if it else 'Geass command'
+ d['message.noctismagic.geass_order']='Il Geass controlla il tuo corpo: allontanati!' if it else 'Geass controls your body: walk away!'
+ d['message.noctismagic.geass_progress']='Geass: %s/200 blocchi percorsi' if it else 'Geass: %s/200 blocks walked'
+ d['message.noctismagic.geass_free']='Il comando e terminato. Hai ripreso il controllo.' if it else 'The command is over. You are in control again.'
+ d['message.noctismagic.geass_break']='Il comando del Geass si interrompe.' if it else 'The Geass command is interrupted.'
+ j(p,d)
+print('Defensive Lelouch Geass: controlled 200-block walk, safe terrain and temporary input override.')
