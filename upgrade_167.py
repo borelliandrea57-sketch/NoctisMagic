@@ -307,3 +307,282 @@ for i,lang in enumerate(('it_it','en_us')):
  d['item.noctismagic.dragon_slayer']='Dragon Slayer'
  j(p,d)
 print('Guts detailed model, safe eclipse arrival, Dragon Slayer, Geass and enigmatic quests installed.')
+
+
+# 1.6.7 visual and mounted-flight hotfix (after all earlier upgrades).
+edit('SynchroClient.java','e.registerEntityRenderer(Noctis.BLACK_ROSE.get(),c->new Renderer(c,true));','')
+edit('SculptedGuestsClient.java','e.registerEntityRenderer(Noctis.JOKER.get(),c->new R<Joker>(c,0));','')
+
+write('RoseDragonClient.java','''package it.noctis.magic;
+import com.mojang.blaze3d.vertex.*;
+import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.renderer.entity.*;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import it.noctis.magic.SculptedGuestsClient.Part;
+import static it.noctis.magic.StardustSculptedClient.spar;
+@Mod.EventBusSubscriber(modid=Noctis.ID,value=Dist.CLIENT,bus=Mod.EventBusSubscriber.Bus.MOD)
+public class RoseDragonClient {
+ @SubscribeEvent public static void renderers(EntityRenderersEvent.RegisterRenderers e){e.registerEntityRenderer(Noctis.BLACK_ROSE.get(),R::new);}
+ static Part petal(Part p,int mat,float x,float y,float z,float rx,float ry,float rz,float len,float w,float curve){
+  Part q=p.child(x,y,z);q.rx=rx;q.ry=ry;q.rz=rz;
+  q.loft(mat,18,0,0,0,w*.22f,.18f,len*.20f,0,-.15f,w*.65f,.38f,len*.46f,0,-curve*.30f,w,.46f,len*.72f,0,-curve*.65f,w*.72f,.28f,len,0,-curve,.035f,.035f);
+  return q;
+ }
+ static class M extends EntityModel<SynchroDragon>{
+  final Part root=new Part(0,0,0),body=root.child(0,9,0),neck=body.child(0,-1,-6),head=neck.child(0,-8,-5),jaw=head.child(0,.7f,-2);
+  final Part[] wing=new Part[2],outer=new Part[2],front=new Part[2],fore=new Part[2],hind=new Part[2],shin=new Part[2],tail=new Part[11];
+  M(){
+   Part trunk=body.child(0,0,0);trunk.rx=(float)Math.PI/2;
+   trunk.loft(0,28,-7,0,0,1.65f,1.8f,-5,0,0,3.7f,3.25f,-2,0,0,4.1f,3.55f,2,0,0,2.55f,2.45f,5.5f,0,0,2.8f,2.6f,7,0,0,1.65f,1.65f);
+   for(int j=0;j<5;j++){Part q=body.child(0,1.6f,-5+j*2.25f);q.rx=(float)Math.PI/2;q.loft(1,24,-.7f,0,0,2.5f-j*.19f,1.7f,0,0,0,2.7f-j*.19f,1.8f,.65f,0,0,2.35f-j*.19f,1.55f);}
+   neck.loft(0,26,-8.5f,0,-5,1.28f,1.48f,-7,0,-4,1.62f,1.65f,-4.5f,0,-2,1.93f,1.85f,-2,0,-.5f,2.28f,2.1f,0,0,0,2.6f,2.4f);
+   // Distinctive overlapping rose corolla and thorny dark neck.
+   for(int layer=0;layer<3;layer++)for(int i=0;i<8;i++){
+    double a=i*Math.PI/4+layer*.36;float sx=(float)Math.sin(a),cz=(float)Math.cos(a);
+    petal(neck,layer==0?2:layer==1?3:4,sx*(1.4f+layer*.32f),-6+layer*1.65f,-3.5f+cz*1.7f+layer*.8f,cz*.87f,0,-sx*(.85f+layer*.13f),5.2f+layer*.95f,1.45f+layer*.32f,1.4f+layer*.5f);
+   }
+   Part skull=head.child(0,-.2f,-.3f);skull.rx=-(float)Math.PI/2;
+   skull.loft(0,32,-1.8f,0,0,1.15f,1.3f,-.7f,0,0,2.18f,1.85f,.8f,0,0,2.28f,1.7f,2.4f,0,.18f,1.5f,1.14f,4.2f,0,.24f,.66f,.61f,5.0f,0,.22f,.28f,.32f);
+   jaw.blade(0,-.15f,0,-.1f,0,1.1f,-3.7f,2.25f);
+   for(int s:new int[]{-1,1}){
+    head.blade(3,s*1.25f,-1.3f,-.8f,s*3.4f,-.25f,2.1f,1.45f);
+    spar(head,0,s*1.6f,-1.2f,.35f,s*3.3f,-6.2f,3.0f,.62f,.025f);
+    spar(head,2,s*1.3f,-1.25f,.2f,s*2.0f,-4.6f,1.6f,.43f,.025f);
+    head.oval(12,s*1.64f,-.55f,-1.95f,.40f,.27f,.64f);
+    head.blade(0,s*1.25f,-1.1f,-2.5f,s*2.05f,-.95f,-.45f,.55f);
+    for(int j=0;j<4;j++)spar(jaw,6,s*(.86f-j*.11f),.25f,-.6f-j*.58f,s*(.82f-j*.11f),-.47f,-.68f-j*.58f,.16f,.025f);
+   }
+   head.blade(3,0,-1.7f,-2.4f,0,-4.6f,1.5f,1.25f);
+   for(int i=0;i<2;i++){
+    int s=i==0?-1:1;
+    front[i]=body.child(s*3.0f,1,-4.4f);front[i].loft(0,20,-.6f,0,0,1.15f,1.3f,1.7f,s*.4f,0,1.3f,1.35f,5,s*.75f,-.2f,.68f,.78f);
+    fore[i]=front[i].child(s*.75f,4.8f,-.2f);fore[i].loft(0,18,0,0,0,.76f,.8f,2.1f,0,.18f,.88f,.83f,7,0,-.2f,.53f,.7f);
+    fore[i].oval(0,0,7,-.65f,.92f,.7f,1.26f);
+    for(int j=0;j<3;j++)spar(fore[i],6,-.65f+j*.65f,7,-1.05f,-.75f+j*.75f,7.7f,-2.65f,.27f,.02f);
+    hind[i]=body.child(s*2.55f,.9f,4.5f);hind[i].oval(0,s*.3f,1.5f,0,1.6f,2.3f,1.8f);
+    hind[i].loft(0,20,1,0,0,1.45f,1.55f,3.3f,0,-.55f,1.05f,1.1f,5,0,-.9f,.69f,.75f);
+    shin[i]=hind[i].child(0,5,-.9f);shin[i].loft(0,18,0,0,0,.85f,.9f,1.6f,0,.55f,.8f,.9f,7.1f,0,-.2f,.68f,.8f);
+    shin[i].oval(0,0,7.2f,-.5f,1.12f,.72f,1.45f);
+    for(int j=0;j<3;j++)spar(shin[i],6,-.75f+j*.75f,7.1f,-1.1f,-.86f+j*.86f,7.9f,-2.8f,.31f,.02f);
+    petal(body,3,s*3.0f,-1.6f,-3.2f,-.5f,0,-s*1.5f,5.8f,1.8f,1.2f);
+    Part w=wing[i]=body.child(s*3.3f,-2.1f,-1.7f);
+    spar(w,0,0,0,0,s*7,-3.5f,0,1.05f,.66f);spar(w,0,s*7,-3.5f,0,s*11,-7,1,.72f,.35f);
+    Part o=outer[i]=w.child(s*11,-7,1);
+    // Petal wings rather than bat membrane: overlapping, tapered crimson blades with dark veins.
+    for(int j=0;j<8;j++){
+     float f=j/7f;
+     petal(o,j%3==0?4:2,s*(-3+f*4),1.4f+f*.9f,1+f*1.6f,-.63f-f*.18f,s*.18f,-s*(1.95f-f*1.90f),18-f*3.4f,2.1f+f*.4f,2.4f+f*1.3f);
+     petal(o,3,s*(-2+f*4),-.1f+f,1.1f+f*1.6f,-.60f-f*.1f,s*.18f,-s*(1.90f-f*1.85f),13-f*2,1.3f,1.85f);
+    }
+    for(int j=0;j<4;j++)petal(w,3,s*(.9f+j*1.65f),-.3f-j*.55f,.2f,-.68f,0,-s*.60f,10.2f-j*.35f,1.85f,2.15f);
+    spar(o,0,0,0,0,s*5,-3,1,.55f,.02f);
+   }
+   Part prev=body;
+   for(int i=0;i<tail.length;i++){
+    float r=1.65f-i*.132f;Part t=tail[i]=prev.child(0,0,i==0?6:3.2f);
+    Part seg=t.child(0,0,0);seg.rx=(float)Math.PI/2;seg.loft(0,18,-.25f,0,0,r,r,.85f,0,0,r,r,3.35f,0,0,r*.84f,r*.84f);
+    spar(t,0,0,-r*.6f,.4f,0,-r*2.0f,2.3f,r*.36f,.02f);
+    if(i%2==0)for(int s:new int[]{-1,1})spar(t,3,s*r*.8f,0,.3f,s*r*1.8f,-r*.7f,2.1f,r*.24f,.02f);
+    prev=t;
+   }
+   for(int i=0;i<5;i++)petal(prev,i%2==0?2:3,0,0,2,(float)Math.PI/2,i*1.256f,(i-2)*.27f,4.8f,1.1f,1.25f);
+  }
+  @Override public void setupAnim(SynchroDragon e,float limb,float amount,float age,float yaw,float pitch){
+   boolean air=!e.onGround()||e.isVehicle(),sit=e.isInSittingPose();float cast=e.casting();
+   body.y=sit?12:9;body.rx=air?-.075f:0;neck.rx=-cast*.22f+(float)Math.sin(age*.10f)*.055f;neck.ry=yaw*.004f;
+   head.ry=yaw*.009f;head.rx=pitch*.009f+cast*.14f;jaw.rx=cast*.6f;
+   for(int i=0;i<2;i++){int s=i==0?-1:1;float flap=(float)Math.sin(age*(air?.23f:.075f))*(air?.54f:.10f);
+    wing[i].rz=s*(flap+(air?-.10f:.36f));wing[i].ry=s*(air?.04f:.39f);outer[i].rz=s*flap*.33f;
+    float w=(float)Math.cos(limb*.65f+i*Math.PI)*amount;front[i].rx=air?-.69f:sit?-.48f:w*.51f;fore[i].rx=air?-.57f:sit?.22f:-.09f;
+    hind[i].rx=air?.72f:sit?-.61f:-w*.48f;shin[i].rx=air?-.83f:sit?.61f:Math.max(0,w)*.27f;
+   }
+   for(int i=0;i<tail.length;i++){tail[i].ry=(float)Math.sin(age*.11f-i*.46f)*.17f;tail[i].rx=-.04f+(float)Math.cos(age*.09f-i*.4f)*.095f;}
+  }
+  @Override public void renderToBuffer(PoseStack p,VertexConsumer v,int light,int overlay,float r,float g,float b,float a){root.draw(p,v,light,overlay,r,g,b,a);}
+ }
+ static class R extends MobRenderer<SynchroDragon,M>{
+  R(EntityRendererProvider.Context c){super(c,new M(),1.2f);}
+  @Override protected void scale(SynchroDragon e,PoseStack p,float partial){p.scale(2.15f,2.15f,2.15f);}
+  @Override public ResourceLocation getTextureLocation(SynchroDragon e){return new ResourceLocation(Noctis.ID,"textures/entity/black_rose_sculpted.png");}
+ }
+}''')
+write('JokerDetailedClient.java','''package it.noctis.magic;
+import com.mojang.blaze3d.vertex.*;
+import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.renderer.entity.*;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import it.noctis.magic.SculptedGuestsClient.Part;
+@Mod.EventBusSubscriber(modid=Noctis.ID,value=Dist.CLIENT,bus=Mod.EventBusSubscriber.Bus.MOD)
+public class JokerDetailedClient{
+ @SubscribeEvent public static void renderers(EntityRenderersEvent.RegisterRenderers e){e.registerEntityRenderer(Noctis.JOKER.get(),R::new);}
+ static class M extends EntityModel<Joker>{
+  final Part root=new Part(0,0,0),body=root.child(0,0,0),head=body.child(0,-.6f,0);
+  final Part[] arm=new Part[2],elbow=new Part[2],leg=new Part[2],knee=new Part[2],coat=new Part[4];
+  M(){
+   body.loft(0,24,-.9f,0,0,2.35f,1.55f,.3f,0,0,3.3f,1.95f,2.8f,0,0,3.25f,1.95f,6.8f,0,0,2.30f,1.45f,9.4f,0,0,2.5f,1.6f,11.2f,0,0,2.85f,1.75f);
+   body.loft(2,24,-.65f,0,-.1f,1.4f,1.34f,1.5f,0,-.38f,1.95f,1.55f,5.6f,0,-.15f,1.85f,1.35f,8.9f,0,-.1f,1.7f,1.40f);
+   body.loft(1,20,-1.35f,0,0,.94f,.91f,.0f,0,0,1.05f,1.03f);
+   for(int s:new int[]{-1,1}){
+    body.blade(3,s*1.5f,-1.0f,-.7f,s*2.4f,-2.4f,.85f,1.8f);
+    body.blade(3,s*2.25f,.05f,-1.48f,s*.24f,4.5f,-1.93f,1.8f);
+    body.blade(3,s*1.95f,4.25f,-1.35f,s*.4f,9.3f,-1.63f,.9f);
+    body.blade(5,s*2.18f,6.2f,-1.0f,s*2.1f,7.85f,-1.12f,.39f);
+    for(int j=0;j<3;j++)body.oval(6,s*1.22f,3.8f+j*1.48f,-1.70f,.16f,.17f,.13f);
+   }
+   head.loft(7,32,-7.35f,0,.05f,1.7f,1.8f,-6.8f,0,0,2.65f,2.36f,-5.35f,0,0,2.92f,2.62f,-3.6f,0,-.09f,2.87f,2.53f,-2.0f,0,-.15f,2.25f,2.12f,-.72f,0,-.25f,1.55f,1.64f,-.15f,0,-.35f,.64f,.8f);
+   // Raised sculpted porcelain edge on both sides of the angular domino mask.
+   for(int s:new int[]{-1,1}){
+    head.blade(8,s*1.58f,-4.1f,-2.04f,s*2.68f,-5.16f,-1.12f,.58f);
+    head.blade(8,s*.58f,-3.9f,-2.53f,s*1.84f,-3.25f,-1.97f,.34f);
+    head.oval(1,s*2.78f,-3.5f,.02f,.34f,.69f,.49f);
+   }
+   head.loft(9,24,-8.8f,0,.1f,.8f,1.05f,-8.45f,0,.2f,2.5f,2.2f,-7.35f,0,.20f,3.16f,2.86f,-6.2f,0,.28f,3.23f,2.91f);
+   head.loft(9,20,-7.6f,0,1.0f,2.75f,2.13f,-5.7f,0,1.35f,2.97f,1.68f,-3.2f,0,1.68f,2.55f,1.26f,-1.5f,0,1.55f,1.58f,.23f);
+   for(int j=0;j<9;j++){float x=-2.7f+j*.67f;Part h=head.child(x,-7.5f,-1.95f);
+    h.loft(9,12,-.85f,0,.28f,.67f,.76f,.4f,-.28f,-.20f,.77f,.67f,1.48f,-.48f,-.57f,.52f,.33f,2.25f+(j%3)*.32f,-.70f,-.4f,.035f,.04f);
+   }
+   for(int s:new int[]{-1,1}){
+    for(int j=0;j<3;j++)head.blade(9,s*(2.1f+j*.27f),-7.1f+j*.75f,.15f+j*.45f,s*(3.4f+j*.11f),-5.2f+j*.9f,1.05f+j*.2f,1.0f);
+   }
+   for(int i=0;i<2;i++){int s=i==0?-1:1;
+    arm[i]=body.child(s*3.57f,.25f,0);
+    arm[i].loft(0,18,-.72f,0,0,1.0f,1.14f,.5f,s*.08f,0,1.42f,1.34f,2.7f,0,0,1.15f,1.17f,5.0f,0,0,.91f,.94f);
+    elbow[i]=arm[i].child(0,4.9f,0);elbow[i].loft(0,18,-.1f,0,0,.95f,.98f,1.8f,0,0,.92f,.93f,3.9f,0,0,.78f,.80f);
+    elbow[i].loft(3,18,3.45f,0,0,.89f,.89f,4.0f,0,0,.93f,.91f,4.25f,0,0,.86f,.85f);
+    elbow[i].loft(4,18,4.0f,0,0,.74f,.72f,5.25f,0,-.10f,.82f,.66f,5.8f,0,-.16f,.64f,.52f);
+    for(int j=0;j<4;j++)elbow[i].oval(4,-.51f+j*.34f,5.95f,-.15f,.21f,.46f,.29f);
+    elbow[i].oval(4,-s*.73f,5.05f,-.24f,.25f,.50f,.30f);
+    if(i==1){Part d=elbow[i].child(0,5.55f,-.4f);d.rx=-1.25f;d.loft(5,12,0,0,0,.42f,.43f,2.0f,0,0,.44f,.45f);d.blade(10,0,1.85f,0,0,7.35f,0,1.33f);}
+    leg[i]=root.child(s*1.54f,10.8f,0);leg[i].loft(0,18,0,0,0,1.40f,1.43f,2.7f,0,0,1.19f,1.23f,6.0f,0,0,.94f,1.0f);
+    knee[i]=leg[i].child(0,5.95f,0);knee[i].loft(0,16,0,0,0,.97f,1.0f,3.65f,0,0,.75f,.84f,5.4f,0,0,.73f,.82f);
+    knee[i].loft(5,20,4.75f,0,0,.83f,.89f,6.05f,0,-.43f,1.06f,1.45f,7.2f,0,-.65f,1.05f,1.67f);
+    coat[i]=body.child(s*1.32f,7.9f,1.35f);coat[i].loft(0,16,0,0,0,1.40f,.38f,3.4f,s*.28f,.35f,1.65f,.28f,7.5f,s*.50f,.85f,1.57f,.22f,12.0f,s*.95f,1.55f,.06f,.08f);
+    coat[i+2]=body.child(s*2.22f,8.1f,.25f);coat[i+2].blade(0,0,0,0,s*1.5f,10.35f,2.4f,2.22f);
+   }
+  }
+  @Override public void setupAnim(Joker e,float limb,float amount,float age,float yaw,float pitch){
+   float cast=e.summoning();head.ry=yaw*.01745f;head.rx=pitch*.016f;body.ry=cast*.12f;
+   for(int i=0;i<2;i++){int s=i==0?-1:1;float w=(float)Math.cos(limb*.666f+i*Math.PI)*amount;
+    arm[i].rx=-w*.65f-(i==1?cast*1.62f:cast*.24f);arm[i].rz=-s*(.10f+(i==1?cast*.24f:0));
+    elbow[i].rx=-.15f-Math.max(0,-w)*.25f-(i==1?cast*.68f:0);leg[i].rx=w*.65f;knee[i].rx=Math.max(0,-w)*.46f;
+    coat[i].rx=.08f+amount*.38f+cast*.22f+(float)Math.sin(age*.12f+i)*.08f;coat[i].rz=s*.13f;
+    coat[i+2].rx=coat[i].rx*.81f;coat[i+2].rz=s*(.12f+amount*.13f);
+   }
+  }
+  @Override public void renderToBuffer(PoseStack p,VertexConsumer v,int light,int overlay,float r,float g,float b,float a){root.draw(p,v,light,overlay,r,g,b,a);}
+ }
+ static class R extends MobRenderer<Joker,M>{
+  R(EntityRendererProvider.Context c){super(c,new M(),.36f);}
+  @Override public ResourceLocation getTextureLocation(Joker e){return new ResourceLocation(Noctis.ID,"textures/entity/joker_detailed.png");}
+ }
+}''')
+# Dedicated atlases: do not modify textures used by the other sculpted guests.
+def sat(v):return max(0,min(1,v))
+def shade(a,f):return tuple(max(0,min(255,round(x*f))) for x in a)
+def atlas(name,palette,is_rose):
+ W,H=1024,512;pix=bytearray(W*H*4)
+ for m,basecolor in palette.items():
+  for y in range(128):
+   v=sat((y-3)/121)
+   for x in range(128):
+    u=sat((x-3)/121);f=abs(u-.5);grain=.5+.5*math.sin(u*91+v*16)*math.sin(v*107-u*12)
+    c=shade(basecolor,.88+.12*math.cos((u-.5)*math.pi*2)**2)
+    if is_rose:
+     if m==0:
+      sc=(u*17+(.5 if int(v*16)%2 else 0))%1;sv=(v*16)%1
+      c=mix(c,(57,35,51),.24*(1-abs(sc-.5)*2)+.15*grain)
+      if sv<.065 or (sc<.035 and sv>.12):c=shade(c,.58)
+     if m in (2,3,4):
+      vein=abs(math.sin((u-.5)*math.pi*8+v*.95));edge=abs(math.sin(u*math.pi*2))
+      c=mix(c,(237,66,106),.28*math.exp(-((v-.63)/.22)**2)+.16*edge)
+      c=mix(c,(37,10,29),.52*(1-v)**2+.27*(1-vein)**12)
+      if abs(u-.5)<.013:c=mix(c,(242,88,121),.42)
+      if v>.96:c=mix(c,(79,9,37),.62)
+     if m==1:c=mix(c,(112,46,65),.32*math.exp(-((v-.32)/.19)**2))
+     if m==12:
+      c=mix((251,85,117),(255,218,202),.7*math.exp(-((v-.38)/.17)**2))
+      if f<.07:c=(20,8,20)
+    else:
+     if m in (0,2,3,5):
+      c=shade(c,.96+.075*grain)
+      if f<.012 and m in (0,2):c=mix(c,(93,94,110),.52)
+      if m==3:c=mix(c,(113,115,134),.28*math.exp(-((u-.18)/.045)**2))
+      if m==5:c=mix(c,(71,64,78),.32*math.exp(-((v-.18)/.10)**2))
+     if m==4:
+      c=mix(c,(249,73,78),.30*math.exp(-((u-.35)/.16)**2))
+      if abs(v-.18)<.023:c=(82,9,24)
+     if m==9:
+      f1=(u*8+v*.65)%1;c=mix(c,(81,77,95),.38*math.exp(-((f1-.32)/.11)**2))
+     if m==7:
+      c=mix(basecolor,(182,121,110),.17*math.exp(-((v-.72)/.13)**2))
+      # Angular white domino mask across the face: pointed temples, black eye sockets, gray lip.
+      if f<.222 and abs(v-(.49+.30*f))<(.112-.23*f):c=(239,239,235)
+      if f<.224 and abs(abs(v-(.49+.30*f))-(.112-.23*f))<.014:c=(35,31,40)
+      for ex in (.405,.595):
+       dx=(u-ex)/.068;dy=(v-.515+(.044*dx if ex<.5 else -.044*dx))/.066
+       if abs(dx)+abs(dy)*.88<1.22:c=(20,18,27)
+       if dx*dx+dy*dy<.69:c=(226,225,224)
+       if abs(dx)<.34 and dx*dx+dy*dy<.69:c=(79,79,95)
+       if abs(dx)<.16 and abs(dy)<.53:c=(21,19,28)
+       if (dx+.12)**2+(dy+.21)**2<.045:c=(255,255,255)
+      if f<.025 and .65<v<.73:c=mix(c,(163,107,105),.30)
+      if f<.055 and abs(v-.84+.012*math.cos(f*45))<.010:c=(128,76,84)
+    off=(((m//8)*128+y)*W+(m%8)*128+x)*4;pix[off:off+4]=bytes((*c,255))
+ png(assets/'textures/entity'/name,W,H,pix)
+atlas('black_rose_sculpted.png',{0:(29,19,34),1:(75,35,53),2:(146,15,51),3:(101,11,38),4:(186,27,67),6:(218,187,174),12:(251,62,98)},True)
+atlas('joker_detailed.png',{0:(24,24,32),1:(234,196,174),2:(64,66,79),3:(35,34,45),4:(188,19,40),5:(16,15,23),6:(177,177,190),7:(236,204,180),8:(235,235,233),9:(19,18,26),10:(190,192,202)},False)
+
+# Replace the old mounted travel method for both Synchro Dragons. Vanilla vehicle packets
+# transmit the locally controlled position; do not run a second integration on the remote side.
+p=java/'SynchroDragon.java';s=p.read_text(encoding='utf-8')
+start=s.index('    @Override public void travel(Vec3 v)')
+end=s.index('    @Override public boolean wantsToAttack',start)
+s=s[:start]+'''    @Override public void travel(Vec3 v){
+        if(isAlive()&&getControllingPassenger() instanceof Player rider){
+            setYRot(rider.getYRot());yBodyRot=getYRot();yHeadRot=getYRot();setXRot(0);
+            setNoGravity(true);resetFallDistance();getNavigation().stop();
+            if(isControlledByLocalInstance()){
+                double yaw=Math.toRadians(rider.getYRot()),pitch=Math.toRadians(rider.getXRot());
+                double f=rider.zza,side=rider.xxa;
+                Vec3 direction=new Vec3(-Math.sin(yaw)*Math.cos(pitch)*f+Math.cos(yaw)*side*.68,-Math.sin(pitch)*f,Math.cos(yaw)*Math.cos(pitch)*f+Math.sin(yaw)*side*.68);
+                if(direction.lengthSqr()>1)direction=direction.normalize();
+                double speed=rose()?.94:1.06;
+                Vec3 target=direction.scale(speed);
+                if(onGround()&&f>.05&&rider.getXRot()<18)target=target.add(0,.34,0);
+                Vec3 next=getDeltaMovement().scale(.68).add(target.scale(.32));
+                if(direction.lengthSqr()<.0001&&next.lengthSqr()<.0009)next=Vec3.ZERO;
+                setDeltaMovement(next);move(MoverType.SELF,next);
+                if(horizontalCollision)setDeltaMovement(new Vec3(0,getDeltaMovement().y,0));
+                resetFallDistance();calculateEntityAnimation(false);
+            }
+            return;
+        }
+        if(isNoGravity())setNoGravity(false);
+        super.travel(v);
+    }
+'''+s[end:]
+s=s.replace('WASD per volare; guarda in alto/basso per salire/scendere; bacchetta di Blaze per il potere.','W per decollare e volare, A/D per virare, S per arretrare. Guarda in alto o in basso mentre premi W per salire o atterrare. Rilascia W per librarti. Bacchetta di Blaze: potere.')
+p.write_text(s,encoding='utf-8')
+
+# Quest clues are now legible without spoiling other mysteries.
+qtexts={
+ 'sephiroth':('Un cartello reca il nome dell angelo con una sola ala: scrivi One Winged Angel e rimani nei pressi.','A sign bears the name of the one-winged angel: write One Winged Angel and stay nearby.'),
+ 'sephiroth_complete':('Quando Sephiroth risponde al richiamo, affrontalo e sconfiggilo per spezzare il suo canto.','When Sephiroth answers the summons, confront and defeat him to silence his song.'),
+ 'joker':('Di notte cerca il ladro in nero con la maschera bianca. Parlagli a mano vuota: potrebbe affidarti una lettera rossa.','At night seek the thief in black with the white mask. Speak to him empty-handed: he may entrust you with a red letter.'),
+ 'joker_complete':('La Calling Card richiede cinque vittorie contro creature ostili comuni, come zombie e scheletri. Quando la lettera pulsa, torna da Joker a mano vuota.','The Calling Card demands five victories against ordinary hostile creatures such as zombies and skeletons. When it glows, return to Joker empty-handed.')
+}
+for idx,lang in enumerate(('it_it','en_us')):
+ p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
+ for key,desc in qtexts.items():d['advancement.noctismagic.rituals.'+key+'.description']=desc[idx]
+ j(p,d)
+edit('Joker.java','Take your time. Cinque ombre custodiscono la strada per il mio covo.','Take your time. La Calling Card reclama cinque ombre: sconfiggi cinque creature ostili, poi torna da me.')
+edit('Joker.java','Le Ombre non si sconfiggono da sole.','La Calling Card non e ancora pronta. Sconfiggi altre creature ostili, poi torna qui.')
+print('Black Rose and Joker dedicated detailed meshes, improved mounted flight, clarified quest hints.')
