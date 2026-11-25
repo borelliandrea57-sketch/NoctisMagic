@@ -62,7 +62,7 @@ public class Fallomorph extends Monster{
   if(attackWindow>0){
    attackWindow--;
    if(chase&&getBoundingBox().inflate(.42,.16,.42).intersects(t.getBoundingBox())&&hasLineOfSight(t)){
-    if(doHurtTarget(t)){playSound(SoundEvents.SLIME_ATTACK,.9f,.65f);l.sendParticles(ParticleTypes.CRIT,t.getX(),t.getY()+.8,t.getZ(),8,.25,.3,.25,.12);}
+    if(doHurtTarget(t)){if(t instanceof net.minecraft.server.level.ServerPlayer player)player.displayClientMessage(net.minecraft.network.chat.Component.literal("SENTI UN FORTE DOLORE AL SEDERE..").withStyle(net.minecraft.ChatFormatting.RED,net.minecraft.ChatFormatting.BOLD),true);playSound(SoundEvents.SLIME_ATTACK,.9f,.65f);l.sendParticles(ParticleTypes.CRIT,t.getX(),t.getY()+.8,t.getZ(),8,.25,.3,.25,.12);}
     attackWindow=0;
    }
   }
