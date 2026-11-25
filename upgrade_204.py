@@ -101,6 +101,8 @@ import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import it.noctis.magic.SculptedGuestsClient.Part;
+import it.noctis.magic.SculptedGuestsClient.Q;
+import it.noctis.magic.SculptedGuestsClient.V;
 @Mod.EventBusSubscriber(modid=Noctis.ID,value=Dist.CLIENT,bus=Mod.EventBusSubscriber.Bus.MOD)
 public final class JohnnyClient{
  @SubscribeEvent public static void register(EntityRenderersEvent.RegisterRenderers e){e.registerEntityRenderer(Noctis.JOHNNY.get(),Renderer::new);}
@@ -112,6 +114,11 @@ public final class JohnnyClient{
   final Part root=new Part(0,0,0),chair=root.child(0,0,0),body=root.child(0,3.5f,.9f),head=body.child(0,0,0);
   final Part[] wheel=new Part[2],caster=new Part[2],arms=new Part[2],fore=new Part[2];
   void tube(Part p,int m,float... a){p.loft(m,8,a);}
+  void facet(Part p,int m,int front,float width,float... a){CinnabarClient.Model.angular(p,m,front,width,a[0],a[a.length-5],a);}
+  V point(float x,float y,float z,float u,float v,float nx,float ny,float nz){return new V(x,y,z,u,v,nx,ny,nz);}
+  void flat(Part p,int m,float x,float y,float X,float Y,float z){
+   p.faces.add(new Q(point(x,y,z,0,0,0,0,-1),point(x,Y,z,0,1,0,0,-1),point(X,Y,z,1,1,0,0,-1),point(X,y,z,1,0,0,0,-1),m));
+  }
   void bar(Part p,int m,float x,float y,float z,float X,float Y,float Z,float w){p.blade(m,x,y,z,X,Y,Z,w);}
   void ring(Part p,int m,float x,float r,float width,int n){
    for(int j=0;j<n;j++){
@@ -153,7 +160,13 @@ public final class JohnnyClient{
     for(int j=0;j<4;j++){double a=j*Math.PI/2;bar(cast,6,0,0,0,0,(float)Math.cos(a),(float)Math.sin(a),.24f);}
    }
    // Seated torso, white sailor shirt, blue trim, pink stripes.
-   tube(body,0,-.4f,0,0,1.55f,.95f,.7f,0,0,2.58f,1.48f,3.2f,0,0,2.33f,1.42f,6.8f,0,0,1.82f,1.34f,8.5f,0,0,2.08f,1.54f);
+   facet(body,0,0,5.6f,-.4f,0,0,1.77f,1.12f,.7f,0,0,2.83f,1.63f,3.2f,0,0,2.53f,1.51f,6.8f,0,0,1.96f,1.42f,8.5f,0,0,2.12f,1.55f);
+   facet(body,2,2,3.5f,-.45f,0,-1.10f,1.55f,.48f,.45f,0,-1.28f,1.45f,.44f,1.45f,0,-1.43f,.94f,.24f,2.15f,0,-1.48f,.08f,.05f);
+   for(int side:new int[]{-1,1}){
+    bar(body,1,side*.15f,2.63f,-1.71f,side*2.03f,1.90f,-1.50f,.89f);
+    bar(body,14,side*.14f,3.88f,-1.70f,side*2.05f,3.32f,-1.51f,.29f);
+    bar(body,14,side*.22f,6.15f,-1.49f,side*1.58f,5.84f,-1.41f,.26f);
+   }
    tube(body,2,-1.65f,0,0,.82f,.78f,0,0,0,1.03f,.95f);
    for(int s:new int[]{-1,1}){
     bar(body,1,s*2.08f,.1f,-1.17f,s*.08f,3.15f,-1.60f,.45f);
@@ -165,26 +178,54 @@ public final class JohnnyClient{
     tube(chair,5,19.4f,s*1.41f,-4.78f,.78f,.83f,20.6f,s*1.41f,-5.08f,.95f,1.50f,21.45f,s*1.41f,-5.13f,.95f,1.53f);
     bar(chair,1,s*1.41f,21.38f,-6.49f,s*1.41f,21.38f,-3.93f,1.58f);
    }
-   tube(head,2,-6.8f,0,0,1.42f,1.25f,-6.0f,0,0,2.07f,1.72f,-4.3f,0,-.06f,2.15f,1.78f,-2.5f,0,-.16f,1.46f,1.36f,-1.65f,0,-.18f,.68f,.75f);
+   // Face uses projected frontal UVs rather than wrapping both eyes around the skull.
+   facet(head,2,4,4.65f,-6.80f,0,0,1.67f,1.42f,-6.02f,0,-.03f,2.14f,1.84f,-4.70f,0,-.08f,2.17f,1.91f,-3.69f,0,-.12f,1.99f,1.78f,-2.55f,0,-.18f,1.44f,1.51f,-1.67f,0,-.25f,.73f,.92f);
+   facet(head,2,2,1.3f,-4.64f,0,-1.90f,.15f,.13f,-3.90f,0,-2.04f,.20f,.23f,-3.54f,0,-2.22f,.27f,.25f,-3.31f,0,-1.98f,.18f,.13f);
+   for(int side:new int[]{-1,1}){
+    tube(head,2,-5.1f,side*2.00f,.04f,.40f,.46f,-4.47f,side*2.14f,.02f,.40f,.43f,-3.93f,side*1.96f,.00f,.25f,.32f);
+    bar(head,10,side*.50f,-5.32f,-2.02f,side*1.55f,-5.51f,-1.91f,.18f);
+   }
+   bar(head,11,-.42f,-3.04f,-1.89f,.42f,-3.06f,-1.89f,.20f);
+   bar(head,12,-.31f,-2.89f,-1.91f,.34f,-2.90f,-1.91f,.21f);
    // Long blond layered hair, white star-pattern cap.
    tube(head,3,-7.0f,0,.50f,1.64f,1.40f,-5.75f,0,.80f,2.26f,1.62f,-4.1f,0,1.02f,2.17f,1.29f,-2.2f,0,1.00f,1.80f,.77f);
-   for(int s:new int[]{-1,1})for(int j=0;j<3;j++){
-    float x=s*(1.57f+j*.20f);float z=-.45f+j*.69f;
-    tube(head,3,-6.0f,x,z,.48f,.54f,-4.9f,x+s*.32f,z,.46f,.43f,-3.2f,x+s*.30f,z+.16f,.40f,.43f,-1.05f,x+s*.62f,z+.25f,.04f,.06f);
+   for(int side:new int[]{-1,1})for(int j=0;j<5;j++){
+    float x=side*(1.35f+j*.19f);float z=-1.02f+j*.50f;
+    int mat=j%2==0?3:10;
+    tube(head,mat,-6.20f,x,z,.47f,.51f,-5.35f,x+side*.44f,z-.16f,.50f,.44f,-4.15f,x+side*.33f,z-.18f,.44f,.39f,-2.70f,x+side*.46f,z+.04f,.39f,.36f,-1.15f,x+side*.68f,z+.22f,.32f,.29f,-.48f,x+side*1.04f,z+.04f,.21f,.20f,-1.02f,x+side*1.37f,z-.14f,.035f,.045f);
    }
-   tube(head,0,-8.1f,0,.15f,1.2f,1.10f,-7.65f,0,0,2.03f,1.73f,-6.2f,0,0,2.35f,1.89f,-5.55f,0,-.12f,2.17f,1.77f);
-   tube(head,0,-5.95f,0,-1.04f,2.12f,1.52f,-5.52f,0,-1.10f,2.16f,1.60f);
-   for(int j=0;j<3;j++)star(head,1,(j-1)*1.13f,-6.65f,-1.74f,.45f);
-   bar(head,1,-.42f,-2.82f,-1.58f,.42f,-2.82f,-1.58f,.18f);
+   for(int side:new int[]{-1,1}){
+    tube(head,3,-6.38f,side*.80f,-1.62f,.41f,.30f,-5.87f,side*1.08f,-1.98f,.39f,.28f,-5.43f,side*1.71f,-1.93f,.33f,.23f,-5.63f,side*2.21f,-1.58f,.05f,.05f);
+    tube(head,3,-5.76f,side*1.82f,-1.16f,.34f,.35f,-4.72f,side*1.72f,-1.63f,.30f,.29f,-3.26f,side*1.54f,-1.67f,.24f,.23f,-1.50f,side*1.78f,-1.42f,.19f,.16f,-.12f,side*1.66f,-1.31f,.025f,.03f);
+   }
+   facet(head,0,13,5.2f,-8.86f,0,.18f,.85f,.92f,-8.41f,-.15f,.12f,1.85f,1.64f,-7.58f,.07f,.02f,2.46f,2.03f,-6.65f,0,.05f,2.51f,2.09f,-5.86f,0,-.08f,2.25f,1.88f);
+   facet(head,14,14,5.2f,-6.03f,0,-.13f,2.31f,2.00f,-5.76f,0,-.15f,2.22f,1.96f);
+   // Gold horseshoe and black horse silhouette on the front of the cap.
+   for(int j=0;j<12;j++){
+    double a=j*Math.PI/12,b=(j+1)*Math.PI/12;
+    bar(head,15,(float)Math.cos(a)*.64f,-6.91f+(float)Math.sin(a)*.68f,-2.25f,(float)Math.cos(b)*.64f,-6.91f+(float)Math.sin(b)*.68f,-2.25f,.23f);
+   }
+   bar(head,15,-.64f,-7.30f,-2.25f,-.64f,-6.89f,-2.25f,.23f);
+   bar(head,15,.64f,-7.30f,-2.25f,.64f,-6.89f,-2.25f,.23f);
+   bar(head,5,-.22f,-7.54f,-2.17f,.17f,-6.96f,-2.19f,.38f);
+   bar(head,5,-.21f,-7.54f,-2.17f,-.48f,-7.35f,-2.20f,.26f);
+   for(int side:new int[]{-1,1}){
+    tube(head,15,-8.98f,side*2.37f,.15f,.04f,.05f,-8.44f,side*2.31f,.12f,.20f,.24f,-7.90f,side*2.06f,.02f,.34f,.34f,-7.58f,side*1.82f,-.04f,.35f,.33f);
+    star(head,11,side*1.30f,-7.16f,-2.12f,.42f);
+    star(head,11,side*1.82f,-6.36f,-1.84f,.37f);
+   }
    for(int i=0;i<2;i++){
     int s=i==0?-1:1;
     Part a=arms[i]=body.child(s*2.60f,.9f,0);
     tube(a,0,-.5f,0,0,.83f,.84f,.65f,0,0,1.05f,1.03f,2.1f,0,0,.93f,.88f);
     tube(a,9,1.86f,0,0,.94f,.91f,2.45f,0,0,.89f,.87f);
+    facet(a,11,11,2.4f,-.24f,0,-.66f,.54f,.31f,.16f,0,-.84f,1.02f,.39f,.76f,0,-.93f,.92f,.40f,1.42f,0,-.86f,.46f,.28f,1.66f,0,-.78f,.08f,.07f);
+    bar(a,12,-.43f,.26f,-1.18f,.40f,.26f,-1.18f,.14f);
     tube(a,2,2.42f,0,0,.72f,.73f,4.1f,0,0,.60f,.64f);
     Part f=fore[i]=a.child(0,4.0f,0);
     tube(f,2,-.2f,0,0,.64f,.66f,2.6f,0,0,.49f,.50f,3.2f,0,0,.46f,.46f);
-    for(int j=0;j<3;j++)tube(f,j%2==0?0:9,.45f+j*.68f,0,0,.66f-j*.035f,.67f-j*.035f,.82f+j*.68f,0,0,.66f-j*.035f,.67f-j*.035f);
+    for(int j=0;j<5;j++)tube(f,j%2==0?0:9,.03f+j*.56f,0,0,.70f-j*.03f,.72f-j*.03f,.56f+j*.56f,0,0,.70f-j*.03f,.72f-j*.03f);
+    bar(f,1,.47f,.12f,-.48f,.38f,2.79f,-.42f,.34f);
     tube(f,2,3.05f,0,0,.52f,.46f,3.95f,0,-.12f,.64f,.44f,4.34f,0,-.16f,.38f,.30f);
    }
   }
@@ -204,7 +245,7 @@ public final class JohnnyClient{
  }
 }''',encoding='utf-8')
 im=Image.new('RGBA',(1024,512))
-pal={0:(233,230,219),1:(56,68,157),2:(239,194,157),3:(204,155,66),5:(36,39,48),6:(174,184,187),7:(131,83,48),8:(143,69,49),9:(186,51,102)}
+pal={0:(235,239,245),1:(34,72,169),2:(240,196,168),3:(236,192,89),4:(240,196,168),5:(29,33,43),6:(174,184,187),7:(131,83,48),8:(143,69,49),9:(197,47,91),10:(185,126,40),11:(25,138,203),12:(105,205,228),13:(238,242,247),14:(138,158,183),15:(219,151,39)}
 def mix(a,b,t):
  t=max(0,min(1,t));return tuple(round(x+(y-x)*t) for x,y in zip(a,b))
 for m,base in pal.items():
@@ -214,16 +255,29 @@ for m,base in pal.items():
    u=x/127
    c=mix(base,(22,26,37),.28*abs(u-.5)+.18*v)
    c=mix(c,(255,245,224),.20*math.exp(-((u-.30)/.17)**2-((v-.25)/.45)**2))
-   if m in (3,7):c=mix(c,(63,39,29),.25*max(0,math.sin(u*44+v*5))**6)
+   if m in (3,7,10):c=mix(c,(63,39,29),.25*max(0,math.sin(u*44+v*5))**6)
    if m==6:c=mix(c,(255,255,247),.50*math.exp(-((u-.26)/.07)**2))
-   if m==2:
+   if m==4:
     for sign in (-1,1):
-     ex=.5+sign*.22;dx=(u-ex)/.105;dy=(v-.41)/.045
-     if abs(dx)**1.7+abs(dy)**1.4<1:c=(48,40,48)
-     if abs(dx)**1.7+abs(dy)**1.4<.67:c=(244,239,227)
-     if abs(dx)<.30 and abs(dy)<.72:c=(66,125,161)
-     if abs(dx)<.11 and abs(dy)<.55:c=(26,37,56)
-     if abs(dx)<1.2 and abs(v-(.33-sign*dx*.02))<.014:c=(132,88,43)
+     ex=.5+sign*.215;dx=(u-ex)/.15;dy=(v-(.35-.024*sign*dx))/.057
+     e=abs(dx)**1.65+abs(dy)**1.25
+     c=mix(c,(110,58,49),.22*math.exp(-((u-ex)/.16)**2-((v-.40)/.12)**2))
+     if e<1.20:c=(34,28,36)
+     if e<.78:c=(246,241,229)
+     if e<.75 and abs(dx)<.43:c=(42,132,185)
+     if e<.70 and abs(dx)<.20:c=(16,28,48)
+     if (dx+.16)**2+(dy+.27)**2<.055:c=(246,250,255)
+     if abs(dx)<1.06 and abs(v-(.28-.031*sign*dx))<.019:c=(106,70,33)
+     if abs(dx)<1.05 and abs(v-(.31-.021*sign*dx))<.012:c=(44,32,32)
+     if .16<abs(u-.5)<.37 and .57<v<.69 and int((u+v*.52)*110)%7==0:c=mix(c,(108,63,52),.38)
+    c=mix(c,(115,67,56),.42*math.exp(-((u-.5)/.085)**2-((v-.64)/.065)**2))
+    if abs(u-.5)<.135 and abs(v-(.74+.018*abs(u-.5)/.135))<.027:c=(38,113,155)
+    if abs(u-.5)<.10 and abs(v-.765)<.013:c=(100,193,210)
+   if m==13:
+    for cx,cy in ((.18,.25),(.36,.56),(.68,.28),(.82,.61),(.12,.79),(.72,.90)):
+     dx=u-cx;dy=v-cy;ang=math.atan2(dy,dx)
+     if math.hypot(dx,dy)<.066*(.68+.32*math.cos(5*(ang+math.pi/2))):c=(25,107,166)
+   if m==0:c=mix(c,(92,115,152),.26*max(0,math.sin(v*26+u*4))**10)
    im.putpixel((m%8*128+x,m//8*128+y),(*c,255))
 im.save(assets/'textures/entity/johnny_wheelchair.png')
 (assets/'models/item/johnny_joestar_spawn_egg.json').write_text('{"parent":"minecraft:item/template_spawn_egg"}',encoding='utf-8')
