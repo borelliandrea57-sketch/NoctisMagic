@@ -1511,3 +1511,191 @@ for lang,it in [('it_it',True),('en_us',False)]:
  d['advancement.noctismagic.rituals.vampire_complete.description']='Cinque doni del colore della vita possono conquistare una fiducia immortale. Una scelta ti attende.' if it else 'Five gifts the color of life may earn immortal trust. A choice awaits you.'
  j(p,d)
 print('Blood gifts earn two hearts; Phos emeralds, Cinnabar redstone, Griffith guaranteed Crimson Behelit.')
+
+
+# Xenomorph: neutral while wild, extremely dangerous when provoked; taming requires peace.
+edit('Xenomorph.java','private int strike,acid;','private int strike,acid,anger;private java.util.UUID attacker;')
+edit('Xenomorph.java','Attributes.MAX_HEALTH,100).add(Attributes.ATTACK_DAMAGE,19).add(Attributes.ARMOR,9)','Attributes.MAX_HEALTH,150).add(Attributes.ATTACK_DAMAGE,27).add(Attributes.ARMOR,13)')
+edit('Xenomorph.java','    @Override public boolean wantsToAttack(LivingEntity target,LivingEntity owner){','''    @Override public boolean hurt(net.minecraft.world.damagesource.DamageSource source,float amount){
+        boolean hit=super.hurt(source,amount);
+        if(hit&&isAlive()&&!isTame()&&level() instanceof ServerLevel l&&source.getEntity() instanceof LivingEntity enemy&&enemy!=this&&!(enemy instanceof Player p&&(p.isCreative()||p.isSpectator()))){
+            attacker=enemy.getUUID();anger=900;setTarget(enemy);setAggressive(true);
+            l.broadcastEntityEvent(this,(byte)83);playSound(SoundEvents.SPIDER_HURT,1,.45f);
+        }
+        return hit;
+    }
+    private boolean validPrey(LivingEntity e){
+        if(e==null||!e.isAlive()||e==this)return false;
+        if(e instanceof Player p&&(p.isCreative()||p.isSpectator()))return false;
+        return isTame()?Eclipse.hostile(e):anger>0&&e.getUUID().equals(attacker);
+    }
+    @Override public boolean wantsToAttack(LivingEntity target,LivingEntity owner){''')
+edit('Xenomorph.java','if(!isTame()&&isFood(s)){','''if(!isTame()&&h==InteractionHand.MAIN_HAND&&(s.isEmpty()||isFood(s))&&anger>0){
+            if(p instanceof net.minecraft.server.level.ServerPlayer sp)sp.displayClientMessage(net.minecraft.network.chat.Component.literal("Lo Xenomorfo e ancora aggressivo. Aspetta che si calmi."),true);
+            return InteractionResult.sidedSuccess(level().isClientSide);
+        }
+        if(!isTame()&&s.isEmpty()&&h==InteractionHand.MAIN_HAND){
+            if(p instanceof net.minecraft.server.level.ServerPlayer sp)sp.displayClientMessage(net.minecraft.network.chat.Component.literal("Offri carne cruda o carne marcia allo Xenomorfo, senza attaccarlo."),true);
+            return InteractionResult.sidedSuccess(level().isClientSide);
+        }
+        if(!isTame()&&isFood(s)){''')
+edit('Xenomorph.java','tame(p);setPersistenceRequired();setHealth(getMaxHealth());','tame(p);anger=0;attacker=null;setTarget(null);setAggressive(false);setPersistenceRequired();setHealth(getMaxHealth());')
+edit('Xenomorph.java','if(!isTame()||!(e instanceof LivingEntity le)||!Eclipse.hostile(le))return false;','if(!(e instanceof LivingEntity le)||!validPrey(le))return false;')
+edit('Xenomorph.java','if(!(level() instanceof ServerLevel l)||!isTame()||isOrderedToSit())return;','''if(!(level() instanceof ServerLevel l)||isOrderedToSit())return;
+        if(!isTame()){
+            if(anger>0)anger--;
+            LivingEntity enemy=attacker!=null&&l.getEntity(attacker) instanceof LivingEntity v?v:null;
+            if(anger<=0||!validPrey(enemy)||distanceTo(enemy)>48){anger=0;attacker=null;setTarget(null);setAggressive(false);return;}
+            setTarget(enemy);
+        }''')
+edit('Xenomorph.java','!Eclipse.hostile(v)||acid>0','!validPrey(v)||acid>0')
+edit('Xenomorph.java','acid=110;','acid=75;')
+edit('Xenomorph.java','v.hurt(damageSources().mobAttack(this),8);v.addEffect(new MobEffectInstance(MobEffects.POISON,100,0));','v.hurt(damageSources().mobAttack(this),14);v.addEffect(new MobEffectInstance(MobEffects.POISON,140,1));')
+# Save anger and aggressor across chunk unloads.
+edit('Xenomorph.java','    @Override public AgeableMob getBreedOffspring','''    @Override public void addAdditionalSaveData(net.minecraft.nbt.CompoundTag t){super.addAdditionalSaveData(t);t.putInt("AngerTicks",anger);if(attacker!=null)t.putUUID("AngerTarget",attacker);}
+    @Override public void readAdditionalSaveData(net.minecraft.nbt.CompoundTag t){super.readAdditionalSaveData(t);anger=t.getInt("AngerTicks");attacker=t.hasUUID("AngerTarget")?t.getUUID("AngerTarget"):null;}
+    @Override public AgeableMob getBreedOffspring''')
+# Original horror creature, an uncanny six-limbed contorted living ossuary.
+a='public static final RegistryObject<Item> CATHEDRAL_EGG='
+edit('Noctis.java',a,'''public static final RegistryObject<EntityType<OssuaryCrawler>> OSSUARY_CRAWLER=ENTITIES.register("ossuary_crawler",()->EntityType.Builder.<OssuaryCrawler>of(OssuaryCrawler::new,MobCategory.MONSTER).sized(2.0f,2.5f).clientTrackingRange(12).build(ID+":ossuary_crawler"));
+    public static final RegistryObject<Item> OSSUARY_CRAWLER_EGG=ITEMS.register("ossuary_crawler_spawn_egg",()->new ForgeSpawnEggItem(OSSUARY_CRAWLER,0x33272f,0xbfb4a0,new Item.Properties()));
+    '''+a)
+edit('Noctis.java','e.put(SCRAP_THIEF.get(),ScrapThief.attributes().build());','e.put(OSSUARY_CRAWLER.get(),OssuaryCrawler.attributes().build());e.put(SCRAP_THIEF.get(),ScrapThief.attributes().build());')
+edit('Noctis.java','e.accept(CATHEDRAL_EGG.get());','e.accept(CATHEDRAL_EGG.get());e.accept(OSSUARY_CRAWLER_EGG.get());')
+write('OssuaryCrawler.java','''package it.noctis.magic;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.attributes.*;
+import net.minecraft.world.entity.ai.goal.*;
+import net.minecraft.world.entity.ai.goal.target.*;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.effect.*;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+public class OssuaryCrawler extends Monster{
+ private int windup,cd=80,pose,mode;
+ public OssuaryCrawler(EntityType<? extends Monster> t,Level l){super(t,l);setMaxUpStep(1f);}
+ public static AttributeSupplier.Builder attributes(){return Monster.createMonsterAttributes().add(Attributes.MAX_HEALTH,220).add(Attributes.ATTACK_DAMAGE,23).add(Attributes.ARMOR,11).add(Attributes.MOVEMENT_SPEED,.30).add(Attributes.FOLLOW_RANGE,36).add(Attributes.KNOCKBACK_RESISTANCE,.65);}
+ @Override protected void registerGoals(){
+  goalSelector.addGoal(0,new FloatGoal(this));
+  goalSelector.addGoal(1,new MeleeAttackGoal(this,1.25,true){@Override public boolean canUse(){return windup==0&&super.canUse();}@Override public boolean canContinueToUse(){return windup==0&&super.canContinueToUse();}});
+  goalSelector.addGoal(2,new WaterAvoidingRandomStrollGoal(this,.7));
+  goalSelector.addGoal(3,new LookAtPlayerGoal(this,Player.class,10));
+  targetSelector.addGoal(1,new HurtByTargetGoal(this));targetSelector.addGoal(2,new NearestAttackableTargetGoal<>(this,Player.class,true));
+ }
+ @Override public void tick(){
+  super.tick();if(pose>0)pose--;if(cd>0)cd--;
+  if(!(level() instanceof ServerLevel l))return;
+  LivingEntity t=getTarget();
+  if(t==null||!t.isAlive()){windup=0;return;}
+  if(windup>0){
+   getNavigation().stop();getLookControl().setLookAt(t,45,45);
+   if(--windup==0){
+    if(distanceTo(t)<9&&hasLineOfSight(t)){
+     if(mode==0){
+      for(Player p:l.getEntitiesOfClass(Player.class,getBoundingBox().inflate(6),p->!p.isCreative()&&!p.isSpectator()&&hasLineOfSight(p))){p.addEffect(new MobEffectInstance(MobEffects.DARKNESS,120,0));p.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN,90,2));p.hurt(damageSources().magic(),9);}
+      l.sendParticles(ParticleTypes.SMOKE,getX(),getY()+1.5,getZ(),60,1.6,.5,1.6,.08);playSound(SoundEvents.WARDEN_ROAR,1,.8f);
+     }else{
+      Vec3 d=t.position().subtract(position());Vec3 v=new Vec3(d.x,0,d.z).normalize().scale(.85);
+      if(onGround())setDeltaMovement(v.x,.32,v.z);
+      if(distanceTo(t)<4.8){t.hurt(damageSources().mobAttack(this),30);t.knockback(1.35,getX()-t.getX(),getZ()-t.getZ());}
+      l.sendParticles(ParticleTypes.POOF,getX(),getY()+.25,getZ(),32,.7,.15,.7,.08);
+     }
+    }cd=100;return;
+   }return;
+  }
+  if(cd==0&&distanceTo(t)<8&&hasLineOfSight(t)){mode=random.nextInt(2);windup=25;getNavigation().stop();l.broadcastEntityEvent(this,(byte)(mode==0?114:115));playSound(SoundEvents.ENDERMAN_STARE,.8f,.55f);}
+ }
+ @Override public boolean doHurtTarget(Entity target){boolean ok=super.doHurtTarget(target);if(ok&&level() instanceof ServerLevel l)l.broadcastEntityEvent(this,(byte)116);return ok;}
+ @Override public void handleEntityEvent(byte id){if(id>=114&&id<=116){pose=id==116?16:32;mode=id==115?1:0;return;}super.handleEntityEvent(id);}
+ public float action(){return pose>0?(float)Math.sin(Math.PI*pose/(pose>16?32f:32f)):0;}
+ public int attackMode(){return mode;}
+ @Override protected void dropCustomDeathLoot(net.minecraft.world.damagesource.DamageSource source,int looting,boolean hit){super.dropCustomDeathLoot(source,looting,hit);spawnAtLocation(Items.BONE,6+random.nextInt(7));spawnAtLocation(Items.ECHO_SHARD,1+random.nextInt(2));}
+}''')
+edit('NightGuests.java','if(l.dimension()!=Level.OVERWORLD)return;','''if(l.dimension()!=Level.OVERWORLD)return;
+        if((!l.isDay()||Eclipse.active(l))&&l.getDifficulty()!=net.minecraft.world.Difficulty.PEACEFUL&&!p.isCreative()&&!p.isSpectator()&&p.getRandom().nextInt(Eclipse.active(l)?10:55)==0&&l.getEntitiesOfClass(OssuaryCrawler.class,p.getBoundingBox().inflate(96)).isEmpty()){
+            BlockPos q=Eclipse.spot(p,20,32);if(q!=null){OssuaryCrawler m=Noctis.OSSUARY_CRAWLER.get().create(l);if(m!=null){m.moveTo(q.getX()+.5,q.getY(),q.getZ()+.5);if(l.noCollision(m))l.addFreshEntity(m);}}
+        }''')
+write('OssuaryCrawlerClient.java','''package it.noctis.magic;
+import com.mojang.blaze3d.vertex.*;
+import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.renderer.entity.*;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import it.noctis.magic.SculptedGuestsClient.Part;
+@Mod.EventBusSubscriber(modid=Noctis.ID,value=Dist.CLIENT,bus=Mod.EventBusSubscriber.Bus.MOD)
+public class OssuaryCrawlerClient{
+ @SubscribeEvent public static void renderers(EntityRenderersEvent.RegisterRenderers e){e.registerEntityRenderer(Noctis.OSSUARY_CRAWLER.get(),R::new);}
+ static class M extends EntityModel<OssuaryCrawler>{
+  final Part root=new Part(0,0,0),body=root.child(0,8,0),head=body.child(0,-4,-4),jaw=head.child(0,1.1f,-2.0f);
+  final Part[] legs=new Part[6],shins=new Part[6],spines=new Part[7],masks=new Part[3];
+  M(){
+   Part barrel=body.child(0,0,0);barrel.rx=1.15f;
+   barrel.loft(0,24,-9,0,0,1.25f,1.5f,-6,0,0,3.1f,3.4f,-2,0,0,4.9f,4.1f,3,0,0,4.0f,3.25f,7,0,0,2.6f,2.5f,9,0,0,.9f,1.0f);
+   for(int j=0;j<7;j++){
+    Part s=spines[j]=body.child(0,-3.2f-j*.22f,-4+j*1.45f);
+    s.loft(1,12,-4.5f,0,.9f,.06f,.08f,-2,0,.45f,.55f,.70f,0,0,0,1.10f,.75f);
+    for(int side:new int[]{-1,1}){
+     Part rib=body.child(side*2.2f,-2.5f,-4.0f+j*1.30f);
+     rib.loft(1,14,-.9f,0,0,.32f,.48f,.6f,side*1.65f,0,.45f,.55f,2.2f,side*2.0f,-.1f,.40f,.47f,3.7f,side*.8f,-.55f,.21f,.27f);
+    }
+   }
+   head.loft(1,24,-5.4f,0,.5f,.7f,.8f,-4.8f,0,.2f,2.0f,1.7f,-2.8f,0,0,2.8f,2.2f,-1,0,0,2.5f,2.0f,.6f,0,-.2f,1.8f,1.35f);
+   head.oval(2,-1.10f,-2.55f,-1.99f,.64f,.78f,.20f);head.oval(2,1.10f,-2.55f,-1.99f,.64f,.78f,.20f);
+   jaw.loft(0,18,-.8f,0,0,1.8f,.6f,1.5f,0,-.45f,1.55f,1.05f,2.25f,0,-.70f,.62f,.35f);
+   for(int i=0;i<7;i++){float x=-1.5f+i*.5f;head.blade(1,x,.35f,-1.9f,x,1.45f,-2.45f,.38f);jaw.blade(1,x,1.0f,-1.0f,x,-.5f,-1.40f,.34f);}
+   for(int i=0;i<3;i++){
+    Part m=masks[i]=body.child((i-1)*1.75f,-2.1f,-5.5f+i*.28f);m.ry=(i-1)*.25f;
+    m.oval(3,0,0,0,.95f,1.55f,.65f);
+    m.oval(2,-.35f,-.3f,-.54f,.20f,.26f,.09f);m.oval(2,.35f,-.3f,-.54f,.20f,.26f,.09f);
+   }
+   for(int i=0;i<6;i++){
+    int side=i<3?-1:1;int j=i%3;
+    Part leg=legs[i]=body.child(side*(3.2f+j*.25f),.65f,j*4.15f-4.1f);
+    leg.loft(0,18,-.7f,0,0,1.0f,1.0f,1.5f,side*1.2f,0,1.3f,1.05f,5.0f,side*2.9f,.2f,.62f,.72f,7.0f,side*3.1f,0,.54f,.62f);
+    Part shin=shins[i]=leg.child(side*3.1f,7,0);
+    shin.loft(1,18,-.3f,0,0,.58f,.64f,3.7f,side*.6f,-.3f,.48f,.54f,7.2f,side*.25f,-.4f,.32f,.38f,8.6f,0,-.5f,.5f,.64f);
+    for(int n=0;n<3;n++)shin.blade(1,-.4f+n*.4f,8.2f,-.35f,-.52f+n*.52f,9.0f,-2.0f,.33f);
+   }
+  }
+  @Override public void setupAnim(OssuaryCrawler e,float limb,float amount,float age,float yaw,float pitch){
+   float a=e.action();body.y=8+(float)Math.sin(limb*1.2f)*amount*.50f;body.rz=(float)Math.sin(limb*.7f)*amount*.045f;body.rx=-a*.10f;
+   head.ry=yaw*.014f;head.rx=pitch*.012f-a*.24f;head.rz=(float)Math.sin(age*.12f)*.06f;jaw.rx=.10f+(float)Math.sin(age*.19f)*.08f+a*.85f;
+   for(int i=0;i<6;i++){float w=(float)Math.cos(limb*.92f+(i/3+i%3)*Math.PI)*amount;int side=i<3?-1:1;legs[i].rz=-side*(.14f+w*.16f);legs[i].rx=w*.55f-a*.17f;shins[i].rx=-w*.60f;}
+   for(int i=0;i<7;i++)spines[i].rz=(float)Math.sin(age*.17f-i*.65f)*(.065f+a*.10f);
+   for(int i=0;i<3;i++)masks[i].rz=(float)Math.sin(age*.11f+i)*.10f;
+  }
+  @Override public void renderToBuffer(PoseStack p,VertexConsumer v,int light,int overlay,float r,float g,float b,float a){root.draw(p,v,light,overlay,r,g,b,a);}
+ }
+ static class R extends MobRenderer<OssuaryCrawler,M>{
+  R(EntityRendererProvider.Context c){super(c,new M(),.85f);}
+  @Override protected void scale(OssuaryCrawler e,PoseStack p,float partial){p.scale(1.4f,1.4f,1.4f);}
+  @Override public ResourceLocation getTextureLocation(OssuaryCrawler e){return new ResourceLocation(Noctis.ID,"textures/entity/ossuary_crawler.png");}
+ }
+}''')
+W,H=1024,512;pix=bytearray(W*H*4)
+for m,base in enumerate([(72,48,57),(189,178,155),(20,12,24),(147,139,129)]):
+ for yy in range(128):
+  v=yy/127
+  for xx in range(128):
+   u=xx/127;grain=.5+.5*math.sin(u*89+v*14)*math.cos(v*93)
+   c=shade(base,.74+.24*math.sin(u*math.pi)**2+.08*grain)
+   if m==0:c=mix(c,(38,26,43),.38*math.exp(-(((u*7+v*.28)%1-.5)/.12)**2))
+   if m in (1,3):c=mix(c,(92,75,78),.20*math.exp(-((u-.86)/.12)**2)+.10*grain)
+   if m==2:c=mix(c,(134,74,100),.24*math.exp(-((u-.48)/.28)**2))
+   off=(yy*W+m*128+xx)*4;pix[off:off+4]=bytes((*c,255))
+png(assets/'textures/entity/ossuary_crawler.png',W,H,pix)
+j(assets/'models/item/ossuary_crawler_spawn_egg.json',{'parent':'minecraft:item/template_spawn_egg'})
+for lang,it in [('it_it',True),('en_us',False)]:
+ p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'))
+ d['entity.noctismagic.ossuary_crawler']='Ossario Strisciante' if it else 'Crawling Ossuary'
+ d['item.noctismagic.ossuary_crawler_spawn_egg']='Uovo generatore: Ossario Strisciante' if it else 'Crawling Ossuary Spawn Egg'
+ j(p,d)
+print('Neutral retaliatory Xenomorph and new six-legged Crawling Ossuary horror.')
