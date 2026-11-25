@@ -1,6 +1,6 @@
-"""1.7.8: Fallomorph, a grotesque comic hopping hostile creature."""
+"""1.7.9: Fallomorph refined, original spring sound and all-day spawns."""
 from pathlib import Path
-import sys,json,math,random
+import sys,json,math,random,wave,struct,subprocess
 from PIL import Image
 root=Path(sys.argv[1]);java=root/'src/main/java/it/noctis/magic';res=root/'src/main/resources';assets=res/'assets/noctismagic'
 def edit(n,a,b):
@@ -29,6 +29,7 @@ import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.util.Mth;
@@ -40,12 +41,12 @@ import net.minecraftforge.fml.common.Mod;
 public class Fallomorph extends Monster{
  private int delay=14,attackWindow=0,pose=0,windup=0;
  private boolean airborne=false;
- public Fallomorph(EntityType<? extends Monster> type,Level level){super(type,level);xpReward=7;}
+ public Fallomorph(EntityType<? extends Monster> type,Level level){super(type,level);xpReward=4;}
  public static AttributeSupplier.Builder attributes(){
-  return Monster.createMonsterAttributes().add(Attributes.MAX_HEALTH,38).add(Attributes.ATTACK_DAMAGE,7).add(Attributes.MOVEMENT_SPEED,.24).add(Attributes.FOLLOW_RANGE,24).add(Attributes.KNOCKBACK_RESISTANCE,.2);
+  return Monster.createMonsterAttributes().add(Attributes.MAX_HEALTH,16).add(Attributes.ATTACK_DAMAGE,7).add(Attributes.MOVEMENT_SPEED,.24).add(Attributes.FOLLOW_RANGE,24).add(Attributes.KNOCKBACK_RESISTANCE,.2);
  }
  @SubscribeEvent public static void placements(SpawnPlacementRegisterEvent e){
-  e.register(Noctis.FALLOMORPH.get(),SpawnPlacements.Type.ON_GROUND,Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,Monster::checkMonsterSpawnRules,SpawnPlacementRegisterEvent.Operation.REPLACE);
+  e.register(Noctis.FALLOMORPH.get(),SpawnPlacements.Type.ON_GROUND,Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,(type,level,reason,pos,rng)->level.getDifficulty()!=Difficulty.PEACEFUL&&Mob.checkMobSpawnRules(type,level,reason,pos,rng),SpawnPlacementRegisterEvent.Operation.REPLACE);
  }
  @Override protected void registerGoals(){
   goalSelector.addGoal(0,new FloatGoal(this));
@@ -92,11 +93,11 @@ public class Fallomorph extends Monster{
   }
   setDeltaMovement(vx,chase?.53:.38,vz);
   hasImpulse=true;l.broadcastEntityEvent(this,(byte)90);
-  playSound(SoundEvents.SLIME_JUMP,.85f,.65f+random.nextFloat()*.22f);
+  playSound(FallenEncounter.FALLOMORPH_BOING.get(),.8f,.92f+random.nextFloat()*.16f);
  }
  @Override public void handleEntityEvent(byte id){
   if(id==90){pose=12;windup=0;return;}
-  if(id==91){pose=-0;windup=5;return;}
+  if(id==91){pose=0;windup=5;return;}
   if(id==92){windup=5;return;}
   super.handleEntityEvent(id);
  }
@@ -108,7 +109,7 @@ public class Fallomorph extends Monster{
 }
 ''',encoding='utf-8')
 # Sculpted, stepped silhouette; each mesh cuboid has its own UV island.
-N=256;S=2;cursorX=cursorY=rowH=0;islands=[];lines=[]
+N=256;S=4;cursorX=cursorY=rowH=0;islands=[];lines=[]
 def cube(b):
  global cursorX,cursorY,rowH
  x,y,z,w,h,d,mat=b
@@ -121,16 +122,22 @@ def cube(b):
  return f'.texOffs({u},{v}).addBox('+','.join(str(float(a))+'f' for a in (x,y,z,w,h,d))+')'
 def part(var,parent,name,pos,rot,boxes):
  lines.append(f'        PartDefinition {var}={parent}.addOrReplaceChild("{name}",CubeListBuilder.create()'+''.join(cube(b) for b in boxes)+',PartPose.offsetAndRotation('+','.join(str(float(a))+'f' for a in (*pos,*rot))+'));')
-part('b','r','body',(0,24,0),(0,0,0),[(-4,-21,-4,8,16,8,'flesh'),(-5,-17,-3,10,10,6,'flesh'),(-3,-24,-3,6,5,6,'flesh'),(-4,-7,-4,8,6,8,'dark')])
-part('h','b','crown',(0,-20,0),(0,0,0),[(-6,-5,-5,12,6,10,'crown'),(-5,-7,-4,10,2,8,'crown'),(-3,-8,-3,6,1,6,'crown'),(-6,0,-5,12,2,10,'rim'),(-4,-4,-6,8,4,1,'face')])
+# Limb-free caricature: continuous upright body, stepped contours and rounded base.
+part('b','r','body',(0,24,0),(0,0,0),[
+ (-3,-23,-3,6,20,6,'flesh'),
+ (-4,-21,-4,8,17,8,'flesh'),
+ (-4,-7,-4,8,7,8,'dark'),
+ (-3,-22,-4,6,17,8,'flesh')])
+part('h','b','crown',(0,-20,0),(0,0,0),[
+ (-5,-4,-4,10,5,8,'crown'),
+ (-4,-6,-3,8,2,6,'crown'),
+ (-3,-7,-2,6,1,4,'crown'),
+ (-5,1,-4,10,1,8,'rim')])
 for i,side in enumerate((-1,1)):
- part('l'+str(i),'b','lobe'+str(i),(side*4,-3,0),(0,0,side*.12),[(-4,-4,-4,8,6,8,'dark'),(-3,-6,-3,6,2,6,'flesh'),(-3,2,-3,6,1,6,'dark')])
- part('ridge'+str(i),'b','ridge'+str(i),(side*3,-10,-3),(0,0,side*.12),[(-1,-8,-1,2,13,2,'vein')])
- for j in range(3):
-  part(f'claw{i}_{j}','l'+str(i),f'claw{j}',(float(j*2-2),1,-4),(0,0,side*.05),[(-1,-1,-2,2,2,3,'horn'),(-1,0,-3,2,1,1,'horn')])
-part('jaw','h','jaw',(0,0,-5),(0,0,0),[(-4,0,-1,8,2,2,'mouth'),(-3,2,-1,6,1,2,'dark')])
-for i in range(4):
- part(f'tooth{i}','jaw',f'tooth{i}',(i*2-3,0,-1),(0,0,0),[(-.5,0,-.5,1,1,1,'horn')])
+ part('l'+str(i),'b','lobe'+str(i),(side*3,-3,0),(0,0,0),[
+ (-3,-3,-3,6,6,6,'dark'),
+ (-2,-4,-2,4,1,4,'flesh'),
+ (-3,-2,-4,6,4,8,'dark')])
 (java/'FallomorphClient.java').write_text('''package it.noctis.magic;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.model.EntityModel;
@@ -151,13 +158,12 @@ public final class FallomorphClient{
 '''+ '\n'.join(lines)+'''
  return LayerDefinition.create(m,256,256);}
  static class Model extends EntityModel<Fallomorph>{
-  final ModelPart r,b,h,jaw;Model(ModelPart r){this.r=r;b=r.getChild("body");h=b.getChild("crown");jaw=h.getChild("jaw");}
+  final ModelPart r,b,h;Model(ModelPart r){this.r=r;b=r.getChild("body");h=b.getChild("crown");}
   @Override public void setupAnim(Fallomorph e,float limb,float amount,float age,float yaw,float pitch){
    float s=e.stretch(),c=e.compression();
    b.yScale=1+.14f*s-.22f*c;b.xScale=1-.07f*s+.13f*c;b.zScale=b.xScale;
    b.xRot=-.13f*s+.07f*c;h.xRot=-b.xRot*.55f;h.zRot=(float)Math.sin(age*.16)*.045f;
-   jaw.xRot=.14f+.55f*s+.07f*(float)Math.sin(age*.22);
-   for(int i=0;i<2;i++){b.getChild("lobe"+i).zRot=(i==0?-1:1)*(.10f+.13f*c-.06f*s);}
+   for(int i=0;i<2;i++){ModelPart l=b.getChild("lobe"+i);l.yScale=1-.10f*c;l.xScale=1+.08f*c;}
   }
   @Override public void renderToBuffer(PoseStack p,VertexConsumer v,int light,int overlay,float red,float green,float blue,float alpha){r.render(p,v,light,overlay,red,green,blue,alpha);}
  }
@@ -167,22 +173,28 @@ public final class FallomorphClient{
  }
 }''',encoding='utf-8')
 im=Image.new('RGBA',(N*S,N*S),(89,43,58,255))
-pal={'flesh':(159,79,94),'dark':(111,49,72),'crown':(184,94,115),'rim':(119,45,70),'face':(173,81,104),'vein':(95,45,74),'mouth':(38,19,31),'horn':(222,196,145)}
+pal={'flesh':(181,108,116),'dark':(151,80,92),'crown':(193,105,125),'rim':(145,68,88)}
+def blend(c,d,t):
+ t=max(0,min(1,t));return tuple(int(q+(r-q)*t) for q,r in zip(c,d))
 for x,y,w,h,mat,face in islands:
  rng=random.Random(f'{x},{y}')
+ phase=(x*17+y*31)%99/17
  for j in range(h*S):
   v=(j+.5)/(h*S)
   for i in range(w*S):
    u=(i+.5)/(w*S)
-   shade=.75+.24*math.sin(math.pi*u)+.06*math.sin(v*13)+rng.uniform(-.035,.035)
+   shade=.82+.19*math.sin(math.pi*u)+.035*math.sin(v*17)+.018*math.cos(u*87+v*57)+rng.uniform(-.022,.022)
    c=tuple(max(0,min(255,int(q*shade))) for q in pal[mat])
-   if mat in ('flesh','dark','crown') and abs(math.sin(u*17+v*5+math.sin(v*16)*.3))>.98:c=tuple(int(q*.72) for q in c)
-   if mat=='face' and face=='front':
-    for ex in (.24,.76):
-     dx=(u-ex)/.21;dy=(v-.52)/.30
-     if abs(dx)+abs(dy)<1.1:c=(49,18,35)
-     if abs(dx)+abs(dy)<.8:c=(250,193,76)
-     if abs(dx)<.15 and abs(dy)<.63:c=(38,15,27)
+   if mat in ('flesh','dark') and face not in ('up','down'):
+    for k in range(3):
+     center=.18+k*.30+.06*math.sin(v*7+phase+k)+.022*math.sin(v*19+k)
+     dist=abs(u-center)
+     c=blend(c,(108,55,106),.48*math.exp(-(dist/.025)**2))
+     c=blend(c,(224,151,155),.36*math.exp(-((u-center+.025)/.013)**2))
+     branch=center+(.13 if k%2 else -.13)*max(0,v-.35)
+     if v>.35:c=blend(c,(117,58,100),.30*math.exp(-((u-branch)/.012)**2))
+   if mat in ('crown','rim'):
+    c=blend(c,(235,145,166),.18*math.exp(-((u-.35)/.19)**2))
    im.putpixel((x*S+i,y*S+j),(*c,255))
 p=assets/'textures/entity/fallomorph.png';p.parent.mkdir(parents=True,exist_ok=True);im.save(p)
 dump(assets/'models/item/fallomorph_spawn_egg.json',{'parent':'minecraft:item/template_spawn_egg'})
@@ -190,4 +202,22 @@ dump(res/'data/noctismagic/forge/biome_modifier/fallomorph_spawns.json',{'type':
 dump(res/'data/noctismagic/loot_tables/entities/fallomorph.json',{'type':'minecraft:entity','pools':[{'rolls':1,'entries':[{'type':'minecraft:item','name':'minecraft:slime_ball','functions':[{'function':'minecraft:set_count','count':{'type':'minecraft:uniform','min':1,'max':2}}]}]}]})
 for loc in ('it_it','en_us'):
  p=assets/'lang'/f'{loc}.json';d=json.loads(p.read_text(encoding='utf-8'));d['entity.noctismagic.fallomorph']='Fallomorfo' if loc=='it_it' else 'Fallomorph';d['item.noctismagic.fallomorph_spawn_egg']='Uovo generatore: Fallomorfo' if loc=='it_it' else 'Fallomorph Spawn Egg';dump(p,d)
-print('Fallomorph: detailed custom voxel model, animated squash/stretch, leap attacks, low-frequency hostile spawns and spawn egg.')
+# Original cartoony spring sound, synthesized locally at build time.
+tmp=root/'fallomorph_boing.wav'
+rate=22050;length=.38
+with wave.open(str(tmp),'wb') as out:
+ out.setnchannels(1);out.setsampwidth(2);out.setframerate(rate)
+ phase=0;frames=bytearray()
+ for i in range(int(rate*length)):
+  t=i/rate
+  freq=150+310*math.exp(-t*12)+42*math.sin(t*math.tau*13)*math.exp(-t*5)
+  phase+=math.tau*freq/rate
+  env=min(1,t/.009)*math.exp(-t*9)*min(1,(length-t)/.035)
+  v=(math.sin(phase)+.23*math.sin(phase*2)+.07*math.sin(phase*3))*env*.55
+  frames.extend(struct.pack('<h',int(max(-1,min(1,v))*32767)))
+ out.writeframes(frames)
+target=assets/'sounds/fallomorph_boing.ogg';target.parent.mkdir(parents=True,exist_ok=True)
+subprocess.run(['ffmpeg','-nostdin','-loglevel','error','-y','-i',str(tmp),'-c:a','libvorbis','-q:a','4',str(target)],check=True);tmp.unlink()
+f=assets/'sounds.json';d=json.loads(f.read_text(encoding='utf-8'));d['fallomorph_boing']={'sounds':[{'name':'noctismagic:fallomorph_boing'}]};dump(f,d)
+edit('FallenEncounter.java','static final RegistryObject<SoundEvent> PHOENIX_OBJECTION=', 'public static final RegistryObject<SoundEvent> FALLOMORPH_BOING=SOUNDS.register("fallomorph_boing",()->SoundEvent.createVariableRangeEvent(new ResourceLocation(Noctis.ID,"fallomorph_boing")));\n    static final RegistryObject<SoundEvent> PHOENIX_OBJECTION=')
+print('Fallomorph: limb-free caricature, spring sound, detailed texture, daytime and nighttime spawns, 16 HP.')
