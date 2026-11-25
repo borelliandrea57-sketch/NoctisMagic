@@ -174,7 +174,8 @@ public class DramaGuest extends PathfinderMob{
     public DramaGuest(EntityType<? extends PathfinderMob> t,Level l){super(t,l);}
     public int kind(){return getType()==Noctis.MICHAEL_JACKSON.get()?0:getType()==Noctis.LELOUCH.get()?1:2;}
     static AttributeSupplier.Builder attributes(){return Mob.createMobAttributes().add(Attributes.MAX_HEALTH,60).add(Attributes.MOVEMENT_SPEED,.29).add(Attributes.FOLLOW_RANGE,32);}
-    @Override protected void registerGoals(){goalSelector.addGoal(0,new FloatGoal(this));goalSelector.addGoal(2,new WaterAvoidingRandomStrollGoal(this,.7){@Override public boolean canUse(){return dance==0&&kind()!=2&&super.canUse();}@Override public boolean canContinueToUse(){return dance==0&&kind()!=2&&super.canContinueToUse();}});goalSelector.addGoal(3,new LookAtPlayerGoal(this,Player.class,8));}
+    @Override protected void registerGoals(){goalSelector.addGoal(0,new FloatGoal(this));goalSelector.addGoal(2,new WaterAvoidingRandomStrollGoal(this,.7){@Override public boolean canUse(){return dance==0&&kind()!=2&&canWanderTogether()&&super.canUse();}@Override public boolean canContinueToUse(){return dance==0&&kind()!=2&&canWanderTogether()&&super.canContinueToUse();}});goalSelector.addGoal(3,new LookAtPlayerGoal(this,Player.class,8));}
+    boolean canWanderTogether(){return kind()==0||level() instanceof ServerLevel l&&partner!=null&&l.getEntity(partner) instanceof DramaGuest q&&q.isAlive()&&distanceTo(q)<5;}
     void say(ServerLevel l,String s){NpcDialogue.say(l,Component.literal(getDisplayName().getString()+": "+s));}
     void perform(ServerLevel l){if(cd>0)return;cd=200;dance=60;getNavigation().stop();l.broadcastEntityEvent(this,(byte)94);say(l,"EH! HE!");playSound(FallenEncounter.MOONWALK_SHOUT.get(),1,1.15f);l.sendParticles(ParticleTypes.NOTE,getX(),getY()+1.9,getZ(),8,.5,.35,.5,.02);}
     @Override public InteractionResult mobInteract(Player p,InteractionHand h){
