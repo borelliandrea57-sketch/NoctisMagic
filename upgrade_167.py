@@ -6687,3 +6687,208 @@ for a,b in [('body.loft(0,28,','body.loft(0,12,'),('arms[i].loft(0,20,','arms[i]
 s=s.replace('lock.loft(j%3==0?8:9,12,','lock.loft(j%3==0?8:9,8,',1)
 p.write_text(s,encoding='utf-8')
 print('Ogre: sculpted ivory voxel tusks and exposed shoulders/midriff/upper legs; Leon 240 HP and lightly faceted Minecraft-style geometry.')
+
+
+# Dante: distinct angular adult head, white swept hair, detailed red coat and original-inspired relics.
+p=java/'WitchHunterClient.java';s=p.read_text(encoding='utf-8')
+a='   head.loft(5,48,-7.8f,'
+i=s.index(a);j=s.index('\n   head.loft(6,20,',i)
+s=s[:i]+'   if(witch)'+s[i+3:j]+'''\n   else VoxelPortrait.head(head,5,6,6.8f,7.8f,-7.8f,2.45f,2.24f,.10f,.48f,-7.2f,3.08f,2.71f,.05f,.54f,-4.9f,3.17f,2.72f,0,.60f,-2.6f,2.89f,2.48f,-.11f,.58f,-.75f,2.40f,2.05f,-.17f,.49f,0,1.88f,1.66f,-.12f,.41f);'''+s[j:]
+s=s.replace('   head.loft(6,20,-3.8f,','   if(witch)head.loft(6,20,-3.8f,',1)
+a='   for(int s:new int[]{-1,1})head.oval(6,s*w*.95f'
+i=s.index(a)
+s=s[:i]+'''   if(!witch){
+    head.loft(6,8,-4.55f,0,-2.66f,.15f,.09f,-3.55f,0,-2.77f,.26f,.17f,-2.65f,0,-3.00f,.36f,.24f,-2.38f,0,-2.74f,.24f,.12f);
+    head.loft(6,8,-.45f,0,.04f,1.04f,1.03f,.9f,0,.04f,1.25f,1.18f);
+   }
+'''+s[i:]
+for a,b in [('body.loft(0,32,-1,','body.loft(0,12,-1,'),('arms[i].loft(0,26,','arms[i].loft(0,witch?26:12,'),('fore[i].loft(1,24,','fore[i].loft(witch?1:0,witch?24:12,'),('legs[i].loft(0,26,','legs[i].loft(witch?0:1,witch?26:10,'),('shins[i].loft(0,24,','shins[i].loft(witch?0:1,witch?24:10,')]:
+ assert a in s,a
+ s=s.replace(a,b,1)
+s=s.replace('q.loft(j%3==0?8:7,20,','q.loft(j%3==0?8:7,8,',1)
+a='    body.oval(4,0,10.02f,-1.98f,.94f,.52f,.22f);'
+assert a in s
+s=s.replace(a,a+'''
+    // Coat seams, zipper teeth, buckles, raised shoulder leather and rear yoke.
+    for(int side:new int[]{-1,1}){
+     body.blade(10,side*3.42f,.25f,1.22f,side*.62f,2.7f,2.13f,.17f);
+     body.blade(10,side*2.80f,4.4f,-1.30f,side*2.25f,8.85f,-1.38f,.14f);
+     body.blade(10,side*3.18f,7.0f,-1.05f,side*1.86f,7.38f,-1.66f,.26f);
+     for(int n=0;n<9;n++)body.oval(11,side*.23f,2.8f+n*.55f,-2.45f+n*.055f,.09f,.10f,.075f);
+     for(int n=0;n<3;n++)body.oval(4,side*2.55f,1.5f+n*.55f,-1.80f,.12f,.12f,.09f);
+    }
+''',1)
+a='     legs[i].loft(3,24,3.1f,'
+i=s.index(a)
+s=s[:i]+'''     arms[i].loft(10,10,-.34f,0,0,1.48f,1.40f,.78f,0,0,1.79f,1.68f,1.37f,0,0,1.59f,1.48f);
+     for(int n=0;n<3;n++){
+      fore[i].loft(3,8,2.45f+n*.45f,0,0,1.03f,1.01f,2.67f+n*.45f,0,0,.99f,.97f);
+      fore[i].oval(11,s*.89f,2.56f+n*.45f,-.23f,.15f,.12f,.08f);
+     }
+     legs[i].blade(10,s*.94f,.55f,-.95f,s*.62f,5.05f,-.92f,.19f);
+'''+s[i:]
+# Preserve Bayonetta's original gun geometry; use bespoke Dante relics only.
+s=s.replace('guns[i]=gun(witch?2:i==0?4:9);','guns[i]=witch?gun(2):dantePistol(i==0);',1)
+i=s.index(' static Part rebellion(){');j=s.index(' static class M<',i)
+s=s[:i]+''' static Part dantePistol(boolean ivory){
+  int metal=ivory?4:9;Part p=new Part(0,5.1f,-.42f);p.rx=-1.4f;
+  // Stylized collectible replica: two differently coloured slides, grip plates,
+  // decorative engraving and a distinct trigger-guard silhouette.
+  p.loft(3,8,-.75f,0,0,.43f,.56f,.50f,0,0,.48f,.61f,1.47f,0,0,.40f,.52f);
+  for(int side:new int[]{-1,1})p.blade(ivory?10:11,side*.43f,-.45f,-.26f,side*.43f,1.04f,.12f,.69f);
+  Part guard=p.child(0,.53f,-.65f);guard.ry=(float)Math.PI/2;loop(guard,metal,.48f,.66f,.105f);
+  Part slide=p.child(0,1.02f,-.32f);slide.rx=(float)Math.PI/2;
+  slide.loft(metal,8,-.92f,0,0,.55f,.55f,-.54f,0,0,.68f,.70f,2.85f,0,0,.60f,.62f,4.03f,0,0,.52f,.54f);
+  slide.loft(3,8,3.92f,0,0,.35f,.36f,4.07f,0,0,.34f,.35f);
+  slide.loft(metal,8,3.96f,0,0,.53f,.54f,4.17f,0,0,.53f,.54f);
+  slide.loft(3,8,4.19f,0,0,.20f,.21f,4.22f,0,0,.20f,.21f);
+  for(int side:new int[]{-1,1}){
+   for(int n=0;n<6;n++)slide.blade(3,side*.57f,-.57f+n*.23f,-.37f,side*.57f,-.40f+n*.23f,.31f,.085f);
+   slide.blade(11,side*.57f,1.03f,-.35f,side*.57f,3.27f,-.35f,.105f);
+   slide.oval(11,side*.62f,2.18f,.04f,.07f,.29f,.20f);
+  }
+  slide.blade(3,0,3.52f,-.55f,0,3.95f,-.72f,.23f);
+  return p;
+ }
+ static Part rebellion(){
+  Part p=new Part(0,5.1f,-.5f);p.rx=-.95f;
+  p.loft(3,8,-3.10f,0,0,.34f,.37f,-.15f,0,0,.39f,.40f,.9f,0,0,.36f,.37f);
+  for(int j=0;j<7;j++)p.loft(9,8,-2.93f+j*.39f,0,0,.41f,.43f,-2.78f+j*.39f,0,0,.42f,.44f);
+  p.loft(4,8,-3.7f,0,0,.40f,.39f,-3.4f,0,0,.69f,.64f,-3.05f,0,0,.46f,.45f);
+  // Distinct sculpted skull and swept skeletal crossguard.
+  p.loft(4,12,.15f,0,0,.76f,.59f,.75f,0,0,.91f,.72f,1.53f,0,-.04f,.78f,.60f,2.12f,0,-.12f,.43f,.35f);
+  for(int side:new int[]{-1,1}){
+   p.oval(3,side*.36f,.80f,-.67f,.24f,.28f,.10f);
+   p.blade(4,side*.10f,.48f,-.58f,side*.69f,1.13f,-.53f,.22f);
+   p.blade(4,side*.61f,.92f,.02f,side*2.76f,-.43f,.09f,.92f);
+   p.blade(4,side*.72f,1.52f,.03f,side*3.05f,2.85f,.11f,1.04f);
+   p.blade(9,side*.88f,1.57f,-.17f,side*2.62f,2.60f,-.13f,.26f);
+   p.blade(4,side*.55f,1.70f,0,side*2.04f,4.12f,0,.65f);
+  }
+  p.oval(3,0,1.43f,-.58f,.16f,.21f,.09f);
+  for(int j=0;j<5;j++)p.blade(4,-.40f+j*.20f,1.71f,-.47f,-.40f+j*.20f,2.04f,-.37f,.13f);
+  p.loft(4,4,2.02f,0,0,.65f,.24f,3.7f,0,0,1.44f,.33f,6.1f,0,0,1.43f,.31f,16.3f,0,0,1.13f,.24f,21.0f,0,0,.59f,.14f,22.4f,0,0,.035f,.035f);
+  for(int side:new int[]{-1,1}){
+   p.blade(9,side*.28f,4.02f,-.33f,side*.16f,20.2f,-.15f,.29f);
+   p.blade(11,side*1.23f,4.15f,-.055f,side*.49f,20.48f,-.05f,.15f);
+  }
+  return p;
+ }
+'''+s[j:]
+p.write_text(s,encoding='utf-8')
+
+p=assets/'textures/entity/dante_sculpted.png';W,H,pix=read_rgba(p)
+for tile in (0,5,7,8,9,10,11):
+ for y in range(128):
+  for x in range(128):
+   u=sat2((x-3)/121);v=sat2((y-3)/121);U=round(u*60)/60;V=round(v*60)/60
+   off=((tile//8*128+y)*W+tile%8*128+x)*4;c=tuple(pix[off:off+3])
+   if tile==5:
+    c=mix((229,187,161),(135,83,78),.24*sat2((abs(U-.5)-.18)*4)+.09*V)
+    for side in (-1,1):
+     dx=side*(U-(.5+side*.181))/.118;dy=(V-(.47-.026*dx))/.049;d=abs(dx)**1.6+abs(dy)**1.4
+     if d<1.18:c=(48,29,35)
+     if d<.80:c=(238,231,220)
+     if d<.78 and abs(dx)<.39:c=mix((51,72,90),(119,171,201),sat2((dy+.7)/1.4))
+     if d<.75 and abs(dx)<.16:c=(24,23,31)
+     if d<.73 and (dx+.13)**2+(dy+.23)**2<.045:c=(255,250,240)
+     if abs(dx)<1.1 and abs(V-(.378-.026*dx))<.015:c=(117,107,103)
+    if abs(U-.5)<.081 and abs(V-(.78+.023*(U-.5)))<.010:c=(102,49,49)
+    if V>.73 and abs(U-.5)<.32 and (x*17+y*31)%11<2:c=mix(c,(77,61,60),.22)
+   elif tile in (7,8):
+    wave=math.sin(U*math.pi*24+V*5+.6*math.sin(V*8))
+    c=mix((166,173,190),(247,246,240),.42+.44*max(0,wave)**4)
+   elif tile==0:
+    c=mix(c,(52,12,22),.21*max(0,math.sin(U*math.pi*7+V*2))**6)
+    if (x*11+y*17)%19==0:c=mix(c,(230,118,113),.13)
+   elif tile==9:c=mix((25,28,39),(102,111,125),.26+.42*math.sin(math.pi*U)**4)
+   elif tile==10:c=mix((68,17,26),(166,65,63),.26+.28*math.sin(math.pi*U)**4)
+   elif tile==11:c=mix((111,116,129),(242,237,221),.27+.68*math.sin(math.pi*U)**2)
+   pix[off:off+4]=bytes((*c,255))
+png(p,W,H,pix)
+
+# Inventory art: high-resolution pixel silhouettes, skull guard and differentiated Ebony/Ivory.
+for name in ('rebellion','ebony','ivory'):
+ N=64;pix=bytearray(N*N*4)
+ for y in range(N):
+  for x in range(N):
+   c=None
+   if name=='rebellion':
+    t=(x+63-y)/2;cross=x+y-63
+    if 17<t<60 and abs(cross)<(5 if t<52 else max(1,(60-t)*.65)):
+     c=(211,218,226) if cross<0 else (129,145,160)
+     if abs(cross)<1.2:c=(60,66,82)
+    if 13<t<19 and abs(cross)<13-(abs(t-16)*1.4):c=(162,170,183)
+    if 15<t<23 and abs(cross)<4:c=(211,206,191) if int(cross)%3 else (62,55,58)
+    if 3<t<15 and abs(cross)<2.5:c=(40,37,43) if int(t)%3 else (119,114,123)
+    if 1<t<5 and abs(cross)<4:c=(179,183,194)
+   else:
+    if 9<=x<=58 and 12<=y<=24:
+     c=(196,205,217) if name=='ivory' else (44,48,59)
+     if y<15:c=(248,248,240) if name=='ivory' else (109,118,135)
+     if 12<x<26 and x%4==0:c=(72,76,89) if name=='ivory' else (14,17,25)
+     if y==22 and 29<x<51:c=(126,107,84) if name=='ivory' else (183,173,151)
+    if 11<=x<=28 and 24<y<53 and x+y<69:
+     c=(103,63,48) if name=='ivory' else (30,26,35)
+     if (x+y)%5==0:c=shade(c,1.35)
+    if 29<=x<=43 and 25<=y<=37 and (x in (29,30,42,43) or y in (25,36,37)):c=(154,162,175) if name=='ivory' else (61,66,79)
+    if 54<=x<=59 and 16<=y<=20:c=(24,26,34)
+   if c is not None:
+    off=(y*N+x)*4;pix[off:off+4]=bytes((*c,255))
+ png(assets/'textures/item'/f'{name}.png',N,N,pix)
+print('Dante: faceted portrait, coat and hair, sculpted Rebellion and distinct Ebony/Ivory models and icons.')
+
+# Cabaret: retain all existing gameplay and animations; give each adult NPC a distinct
+# stage costume and hairstyle while reusing the original face-specific atlas islands.
+p=java/'CabaretClient.java';s=p.read_text(encoding='utf-8')
+# The baked model originally shared one mesh; add three independent layer definitions.
+s=s.replace('static final ModelLayerLocation L=new ModelLayerLocation(new ResourceLocation(Noctis.ID,"cabaret_healer"),"main");','''static final ModelLayerLocation[] L={new ModelLayerLocation(new ResourceLocation(Noctis.ID,"cabaret_healer"),"rose"),new ModelLayerLocation(new ResourceLocation(Noctis.ID,"cabaret_healer"),"noir"),new ModelLayerLocation(new ResourceLocation(Noctis.ID,"cabaret_healer"),"luna")};''',1)
+s=s.replace('e.registerLayerDefinition(L,CabaretClient::mesh);','for(int i=0;i<3;i++){final int k=i;e.registerLayerDefinition(L[i],()->mesh(k));}',1)
+s=s.replace('Noctis.CABARET_ROSE.get(),Renderer::new','Noctis.CABARET_ROSE.get(),c->new Renderer(c,0)',1).replace('Noctis.CABARET_NOIR.get(),Renderer::new','Noctis.CABARET_NOIR.get(),c->new Renderer(c,1)',1).replace('Noctis.CABARET_LUNA.get(),Renderer::new','Noctis.CABARET_LUNA.get(),c->new Renderer(c,2)',1)
+s=s.replace('static LayerDefinition mesh(){','static LayerDefinition mesh(int k){',1)
+s=s.replace('Renderer(EntityRendererProvider.Context c){super(c,new Model(c.bakeLayer(L)),.35f);}','Renderer(EntityRendererProvider.Context c,int k){super(c,new Model(c.bakeLayer(L[k])),.35f);}',1)
+# Add geometry using a dedicated 128x128 atlas area that is painted below; old
+# parts remain intact, allowing existing stage poses to continue unchanged.
+a='        return LayerDefinition.create(m,128,128);'
+assert a in s
+s=s.replace(a,'''        h.addOrReplaceChild("choker",CubeListBuilder.create().texOffs(96,112).addBox(-1.75f,0,-1.45f,3.5f,.7f,2.9f),PartPose.offset(0,.05f,0));
+        b.addOrReplaceChild("corsetLacing",CubeListBuilder.create().texOffs(104,112).addBox(-.72f,0,-.13f,1.44f,5.7f,.26f),PartPose.offset(0,1.7f,-3.02f));
+        for(int i=0;i<2;i++){
+         int side=i==0?-1:1;
+         h.addOrReplaceChild("earring"+i,CubeListBuilder.create().texOffs(116,112).addBox(-.22f,0,-.22f,.44f,1.25f,.44f),PartPose.offset(side*3.62f,-2.0f,-.4f));
+         PartDefinition arm=r.getChild("arm"+i);
+         arm.addOrReplaceChild("bracelet",CubeListBuilder.create().texOffs(116,112).addBox(-1.13f,0,-1.13f,2.26f,.55f,2.26f),PartPose.offset(0,7.9f,0));
+         PartDefinition leg=r.getChild("leg"+i);
+         leg.addOrReplaceChild("bootTrim",CubeListBuilder.create().texOffs(116,112).addBox(-1.58f,0,-1.58f,3.16f,.42f,3.16f),PartPose.offset(0,9,0));
+         sk.addOrReplaceChild("panel"+i,CubeListBuilder.create().texOffs(96,112).addBox(-.8f,0,-1.4f,1.6f,k==1?4.4f:2.7f,2.8f),PartPose.offsetAndRotation(side*4.3f,.35f,.6f,0,0,-side*.19f));
+        }
+        if(k==0){
+         h.addOrReplaceChild("rose",CubeListBuilder.create().texOffs(96,112).addBox(-1,0,-.65f,2,1.7f,1.3f).texOffs(116,112).addBox(-.45f,.40f,-.8f,.9f,.9f,.4f),PartPose.offsetAndRotation(3.1f,-6.8f,-1.1f,0,0,.38f));
+        }else if(k==1){
+         h.addOrReplaceChild("miniHat",CubeListBuilder.create().texOffs(96,112).addBox(-1.65f,-.2f,-1.5f,3.3f,.4f,3).texOffs(96,112).addBox(-1.08f,-2.1f,-.98f,2.16f,2.05f,1.96f),PartPose.offsetAndRotation(-1.9f,-7.6f,0,0,0,-.38f));
+        }else{
+         h.addOrReplaceChild("tiara",CubeListBuilder.create().texOffs(116,112).addBox(-2.2f,0,-.22f,4.4f,.34f,.44f).texOffs(116,112).addBox(-.36f,-.8f,-.3f,.72f,.84f,.55f),PartPose.offset(0,-6.4f,-3.6f));
+        }
+        return LayerDefinition.create(m,128,128);''',1)
+# Use separate fabric and skin islands for a more fitted torso and less bulky sleeves.
+# The original mesh is shared by all three, so retain its original UV offsets.
+import re
+s=re.sub(r'addBox\(-4\.0f,0\.0f,-3\.0f,8\.0f,5\.0f,5\.0f\)', 'addBox(-3.5f,.75f,-2.65f,7.0f,4.25f,4.7f)',s,count=1)
+s=re.sub(r'addBox\(-1\.5f,-1\.0f,-1\.5f,3\.0f,4\.0f,3\.0f\)', 'addBox(-1.35f,-.25f,-1.35f,2.7f,2.15f,2.7f)',s)
+s=re.sub(r'addBox\(-5\.0f,2\.0f,-3\.5f,10\.0f,2\.0f,7\.0f\)', 'addBox(-4.7f,1.6f,-3.3f,9.4f,1.5f,6.6f)',s,count=1)
+p.write_text(s,encoding='utf-8')
+# Existing original 512px atlases are retained and the new accessory UV area
+# is filled with distinct satin, metallic trim and visible corset laces.
+for name,cloth,metal in [('rose',(150,24,57),(235,181,95)),('noir',(40,20,57),(188,151,208)),('luna',(28,65,125),(218,229,245))]:
+ p=assets/'textures/entity'/f'cabaret_{name}.png';W,H,pix=read_rgba(p);S=W//128
+ for y in range(112*S,H):
+  for x in range(96*S,W):
+   u=x/S;v=y/S
+   c=shade(cloth,.79+.20*math.sin(u*2.3)**2)
+   if u>=116:c=shade(metal,.80+.20*math.sin(u*3.1)**2)
+   elif 104<=u<116:
+    c=(36,20,39)
+    if abs((u-104)-((v-112)%3)*2.1)<.6 or abs((116-u)-((v-112)%3)*2.1)<.6:c=metal
+   off=(y*W+x)*4;pix[off:off+4]=bytes((*c,255))
+ png(p,W,H,pix)
+print('Rosalie, Lilith and Selene: distinct stage accessories, fitted costumes and preserved animations.')
