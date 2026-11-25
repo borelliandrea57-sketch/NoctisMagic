@@ -3686,3 +3686,50 @@ for frame in range(12):
     c=expression_color((x+.5)/24,(y+.5)/21,kind,True,frame);off=((sy+y)*w+sx+x)*4;pix[off:off+4]=bytes((*c,255))
   png(assets/'textures/entity'/f'slime_expression_{kind}_{frame}.png',w,h,pix)
 print('Waifu and Slime Girl: five facial states, five smooth idle gestures, preserved gel-flow animation.')
+
+
+# Guts: actual uploaded scream (mono compressed copy), huge Dragon Slayer and devastating melee.
+edit('FallenEncounter.java','static final RegistryObject<SoundEvent> PHOENIX_OBJECTION=','''static final RegistryObject<SoundEvent> GUTS_GRIFFITH=SOUNDS.register("guts_griffith",()->SoundEvent.createVariableRangeEvent(new ResourceLocation(Noctis.ID,"guts_griffith")));
+    static final RegistryObject<SoundEvent> PHOENIX_OBJECTION=''')
+edit('Guts.java','playSound(SoundEvents.RAVAGER_ROAR,1.5f,.72f);','playSound(FallenEncounter.GUTS_GRIFFITH.get(),2.0f,1f);')
+edit('Guts.java','Attributes.ATTACK_DAMAGE,44','Attributes.ATTACK_DAMAGE,140')
+edit('Guts.java','e.getBoundingBox().inflate(2),m->m!=e&&enemy(m)&&distanceToSqr(m)<25','e.getBoundingBox().inflate(4),m->m!=e&&enemy(m)&&distanceToSqr(m)<64')
+edit('Guts.java','other.hurt(damageSources().mobAttack(this),18);','other.hurt(damageSources().mobAttack(this),85);')
+edit('Noctis.java','net.minecraft.world.item.Tiers.NETHERITE,24,-3.45f','net.minecraft.world.item.Tiers.NETHERITE,95,-3.45f')
+# New sword shape: 50 model units from hilt, wide angular blade and stepped bevels.
+edit('GutsSculptedClient.java','sword.loft(8,8,2.1f,0,0,3.25f,.50f,5.0f,0,0,3.92f,.62f,30.0f,0,0,3.92f,.62f,34.0f,0,0,.08f,.12f);','''sword.loft(8,8,2.1f,0,0,4.4f,.7f,6.0f,0,0,5.1f,.87f,43.0f,0,0,5.1f,.87f,50.0f,0,0,.08f,.12f);
+   for(int side:new int[]{-1,1}){
+    sword.blade(8,side*4.55f,6.2f,-.20f,side*4.55f,43.0f,-.20f,.52f);
+    sword.blade(4,side*4.65f,6.2f,.20f,side*4.65f,43.0f,.20f,.28f);
+    sword.blade(9,side*3.12f,7.0f,-.85f,side*3.12f,41.5f,-.85f,.12f);
+   }''')
+edit('GutsSculptedClient.java','sword.loft(9,8,2.3f,0,-.49f,2.62f,.13f,30.0f,0,-.52f,3.05f,.14f,33.6f,0,-.07f,.07f,.06f);','sword.loft(9,8,2.3f,0,-.70f,3.30f,.17f,43.0f,0,-.77f,3.90f,.16f,49.4f,0,-.07f,.07f,.06f);')
+edit('GutsSculptedClient.java','sword.loft(9,8,2.3f,0,.49f,2.62f,.13f,30.0f,0,.52f,3.05f,.14f,33.6f,0,.07f,.07f,.06f);','sword.loft(9,8,2.3f,0,.70f,3.30f,.17f,43.0f,0,.77f,3.90f,.16f,49.4f,0,.07f,.07f,.06f);')
+# Large item artwork, with heavy dark core, bright worn steel bevels and wrapped handle.
+W=H=128;pix=bytearray(W*H*4)
+for y in range(H):
+ for x in range(W):
+  t=(x+127-y)/2;d=x+y-127;c=None
+  half=12.5 if t<112 else max(0,(123-t)*1.14)
+  if 25<t<123 and abs(d)<half:
+   edge=abs(d)>max(0,half-3.3)
+   c=shade((179,188,201) if edge else (72,77,85),.84+.12*math.sin(t*.21)**2+.09*math.sin(d*.7)**2)
+   if abs(math.sin(t*1.73+d*.49)*math.cos(d*1.11))>.93:c=mix(c,(209,218,225),.36)
+  if 20<t<28 and abs(d)<14:c=shade((109,112,117),.65+.35*math.sin(t*.49)**2)
+  if 6<t<22 and abs(d)<3.5:c=shade((157,145,126),.56+.44*math.sin(t*1.85)**2)
+  if 2<t<8 and abs(d)<5:c=(119,118,110)
+  if c:
+   q=(y*W+x)*4;pix[q:q+4]=bytes((*c,255))
+png(assets/'textures/item/dragon_slayer.png',W,H,pix)
+p=assets/'models/item/dragon_slayer.json';d=json.loads(p.read_text(encoding='utf-8'))
+for hand,angle in [('righthand',55),('lefthand',-55)]:
+ d['display']['thirdperson_'+hand]={'rotation':[0,-90 if angle>0 else 90,angle],'translation':[0,5,0],'scale':[3.4,3.4,3.4]}
+ d['display']['firstperson_'+hand]={'rotation':[0,-90 if angle>0 else 90,angle*.45],'translation':[1.1 if angle>0 else -1.1,1.5,0],'scale':[1.7,1.7,1.7]}
+j(p,d)
+import base64,subprocess
+encoded='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'
+tmp=root/'guts_griffith_recording.mp3';tmp.write_bytes(base64.b64decode(encoded,validate=True))
+subprocess.run(['ffmpeg','-nostdin','-loglevel','error','-y','-i',str(tmp),'-ac','1','-c:a','libvorbis','-q:a','4',str(assets/'sounds/guts_griffith.ogg')],check=True)
+tmp.unlink()
+p=assets/'sounds.json';d=json.loads(p.read_text(encoding='utf-8'));d['guts_griffith']={'sounds':[{'name':'noctismagic:guts_griffith'}]};j(p,d)
+print('Guts uploaded Griffith scream, 140 melee and 85 splash damage, enormous Dragon Slayer with worn steel bevels.')
