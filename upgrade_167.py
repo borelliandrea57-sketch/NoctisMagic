@@ -2253,7 +2253,7 @@ edit('Noctis.java','public static final RegistryObject<Item> CATHEDRAL_EGG=','''
     public static final RegistryObject<Item> BLOOD_VIAL=ITEMS.register("blood_vial",()->new Item(new Item.Properties().stacksTo(16)));
     public static final RegistryObject<Item> CATHEDRAL_EGG=''')
 edit('Noctis.java','e.accept(CATHEDRAL_EGG.get());','e.accept(CATHEDRAL_EGG.get());e.accept(GARLIC.get());e.accept(BLOOD_VIAL.get());')
-edit('CharacterLoot.java','  if(m instanceof CrossoverGuest g){','''  if(m instanceof Vampire.Friendly){add(e,Noctis.BLOOD_VIAL.get(),2+m.getRandom().nextInt(3)+Math.max(0,e.getLootingLevel()));}
+edit('CharacterLoot.java','  if(m instanceof CrossoverGuest g){','''  if(m instanceof Vampire.Friendly){add(e,Noctis.BLOOD_VIAL.get(),1);}
   else if(m.getClass().getSimpleName().equals("Vampire")||new net.minecraft.resources.ResourceLocation(Noctis.ID,"vampire").equals(net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(m.getType()))){add(e,Noctis.GARLIC.get(),1+m.getRandom().nextInt(3)+Math.max(0,e.getLootingLevel()));}
   else if(m instanceof CrossoverGuest g){''')
 for name in ['garlic','blood_vial']:
@@ -2292,8 +2292,9 @@ edit('CharacterLoot.java','  if(m instanceof Vampire.Friendly){','''  if(m insta
    int second=(first+1+m.getRandom().nextInt(common.length-1))%common.length;
    add(e,common[first],2+m.getRandom().nextInt(4)+Math.max(0,e.getLootingLevel()));
    add(e,common[second],1+m.getRandom().nextInt(3)+Math.max(0,e.getLootingLevel()));
-   if(m.getRandom().nextInt(4)==0)add(e,VampireLife.ORE_ITEM.get(),1+m.getRandom().nextInt(2));
-   if(m.getRandom().nextInt(20)==0)add(e,Items.NETHERITE_SCRAP,1);
+   add(e,Items.AMETHYST_SHARD,2+m.getRandom().nextInt(4)+Math.max(0,e.getLootingLevel()));
+   if(m.getRandom().nextInt(2)==0)add(e,VampireLife.ORE_ITEM.get(),1+m.getRandom().nextInt(3));
+   if(m.getRandom().nextInt(3)==0)add(e,Items.NETHERITE_SCRAP,1+m.getRandom().nextInt(2));
   }
   else if(m instanceof Vampire.Friendly){''')
 print('Both Nether demon variants now drop a mixed selection of Nether minerals.')
