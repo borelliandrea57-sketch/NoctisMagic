@@ -6,7 +6,7 @@ root=Path(sys.argv[1]);java=root/'src/main/java/it/noctis/magic';res=root/'src/m
 def dump(p,d):
  p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(d,ensure_ascii=False,indent=2),encoding='utf-8')
 def B(x,y,z,X,Y,Z,m):return (x,y,z,X,Y,Z,m)
-pal={'pearl':(255,255,247),'ivory':(230,220,198),'rose':(174,119,115),'green':(75,113,95),'blue':(79,105,145),'gold':(205,164,82),'shadow':(144,130,114),'sand':(190,169,139),'black':(72,66,76),'red':(144,43,53),'wood':(89,52,39),'wax':(250,235,187),'flame':(255,199,91),'silver':(151,153,164)}
+pal={'halo':(255,229,148),'marblefine':(239,234,222),'pearl':(255,255,247),'ivory':(230,220,198),'rose':(174,119,115),'green':(75,113,95),'blue':(79,105,145),'gold':(205,164,82),'shadow':(144,130,114),'sand':(190,169,139),'black':(72,66,76),'red':(144,43,53),'wood':(89,52,39),'wax':(250,235,187),'flame':(255,199,91),'silver':(151,153,164)}
 for n,c in pal.items():
  im=Image.new('RGBA',(64,64));rng=random.Random(n)
  for y in range(64):
@@ -78,6 +78,19 @@ add('sanctuary_baluster','Balaustra gotica','Gothic balustrade',[B(0,0,5,16,2,11
 # Sculptures: use non-coplanar tessellated volumetric cross-sections rather than a pile of cubes.
 # Model sizes 5-8 blocks tall; split geometry into legal 16-unit tile models.
 shapes={}
+def smooth_halo(box,cx,cy,cz,r=14):
+ # Fine horizontal strips of one continuous annulus, no overlapping coplanar faces.
+ for k in range(-int((r+1)*4),int((r+1)*4)):
+  y=k/4;mid=y+.125
+  outer=math.sqrt(max(0,(r+1)**2-mid*mid))
+  inner=math.sqrt(max(0,(r-1)**2-mid*mid))
+  if outer<=0:continue
+  if inner>0:
+   box(cx-outer,cy+y,cz,cx-inner,cy+y+.25,cz+1.25,'halo')
+   box(cx+inner,cy+y,cz,cx+outer,cy+y+.25,cz+1.25,'halo')
+  else:box(cx-outer,cy+y,cz,cx+outer,cy+y+.25,cz+1.25,'halo')
+ # Fine metal arm connects the lower ring to the back of the head.
+ box(cx-.45,cy-r-2,cz-5,cx+.45,cy-r+.4,cz+1,'gold')
 def sculpt(name):
  boxes=[]
  def box(x,y,z,X,Y,Z,m='ivory'):boxes.append(B(x,y,z,X,Y,Z,m))
@@ -125,9 +138,7 @@ def sculpt(name):
   for side in (-1,1):rod((side*6,108,1),(side*12,119,2),2.2,base)
   box(7,24,-15,10,80,-12,'silver');box(2,73,-17,15,76,-11,'gold')
  else:
-  for j in range(32):
-   a=j*math.tau/32;x=14*math.cos(a);y=105+14*math.sin(a)
-   box(x-1.6,y-1.6,8,x+1.6,y+1.6,10,'gold')
+  smooth_halo(box,0,105,9)
   if name=='saint':
    box(-12,56,-17,-2,68,-12,'red');box(-11,57,-18,-3,67,-17,'gold')
    box(9,56,-16,11,83,-13,'gold');box(4,74,-16,16,77,-13,'gold')
@@ -213,14 +224,27 @@ def sacred_sculpt(name):
   oval(19,104,-6,3,3,2.5,'ivory',2)
   box(18,87,-9,21,122,-6,'wood');box(10,113,-9,29,116,-6,'gold')
   box(-14,49,-15,-6,61,-9,'red');box(-13,50,-15.5,-7,60,-15,'gold')
- for j in range(40):
-  a=j*math.tau/40;x=13*math.cos(a);y=105+13*math.sin(a)
-  box(x-1.15,y-1.15,9,x+1.15,y+1.15,10.6,'gold')
+ smooth_halo(box,0,105,9,13)
+ return boxes
+def refined_angel():
+ # Use the finely carved face and drapery of the praying saint, add two feathered wings.
+ boxes=[(x,y,z,X,Y,Z,'marblefine' if m=='ivory' else m) for x,y,z,X,Y,Z,m in sacred_sculpt('prayer') if m!='pearl']
+ for side in (-1,1):
+  for j in range(10):
+   # Narrow overlapping feather layers, each tapers towards its end.
+   x=12+j*3.0;top=91+j*2.1;bottom=65+j*1.4
+   for k in range(7):
+    yy=bottom+k*(top-bottom)/7;Y=bottom+(k+1)*(top-bottom)/7
+    xx=x+k*.58;w=1.65+1.2*math.sin(math.pi*(k+.5)/7)
+    lo=min(side*(xx-w),side*(xx+w));hi=max(side*(xx-w),side*(xx+w))
+    z=5+j*.19
+    boxes.append(B(lo,yy,z,hi,Y,z+2.7,'marblefine'))
+    boxes.append(B(lo+.25,yy,z+2.7,hi-.25,Y,z+3.15,'sand'))
  return boxes
 def coord(n):return 'm'+str(-n) if n<0 else str(n)
-for name in ('angel','saint','guardian','mourner','prayer','martyr'):
+for name in ('angel','saint','guardian','mourner','prayer','martyr','archangel'):
  tiles={}
- for x,y,z,X,Y,Z,m in (sacred_sculpt(name) if name in ('mourner','prayer','martyr') else sculpt(name)):
+ for x,y,z,X,Y,Z,m in (refined_angel() if name=='archangel' else sacred_sculpt(name) if name in ('mourner','prayer','martyr') else sculpt(name)):
   for ix in range(math.floor((x+8)/16),math.ceil((X+8)/16)):
    for iy in range(math.floor(y/16),math.ceil(Y/16)):
     for iz in range(math.floor((z+8)/16),math.ceil((Z+8)/16)):
@@ -230,7 +254,7 @@ for name in ('angel','saint','guardian','mourner','prayer','martyr'):
  shapes[name]=[]
  for (x,y,z),boxes in sorted(tiles.items()):
   n='sanctuary_statue_'+name+'_'+coord(x)+'_'+coord(y)+'_'+coord(z)
-  add(n,'Frammento di statua','Statue segment',boxes,creative=False);shapes[name].append((x,y,z,n))
+  add(n,'Frammento di statua','Statue segment',boxes,light=any(q[-1]=='halo' for q in boxes),creative=False);shapes[name].append((x,y,z,n))
 # Register all blocks, including hidden sculpture tiles.
 decl=[]
 mats=list(pal)+['ashlar','rosebrick','greenbrick','bluebrick','nightbrick','mosaic_star','mosaic_flower','mosaic_border','mosaic_cross','mosaic_bat','icon','tapestry','tapestry_top','tapestry_end']
@@ -259,7 +283,7 @@ for n,(it,en,boxes,mat,light,creative) in items.items():
   dump(res/'data/noctismagic/loot_tables/blocks'/f'{n}.json',{'type':'minecraft:block','pools':[{'rolls':1,'entries':[{'type':'minecraft:item','name':'noctismagic:'+n}]}]})
 p=java/'Furniture.java';s=p.read_text(encoding='utf-8');a='public class Furniture{';assert a in s;s=s.replace(a,a+'\n'+'\n'.join(decl)+'\n',1);p.write_text(s,encoding='utf-8')
 # Reusable, player-placed statue items. Never overwrite non-replaceable blocks.
-names={'mourner':('Statua monumentale: Vergine delle Lacrime','Monumental weeping Virgin'),'prayer':('Statua monumentale: Santa orante','Monumental praying saint'),'martyr':('Statua monumentale: Martire della Croce','Monumental martyr'),'angel':('Statua monumentale: Arcangelo','Monumental archangel'),'saint':('Statua monumentale: Santo','Monumental saint'),'guardian':('Statua monumentale: Guardiano oscuro','Monumental dark guardian')}
+names={'archangel':('Arcangelo di marmo luminoso','Luminous marble archangel'),'mourner':('Statua monumentale: Vergine delle Lacrime','Monumental weeping Virgin'),'prayer':('Statua monumentale: Santa orante','Monumental praying saint'),'martyr':('Statua monumentale: Martire della Croce','Monumental martyr'),'angel':('Statua monumentale: Arcangelo','Monumental archangel'),'saint':('Statua monumentale: Santo','Monumental saint'),'guardian':('Statua monumentale: Guardiano oscuro','Monumental dark guardian')}
 p=java/'Noctis.java';s=p.read_text(encoding='utf-8');a='public static final RegistryObject<Item> CATHEDRAL_EGG=';assert a in s
 s=s.replace(a,''.join(f'public static final RegistryObject<Item> STATUE_{n.upper()}=ITEMS.register("statue_{n}",()->new MonumentItem("{n}",new Item.Properties().stacksTo(16)));\n    ' for n in shapes)+a,1)
 a='if(e.getTabKey()==CreativeModeTabs.NATURAL_BLOCKS)';assert a in s
@@ -284,7 +308,7 @@ public class MonumentItem extends Item{
  private final String type;
  public MonumentItem(String type,Properties p){super(p);this.type=type;}
  '''+'\n'.join(methods)+'''
- static Tile[] tiles(String n){return switch(n){case "angel"->angel();case "saint"->saint();case "mourner"->mourner();case "prayer"->prayer();case "martyr"->martyr();default->guardian();};}
+ static Tile[] tiles(String n){return switch(n){case "angel"->angel();case "archangel"->archangel();case "saint"->saint();case "mourner"->mourner();case "prayer"->prayer();case "martyr"->martyr();default->guardian();};}
  static int dx(Tile t,Direction f){return switch(f){case EAST->-t.z();case SOUTH->-t.x();case WEST->t.z();default->t.x();};}
  static int dz(Tile t,Direction f){return switch(f){case EAST->t.x();case SOUTH->-t.z();case WEST->-t.x();default->t.z();};}
  static BlockState state(Tile t,Direction f){return t.block().defaultBlockState().setValue(Furniture.FurnitureBlock.FACING,f);}
@@ -320,7 +344,7 @@ for loc in ('it_it','en_us'):
  dump(p,d)
 p=java/'GothicEgg.java';s=p.read_text(encoding='utf-8')
 # Replace old cathedral statues with the detailed monuments at the original anchors.
-s=s.replace('lacrimosaAngel(p,x,1,z+3);','monument(p,x,1,z+3,(z+x)%3==0?"mourner":(z+x)%3==1?"prayer":"martyr",Direction.NORTH);').replace('lacrimosaAngel(p,x,2,83);','monument(p,x,2,83,x<30?"mourner":"martyr",Direction.NORTH);').replace('lacrimosaAngel(p,x,1,5);','monument(p,x,1,5,x<30?"angel":"prayer",Direction.SOUTH);')
+s=s.replace('lacrimosaAngel(p,x,1,z+3);','monument(p,x,1,z+3,(z+x)%3==0?"mourner":(z+x)%3==1?"prayer":"martyr",Direction.NORTH);').replace('lacrimosaAngel(p,x,2,83);','monument(p,x,2,83,"archangel",Direction.NORTH);').replace('lacrimosaAngel(p,x,1,5);','monument(p,x,1,5,"archangel",Direction.SOUTH);')
 helper='''    static void monument(Plan p,int x,int y,int z,String n,Direction f){
         for(MonumentItem.Tile t:MonumentItem.tiles(n))p.put(x+MonumentItem.dx(t,f),y+t.y(),z+MonumentItem.dz(t,f),MonumentItem.state(t,f));
     }
