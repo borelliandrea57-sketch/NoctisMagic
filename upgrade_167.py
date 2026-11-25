@@ -4848,3 +4848,199 @@ for m,base in enumerate(pal):
    off=((m//8*128+y)*W+m%8*128+x)*4;pix[off:off+4]=bytes((*c,255))
 png(assets/'textures/entity/edgeworth_sculpted.png',W,H,pix)
 print('Miles Edgeworth: sculpted angular face, parted silver hair, magenta suit and cravat, upright tea cup with articulated hand and independent objection arm.')
+
+
+# Leon RE4 remake: angular adult facial planes, ash-blond side fringe, stable aimed gunfire.
+p=java/'LeonSculptedClient.java';s=p.read_text(encoding='utf-8')
+s=s.replace('import it.noctis.magic.SculptedGuestsClient.Part;','''import it.noctis.magic.SculptedGuestsClient.Part;
+import it.noctis.magic.SculptedGuestsClient.V;
+import it.noctis.magic.SculptedGuestsClient.Q;''',1)
+s=s.replace('    static class M extends EntityModel<CrossoverGuest>{','''    static float clampFace(float x){return Math.max(.025f,Math.min(.975f,x));}
+    static V face(V v,boolean front){
+        return new V(v.x(),v.y(),v.z(),front?clampFace(.5f+v.x()/5.8f):.025f,clampFace((v.y()+7.75f)/7.75f),v.nx(),v.ny(),v.nz());
+    }
+    static void project(Part p){
+        for(int i=0;i<p.faces.size();i++){
+            Q q=p.faces.get(i);if(q.tile()!=7)continue;
+            boolean f=q.a().nz()+q.b().nz()+q.c().nz()+q.d().nz()<-.05f;
+            p.faces.set(i,new Q(face(q.a(),f),face(q.b(),f),face(q.c(),f),face(q.d(),f),7));
+        }
+    }
+    static class M extends EntityModel<CrossoverGuest>{''',1)
+a=s.index('            head.loft(7,28,');b=s.index('            for(int i=0;i<2;i++){int s=i==0?-1:1;',a)
+s=s[:a]+'''            // Long adult face, narrower temples, strong cheekbones and a defined chin.
+            head.loft(7,24,-7.75f,0,.12f,1.22f,1.46f,-7.10f,0,.06f,2.08f,2.18f,-5.65f,0,0,2.54f,2.46f,-4.35f,0,-.09f,2.50f,2.42f,-3.22f,0,-.17f,2.34f,2.24f,-2.10f,0,-.25f,2.06f,1.98f,-1.12f,0,-.40f,1.75f,1.58f,-.38f,0,-.48f,1.18f,1.08f,0,0,-.51f,.80f,.77f);
+            project(head);
+            head.loft(3,16,-4.86f,0,-2.20f,.18f,.12f,-3.92f,0,-2.48f,.27f,.23f,-3.02f,0,-2.86f,.39f,.35f,-2.68f,0,-2.67f,.29f,.15f);
+            for(int side:new int[]{-1,1}){
+                head.oval(3,side*2.44f,-3.35f,.10f,.30f,.66f,.39f);
+                head.blade(3,side*1.55f,-3.32f,-2.00f,side*2.03f,-2.79f,-1.45f,.15f);
+            }
+            // Low asymmetric crown; long layered sweep passes IN FRONT of left eye.
+            head.loft(8,24,-8.60f,.20f,.12f,.78f,.81f,-8.22f,.13f,.18f,2.00f,2.06f,-7.45f,0,.26f,2.70f,2.65f,-6.20f,0,.38f,2.72f,2.65f);
+            Part back=head.child(0,-6.78f,1.58f);
+            back.loft(8,20,-.64f,0,0,2.27f,1.31f,1.05f,0,.22f,2.45f,1.39f,3.35f,0,.42f,2.18f,1.05f,4.9f,0,.46f,1.36f,.19f);
+            // Long swept diagonal locks with independent roots and pointed ends.
+            for(int j=0;j<13;j++){
+                float t=j/12f;
+                float x=-2.12f+t*4.12f;
+                Part lock=head.child(x,-7.92f+.12f*t,-2.04f);
+                float end=j<8?4.95f-.12f*j:2.35f+(12-j)*.17f;
+                float drift=j<8?-.94f-.72f*t:.55f+.16f*t;
+                lock.loft(j%3==0?8:9,12,-.42f,0,.40f,.34f,.43f,.35f,drift*.15f,-.30f,.47f,.43f,1.45f,drift*.42f,-.91f,.48f,.33f,end*.69f,drift*.78f,-1.12f,.35f,.20f,end,drift,-.84f,.023f,.032f);
+                lock.blade(12,-.10f,.28f,-.58f,drift*.83f,end*.81f,-1.11f,.09f);
+            }
+            for(int j=0;j<8;j++){
+                float t=j/7f;
+                Part lock=head.child(-2.2f+t*4.4f,-8.18f+.18f*t,.08f);
+                float drift=j<5?-.80f:.55f;
+                lock.loft(8,12,-.48f,0,.15f,.34f,.41f,.15f,0,0,.49f,.46f,1.15f,drift*.43f,-.56f,.38f,.31f,2.25f,drift,-1.55f,.025f,.038f);
+            }
+'''+s[b:]
+s=s.replace('s*2.55f,-6.2f,.2f','s*2.30f,-6.2f,.2f',1)
+a=s.index('            float a=e.animation()==2?e.action():0;');b=s.index('            for(int i=0;i<hair.size();i++)',a)
+s=s[:a]+'''            float a=e.animation()==2?e.action():0;
+            float pose=e.aiming()?1:a;
+            float aimPitch=Math.max(-1.05f,Math.min(1.05f,pitch*.0174533f));
+            body.ry=0;head.ry=yaw*.01745f*(1-pose);head.rx=aimPitch*.82f;
+            for(int i=0;i<2;i++){
+                int side=i==0?-1:1;float w=(float)Math.cos(limb*.666+i*Math.PI)*amount;
+                arms[i].rx=-w*.55f*(1-pose)+pose*(i==1?-1.47f+aimPitch:-1.03f+aimPitch);
+                arms[i].rz=-side*.09f*(1-pose)+pose*(i==0?-.28f:0);
+                arms[i].ry=pose*(i==0?-.42f:0);
+                fore[i].rx=-pose*(i==0?.65f:.10f)-(i==1?a*.055f:0);
+                legs[i].rx=w*.65f;calves[i].rx=Math.max(0,-w)*.35f;
+            }
+'''+s[b:]
+# Correct the barrel pivot direction; +Y of slide follows extended forearm toward the target.
+s=s.replace('weapon=new Part(0,5.0f,-.55f);','weapon=new Part(0,5.0f,-.30f);',1)
+p.write_text(s,encoding='utf-8')
+# Rewrite the complete Leon atlas so the projected face is realistic rather than large anime eyes.
+W,H=1024,512;pix=bytearray(W*H*4)
+pal=[(98,72,57),(166,144,116),(34,34,36),(222,181,153),(137,106,76),(37,36,39),(155,145,131),(222,181,153),(112,95,75),(145,126,100),(53,54,57),(76,80,84),(185,163,130)]
+for m,base in enumerate(pal):
+ for y in range(128):
+  v=sat2((y-3)/121)
+  for x in range(128):
+   u=sat2((x-3)/121);f=abs(u-.5)
+   c=shade(base,.81+.21*math.sin(math.pi*u)+.03*math.sin(x*9.13+y*3.71))
+   if m in (0,1,2,5,10):
+    grain=(math.sin(x*11.31+y*17.77)*math.cos(x*7.29-y*13.97)+1)*.5
+    fold=math.sin(u*math.pi*4+v*3+.4*math.sin(v*7))
+    c=mix(c,(38,27,24) if m==0 else (30,27,28),.23*max(0,-fold)**5)
+    c=mix(c,(171,129,96) if m==0 else (226,211,185) if m==1 else (98,99,103),(.34 if m==1 else .18)*grain)
+   if m in (8,9,12):
+    wave=math.sin(u*math.pi*27+v*3+.55*math.sin(v*6))
+    c=mix(c,(212,191,157),.37*max(0,wave)**5+.10*math.exp(-((v-.27)/.16)**2))
+    c=mix(c,(48,37,31),.44*max(0,-wave)**5)
+   if m==7:
+    def g(cx,cy,sx,sy):return math.exp(-((u-cx)/sx)**2-((v-cy)/sy)**2)
+    c=mix(base,(108,65,56),.34*sat2((f-.17)*3.7)+.10*v)
+    c=mix(c,(246,210,178),.35*g(.5,.37,.12,.21))
+    for side in (-1,1):
+     ex=.5+side*.175;dx=side*(u-ex)/.112;dy=(v-(.480-.018*dx))/.031
+     c=mix(c,(104,65,62),.45*g(ex,.46,.12,.066)+.25*g(ex,.53,.10,.047))
+     c=mix(c,(239,193,157),.25*g(.5+side*.20,.595,.09,.064))
+     d=abs(dx)**1.65+abs(dy)**1.25
+     if d<1.15:c=(50,36,36)
+     if d<.77:c=(210,204,192)
+     if d<.74 and abs(dx+.05)<.37:c=mix((53,78,91),(108,142,153),sat2((dy+.6)/1.2))
+     if d<.71 and abs(dx+.05)<.15:c=(22,27,34)
+     if d<.70 and (dx+.19)**2+(dy+.18)**2<.037:c=(239,237,228)
+     if abs(dx)<1.07 and abs(v-(.402-.024*dx))<.014:c=mix((71,50,43),(112,82,62),.30*max(0,math.sin(x*2.3)))
+    c=mix(c,(119,69,58),.30*g(.39,.702,.036,.081)+.30*g(.61,.702,.036,.081))
+    if f<.055 and abs(v-.679)<.009:c=mix(c,(129,76,66),.68)
+    if f<.090 and abs(v-(.779-.009*(1-f/.09)))<.009:c=(96,52,49)
+    if f<.071 and abs(v-.803)<.009:c=mix(c,(183,112,101),.70)
+    c=mix(c,(119,75,64),.23*g(.5,.844,.11,.022))
+    if v>.75 and f<.28 and math.sin(x*17.13+y*19.71)*math.sin(x*13.21-y*7.15)>.7:c=mix(c,(75,57,49),.16)
+   off=((m//8*128+y)*W+m%8*128+x)*4;pix[off:off+4]=bytes((*c,255))
+png(assets/'textures/entity/leon_sculpted.png',W,H,pix)
+
+# Leon: keep a locked target, aim from the actual shoulder/weapon side, and require an unobstructed shot.
+p=java/'CrossoverGuest.java';s=p.read_text(encoding='utf-8')
+a=s.index('            if(tickCount%5==0||!validEnemy(getTarget())){');b=s.index('        }else{',a)
+s=s[:a]+'''            LivingEntity t=getTarget();
+            if(!validEnemy(t)||distanceTo(t)>30){
+                if(t!=null)setTarget(null);
+                t=null;aimLock=0;
+                if(tickCount%6==0){
+                    t=l.getEntitiesOfClass(Mob.class,getBoundingBox().inflate(30),m->validEnemy(m)&&hasLineOfSight(m)).stream()
+                      .min(java.util.Comparator.comparingDouble(this::distanceToSqr)).orElse(null);
+                    setTarget(t);
+                }
+            }
+            if(!validEnemy(t)){
+                if(aimLock>0)l.broadcastEntityEvent(this,(byte)106);
+                aimLock=0;return;
+            }
+            Vec3 point=t.getBoundingBox().getCenter();
+            double range=distanceTo(t);
+            if(!hasLineOfSight(t)||range>22){
+                if(aimLock>0)l.broadcastEntityEvent(this,(byte)106);
+                aimLock=0;
+                if(tickCount%5==0)getNavigation().moveTo(t,1.15);
+                return;
+            }
+            getNavigation().stop();
+            Vec3 eye=getEyePosition();
+            Vec3 shoulder=eye.add(0,-.34,0);
+            Vec3 flat=point.subtract(shoulder);
+            double horizontal=Math.max(.15,flat.horizontalDistance());
+            // Offset aim to compensate for the weapon held on the right side.
+            double yawRad=Math.atan2(-flat.x,flat.z)+Math.asin(Math.min(.75,.35/horizontal));
+            Vec3 right=new Vec3(Math.cos(yawRad),0,Math.sin(yawRad));
+            shoulder=shoulder.add(right.scale(.35));
+            Vec3 dir=point.subtract(shoulder).normalize();
+            float yaw=(float)(yawRad*180/Math.PI);
+            float pitch=(float)(-Math.atan2(dir.y,dir.horizontalDistance())*180/Math.PI);
+            setYRot(yaw);setYHeadRot(yaw);yBodyRot=yaw;setXRot(pitch);
+            getLookControl().setLookAt(point.x,point.y,point.z,45,45);
+            Vec3 muzzle=shoulder.add(dir.scale(.91));
+            var block=l.clip(new net.minecraft.world.level.ClipContext(shoulder,point,net.minecraft.world.level.ClipContext.Block.COLLIDER,net.minecraft.world.level.ClipContext.Fluid.NONE,this));
+            boolean clear=block.getType()==net.minecraft.world.phys.HitResult.Type.MISS;
+            if(clear){
+                // Don't shoot through neutral mobs, friendly NPCs or other players.
+                for(LivingEntity other:l.getEntitiesOfClass(LivingEntity.class,new net.minecraft.world.phys.AABB(shoulder,point).inflate(.20),e->e!=this&&e!=t&&e.isAlive()&&!e.isSpectator())){
+                    if(other.getBoundingBox().inflate(.04).clip(shoulder,point).isPresent()){clear=false;break;}
+                }
+            }
+            if(!clear||range<1.15){
+                if(aimLock>0)l.broadcastEntityEvent(this,(byte)106);
+                aimLock=0;
+                if(range<1.15){
+                    Vec3 away=position().subtract(t.position()).normalize().scale(.13);
+                    if(l.noCollision(this,getBoundingBox().move(away)))setDeltaMovement(away.x,getDeltaMovement().y,away.z);
+                }else if(tickCount%5==0)getNavigation().moveTo(t,1.12);
+                return;
+            }
+            aimLock=Math.min(30,aimLock+1);
+            if(aimLock==1||tickCount%4==0)l.broadcastEntityEvent(this,(byte)105);
+            if(aimLock>=10&&cooldown<=0&&validEnemy(t)){
+                cooldown=23;l.broadcastEntityEvent(this,(byte)104);
+                l.sendParticles(ParticleTypes.SMALL_FLAME,muzzle.x,muzzle.y,muzzle.z,3,.035,.035,.035,.008);
+                l.sendParticles(ParticleTypes.SMOKE,muzzle.x,muzzle.y,muzzle.z,2,.025,.025,.025,.006);
+                for(int i=1;i<=12;i++){Vec3 q=muzzle.lerp(point,i/12.0);l.sendParticles(ParticleTypes.CRIT,q.x,q.y,q.z,1,0,0,0,0);}
+                t.hurt(damageSources().mobAttack(this),22);
+                playSound(SoundEvents.FIREWORK_ROCKET_BLAST,.85f,1.65f);
+                if(!t.isAlive()){setTarget(null);aimLock=0;l.broadcastEntityEvent(this,(byte)106);}
+            }
+'''+s[b:]
+# Java lambda uses a final snapshot, not the reassigned local variable.
+s=s.replace('            if(clear){\n                // Don','            final LivingEntity locked=t;\n            if(clear){\n                // Don',1)
+s=s.replace('e->e!=this&&e!=t&&e.isAlive()','e->e!=this&&e!=locked&&e.isAlive()',1)
+s=s.replace('objectionCooldown=500;','objectionCooldown=500;int aimLock=0;',1)
+s=s.replace('if(id==105){aimTicks=9;return;}','if(id==106){aimTicks=0;if(animation==2)pose=0;return;}if(id==105){aimTicks=9;return;}',1)
+# Avoid idle look-at-player goal pulling the head away while aiming.
+s=s.replace('goalSelector.addGoal(3,new LookAtPlayerGoal(this,Player.class,8));','goalSelector.addGoal(3,new LookAtPlayerGoal(this,Player.class,8){@Override public boolean canUse(){return (kind()!=0||getTarget()==null)&&super.canUse();}@Override public boolean canContinueToUse(){return (kind()!=0||getTarget()==null)&&super.canContinueToUse();}});',1)
+p.write_text(s,encoding='utf-8')
+
+# Restore requested Yu-Gi-Oh victory joke on both actual ritual and creative egg.
+# It triggers only after a successful new spawn; no deletion, ban or repeated kick on rejoin.
+for n in ('ExodiaRitual.java','ExodiaEgg.java'):
+ p=java/n;s=p.read_text(encoding='utf-8')
+ marker='RitualQuests.summon(p,boss,"exodia");'
+ i=s.rfind(marker);assert i>=0,n
+ s=s[:i]+s[i:].replace(marker,marker+'\n  RitualQuests.complete(p,"exodia");\n  p.connection.disconnect(Component.literal("Hai vinto il duello.").withStyle(ChatFormatting.GOLD,ChatFormatting.BOLD));',1)
+ p.write_text(s,encoding='utf-8')
+print('Leon: adult projected face, long swept fringe, locked line-of-fire and controlled aim; Exodia victory disconnect restored.')
