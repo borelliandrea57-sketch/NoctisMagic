@@ -1007,3 +1007,141 @@ for m,col in [(0,(145,180,194)),(1,(137,12,35)),(2,(223,230,226))]:
    off=(yy*W+m*128+xx)*4;pix[off:off+4]=bytes((*c,130 if m==0 else 255))
 png(assets/'textures/entity/vampire_goblet.png',W,H,pix)
 print('Lucy angular anime netrunner outfit and occasional cigarette; friendly vampire goblet prop.')
+
+
+# Six canonical pony hairstyles: layered locks, individual shapes, and matching fine satin highlights.
+p=java/'PonyCartoonClient.java';s=p.read_text(encoding='utf-8')
+start=s.index('  void hairstyle(){');end=s.index('  @Override public void setupAnim',start)
+s=s[:start]+'''  void hairstyle(){
+   if(k==4){
+    // Pinkie Pie: inflated cloud-like curls, curled forelock and springy scalloped tail.
+    mane.oval(24,0,-4.45f,.5f,3.75f,2.25f,3.15f);
+    for(int i=0;i<3;i++){
+     float x=-2.15f+i*2.05f;curl(mane,24,x,-5.15f+(i%2)*.45f,-1.85f,2.1f+i*.10f,3.2f+i*.65f,i==1?-1:1);
+     curl(mane,24,x,-2.7f+(i%2)*.3f,2.3f,2.25f,2.5f+i*.72f,i==1?1:-1);
+    }
+    curl(mane,24,-3.05f,-.65f,.4f,1.85f,2.5f,-1);
+    curl(mane,24,3.10f,-.15f,1.0f,1.95f,-.9f,1);
+    for(int i=0;i<4;i++){Part q=mane.child(0,0,0);locks.add(q);curl(q,24,-2.4f+(i%2)*2.25f,2.25f+i*1.45f,2.7f+i*.48f,1.9f+(i%2)*.22f,2.5f+i*.6f,i%2==0?1:-1);}
+    tail.oval(24,0,-.65f,3.0f,2.30f,2.4f,2.80f);
+    for(int i=0;i<6;i++)curl(tail,24,(i%2==0?-1:1)*(1.15f+i*.10f),-1.7f+i*1.40f,4.6f+(float)Math.sin(i*.65)*2.1f,2.25f+(i%3)*.23f,3.1f+i*.7f,i%2==0?1:-1);
+   }else if(k==5){
+    // Twilight: straight navy bob, squared fringe and continuous violet/magenta stripes.
+    mane.oval(24,0,-4.4f,.65f,3.67f,1.65f,3.08f);
+    for(int j=0;j<9;j++){
+     float x=-3.03f+j*.76f;int mat=j==5?26:j==6?27:24;
+     lock(mane,mat,.57f,x,-5.15f,-.65f,.25f,x,-4.55f,-2.30f,.55f,x,-3.66f,-3.35f,.55f,x+.04f,-2.95f,-3.36f,.51f);
+     Part q=mane.child(0,0,0);locks.add(q);
+     lock(q,mat,.76f,x*.80f,-4.35f,1.75f,.45f,x*.87f,-2.0f,3.45f,.64f,x*.87f,1.7f,4.15f,.64f,x*.72f,5.9f,4.8f,.61f,x*.65f,8.2f,5.05f,.53f);
+     lock(tail,mat,.82f,x*.25f,-1.30f,.10f,.40f,x*.66f,-1.05f,3.0f,.61f,x*.80f,1.8f,5.0f,.68f,x*.72f,5.3f,6.15f,.60f,x*.55f,8.0f,6.25f,.47f);
+    }
+   }else if(k==6){
+    // Rainbow Dash: jagged wind-swept crest and six distinct colors, not blended into brown.
+    for(int j=0;j<6;j++){
+     float x=-2.75f+j*1.10f;int m=26+j;
+     lock(mane,m,.75f,x-.40f,-3.7f,-2.45f,.16f,x-.7f,-5.1f,-1.25f,.73f,x-.40f,-6.2f,.1f,.98f,x+.05f,-5.25f,1.85f,.96f,x+.44f,-2.6f,3.35f,.79f,x+.85f,1.05f,4.75f,.66f,x+1.25f,4.25f,5.75f,.035f);
+     lock(mane,m,.58f,x,-4.9f,.65f,.54f,x+.18f,-3.4f,2.3f,.58f,x+.74f,-.8f,3.75f,.42f,x+1.35f,2.7f,4.2f,.025f);
+     lock(tail,m,.78f,x*.25f,-1.2f,.2f,.40f,x*.55f,-1.30f,2.6f,.69f,x*.80f,-.25f,5.0f,.86f,x*.87f,2.7f,7.8f,.69f,x*.73f,5.2f+(j%2)*.40f,8.85f,.40f,x*.64f,6.8f+(j%3)*.45f,9.0f,.025f);
+    }
+   }else if(k==7){
+    // Fluttershy: long sweeping pink mane mostly on one side, gentle S waves and tapered ends.
+    mane.oval(24,-.35f,-4.45f,.45f,3.62f,1.8f,3.05f);
+    for(int j=0;j<7;j++){
+     float f=j/6f;Part q=mane.child(0,0,0);locks.add(q);
+     lock(q,24,.68f,1.75f-f*1.5f,-5.35f+f*.48f,-.75f,.18f,-.45f-f*.8f,-4.85f+f*.35f,-2.65f,.76f,-2.75f-f*.25f,-3.25f+f*.5f,-2.55f,.95f,-3.90f-f*.22f,.2f+f*.75f,-1.15f,.88f,-3.75f-f*.24f,4.2f+f*.5f,.45f,.76f,-2.75f-f*.40f,8.0f+f*.6f,2.7f,.50f,-2.1f-f*.45f,10.2f+f*.55f,3.4f,.035f);
+     lock(tail,24,.77f,(j-3)*.22f,-1.1f,.10f,.32f,(j-3)*.52f,-.55f,3.35f,.65f,-.55f+(j-3)*.60f,2.15f,5.5f,.78f,-.65f+(j-3)*.52f,5.6f,6.85f,.75f,.7f+(j-3)*.44f,8.0f,7.55f,.56f,2.0f+(j-3)*.25f,9.6f,7.8f,.035f);
+    }
+    lock(mane,24,.82f,2.1f,-4.35f,1.4f,1.15f,3.3f,-1.7f,3.15f,1.55f,2.95f,3.8f,4.7f,1.5f,1.65f,8.6f,5.7f,1.1f,.5f,11.1f,5.9f,.04f);
+   }else if(k==8){
+    // Rarity: elegant purple side sweep, glossy spiral curls and sculpted ringlet layers.
+    mane.oval(24,-.65f,-4.65f,.55f,3.55f,2.05f,3.05f);
+    for(int j=0;j<4;j++){
+     float f=j/3f;
+     lock(mane,24,.72f,-2.7f,-4.3f+f*.35f,-.9f,.18f,-1.5f,-5.75f+f*.34f,-2.0f-f*.22f,.80f,1.25f,-5.0f+f*.48f,-2.5f-f*.18f,.99f,3.15f,-2.6f+f*.53f,-1.6f-f*.15f,.83f,3.65f,.65f+f*.45f,-.35f,.66f,2.0f,2.6f+f*.35f,-.10f,.035f);
+     curl(mane,24,2.8f+f*.28f,.35f+f*.43f,.35f+f*.30f,1.75f+f*.23f,-1.15f,1);
+     Part q=mane.child(0,0,0);locks.add(q);lock(q,24,.85f,-1.9f-f*.25f,-4.0f,1.5f,.67f,-3.1f-f*.30f,-.2f,3.05f,.88f,-3.0f-f*.40f,3.3f,4.15f,1.02f,-1.0f-f*.35f,6.6f,4.3f,.91f,.55f-f*.22f,7.9f,3.8f,.14f);
+     curl(q,24,-.75f-f*.28f,6.75f+f*.35f,3.6f+f*.22f,2.0f+f*.15f,2.55f,-1);
+     lock(tail,24,.83f,(j-1.5f)*.28f,-1.2f,0,.55f,-1.0f+(j-1.5f)*.32f,-1.9f,3.0f,.90f,-1.30f+(j-1.5f)*.45f,.4f,5.1f,1.12f,.40f+(j-1.5f)*.40f,3.6f,6.0f,1.10f,1.6f,5.7f,5.9f,.85f);
+     curl(tail,24,.75f+(j-1.5f)*.35f,5.9f+f*.45f,5.8f+f*.18f,2.1f+f*.25f,1.8f,-1);
+    }
+   }else{
+    // Applejack: golden side fringe and gathered ponytails tied with red bands under her hat.
+    mane.oval(24,0,-4.3f,.45f,3.55f,1.6f,3.0f);
+    for(int j=0;j<6;j++){
+     float f=j/5f;
+     lock(mane,24,.70f,2.2f,-4.9f+f*.30f,-.75f,.23f,.6f,-4.7f+f*.34f,-2.45f,.72f,-1.8f,-3.8f+f*.42f,-2.8f,.72f,-3.2f,-2.4f+f*.4f,-1.55f,.56f,-3.3f,-1.25f+f*.35f,-.8f,.035f);
+     Part q=mane.child(0,0,0);locks.add(q);
+     lock(q,24,.82f,(j-2.5f)*.46f,-4.1f,2.2f,.72f,(j-2.5f)*.60f,-.8f,3.65f,.88f,.45f+(j-2.5f)*.52f,3.3f,4.5f,.87f,.55f+(j-2.5f)*.23f,6.25f,4.9f,.34f,.45f+(j-2.5f)*.47f,8.5f,5.2f,.60f,.3f+(j-2.5f)*.26f,10.2f,5.4f,.035f);
+     lock(tail,24,.82f,(j-2.5f)*.25f,-1.1f,0,.50f,-.25f+(j-2.5f)*.45f,-1.1f,2.8f,.75f,-.20f+(j-2.5f)*.50f,1.8f,5.1f,.90f,.1f+(j-2.5f)*.22f,4.4f,6.2f,.45f,.20f+(j-2.5f)*.20f,5.5f,6.7f,.33f,.65f+(j-2.5f)*.44f,7.3f,6.95f,.65f,1.45f+(j-2.5f)*.27f,9.15f,7.1f,.035f);
+    }
+    mane.oval(27,.55f,6.35f,4.9f,1.12f,.34f,1.0f);tail.oval(27,.2f,5.4f,6.7f,1.14f,.35f,1.05f);
+    Part hat=head.child(0,-4.9f,.10f);hat.rz=.06f;
+    hat.loft(28,40,-.52f,0,0,4.75f,3.80f,-.18f,0,0,5.20f,4.20f,.22f,0,0,5.12f,4.15f,.45f,0,0,4.65f,3.74f);
+    hat.loft(28,36,-3.4f,0,.24f,1.95f,2.07f,-2.92f,0,.20f,2.55f,2.61f,-1.9f,0,.10f,2.78f,2.78f,-.28f,0,0,3.05f,3.03f);
+    hat.loft(29,36,-.95f,0,0,2.99f,2.99f,-.40f,0,0,3.09f,3.09f);
+   }
+  }
+'''+s[end:]
+p.write_text(s,encoding='utf-8')
+# Add fine, direction-following highlights to hair tiles without modifying the eyes or marks.
+for k in range(4,10):
+ p=assets/'textures/entity'/f'pony_cartoon_{k}.png';blob=p.read_bytes();i=8;compressed=b''
+ while i<len(blob):
+  size=struct.unpack('>I',blob[i:i+4])[0];typ=blob[i+4:i+8];data=blob[i+8:i+8+size];i+=size+12
+  if typ==b'IDAT':compressed+=data
+ raw=zlib.decompress(compressed);W,H=1024,512;stride=W*4+1
+ assert len(raw)==H*stride and all(raw[y*stride]==0 for y in range(H))
+ pix=bytearray(b''.join(raw[y*stride+1:(y+1)*stride] for y in range(H)))
+ mats=[24,26,27] if k==5 else list(range(26,32)) if k==6 else [24]
+ for m in mats:
+  for yy in range(128):
+   v=sat((yy-3)/121)
+   for xx in range(128):
+    u=sat((xx-3)/121);off=(((m//8)*128+yy)*W+(m%8)*128+xx)*4
+    c=tuple(pix[off:off+3]);line=(u*10+.11*math.sin(v*5))%1
+    c=mix(c,(255,255,255),.13*math.exp(-((line-.36)/.10)**2))
+    c=shade(c,1-.09*math.exp(-((line-.84)/.09)**2))
+    pix[off:off+4]=bytes((*c,255))
+ png(p,W,H,pix)
+# Malfoid: more tsundere dialogue, synchronized folded-arms pose and combat priority.
+edit('Malfoid.java','private int speech,cast,cd=45,phase,attack,absent;','private int speech,cast,cd=45,phase,attack,absent,foldTicks=0,foldCooldown=180;\n    public boolean folded(){return foldTicks>0;}\n    void fold(ServerLevel l){if(boss||cast>0)return;foldTicks=105;foldCooldown=260+random.nextInt(320);getNavigation().stop();l.broadcastEntityEvent(this,(byte)105);}')
+edit('Malfoid.java','return !boss&&partner==null&&!stay&&super.canUse();','return foldTicks==0&&!boss&&partner==null&&!stay&&super.canUse();')
+edit('Malfoid.java','return !boss&&partner==null&&!stay&&super.canContinueToUse();','return foldTicks==0&&!boss&&partner==null&&!stay&&super.canContinueToUse();')
+edit('Malfoid.java','speech=65;int a=points(p);','speech=65;int a=points(p);fold(l);')
+edit('Malfoid.java','new String[]{"Non hai di meglio da fare?","Sai chi e\' mio padre?","Tsk. Stai attento a come mi parli."}','new String[]{"Tsk! Non credere che abbia tempo per te.","Sai chi e mio padre?","Ma guarda chi si rivede. Che seccatura.","N-non fissarmi!","Non ti ho certo aspettato, idiota."}')
+edit('Malfoid.java','new String[]{"Non e\' che aspettassi proprio te.","Sei meno insopportabile del solito."}','new String[]{"Non e che aspettassi proprio te.","Sei meno insopportabile del solito.","Ti ho tenuto un posto. Solo perche era vuoto!","Non pensare che mi preoccupi per te. Baka!","E va bene, resta. Ma non disturbarmi."}')
+edit('Malfoid.java','new String[]{"Non guardarmi cosi!","B-bene, puoi restare ancora un po\'.","Non e\' che mi mancassi, sia chiaro."}','new String[]{"Non guardarmi cosi!","B-bene, puoi restare ancora un po.","Non e che mi mancassi, sia chiaro.","Ti sei fatto male? Idiota... fammi vedere.","Non andare troppo lontano. Non perche mi interessi!","Sei in ritardo. Hmph... mi hai fatto preoccupare per niente."}')
+edit('Malfoid.java','int mode=attack++%3;l.broadcastEntityEvent(this,(byte)89);','int mode=attack++%3;foldTicks=0;l.broadcastEntityEvent(this,(byte)106);l.broadcastEntityEvent(this,(byte)89);')
+edit('Malfoid.java','super.tick();if(speech>0)speech--;','super.tick();if(foldTicks>0)foldTicks--;if(foldCooldown>0)foldCooldown--;if(speech>0)speech--;')
+edit('Malfoid.java','        if(boss){\n            bar.setProgress','''        if(!boss&&cast==0&&hurtTime==0&&onGround()&&!isInWater()&&getDeltaMovement().horizontalDistanceSqr()<.0025&&foldCooldown==0&&l.getNearestPlayer(this,6)!=null&&random.nextInt(65)==0)fold(l);
+        if(foldTicks>0){
+            if(boss||hurtTime>0||isInWater()||!onGround()||(partner!=null&&l.getEntity(partner) instanceof Player q&&distanceTo(q)>4&&!stay)){foldTicks=0;l.broadcastEntityEvent(this,(byte)106);}
+            else{getNavigation().stop();setDeltaMovement(0,getDeltaMovement().y,0);}
+        }
+        if(boss){
+            bar.setProgress''')
+edit('Malfoid.java','if(id==89){cast=24;return;}','if(id==105){foldTicks=105;return;}if(id==106){foldTicks=0;return;}if(id==89){cast=24;foldTicks=0;return;}')
+# Articulated arms using the existing robe, cuff and skin UV islands. Move the wand to the forearm.
+p=java/'MalfoidClient.java';s=p.read_text(encoding='utf-8')
+for i in range(2):
+ pat=r'(PartDefinition arm'+str(i)+r'=r\.addOrReplaceChild\("arm'+str(i)+r'",CubeListBuilder\.create\(\)\.texOffs\((\d+),(\d+)\))\.addBox\([^)]*\)\.texOffs\((\d+),(\d+)\)\.addBox\([^)]*\)\.texOffs\((\d+),(\d+)\)\.addBox\([^)]*\)(,PartPose\.offsetAndRotation\([^;]*\);)'
+ m=re.search(pat,s);assert m,'Malfoid arm geometry '+str(i)
+ upper=m.group(1)+'.addBox(-1.5f,-1f,-1.5f,3f,5.5f,3f)'+m.group(8)
+ lower=f'PartDefinition fore{i}=arm{i}.addOrReplaceChild("fore{i}",CubeListBuilder.create().texOffs({m.group(2)},{m.group(3)+""}).addBox(-1.5f,0f,-1.5f,3f,4f,3f).texOffs({m.group(4)},{m.group(5)}).addBox(-1.5f,2.7f,-1.5f,3f,1.5f,3f).texOffs({m.group(6)},{m.group(7)}).addBox(-1f,4f,-1f,2f,2f,2f),PartPose.offset(0,4.4f,0));'
+ s=s[:m.start()]+upper+'\n        '+lower+s[m.end():]
+s=s.replace('PartDefinition wand=arm1.addOrReplaceChild','PartDefinition wand=fore1.addOrReplaceChild',1).replace('PartPose.offsetAndRotation(0.0f,10.0f,-1.0f','PartPose.offsetAndRotation(0.0f,5.6f,-1.0f',1)
+a='            for(int j=0;j<7;j++)h.getChild("back"+j).xRot='
+assert a in s
+s=s.replace(a,'''            for(int i=0;i<2;i++){
+                int side=i==0?-1:1;ModelPart arm=r.getChild("arm"+i),fore=arm.getChild("fore"+i);
+                arm.yRot=0;arm.zRot=-side*.08f;fore.xRot=-.10f;fore.yRot=0;fore.zRot=0;
+                if(e.folded()&&cast<=0&&amount<.15f&&!e.isAggressive()){
+                    arm.xRot=-1.02f;arm.yRot=side*.12f;arm.zRot=-side*.16f;
+                    fore.xRot=-.42f;fore.yRot=side*.32f;fore.zRot=-side*1.05f;
+                    h.zRot=-.10f;h.xRot=-.09f;
+                }
+            }
+            r.getChild("arm1").getChild("fore1").getChild("wand").visible=!e.folded()||cast>0;
+'''+a,1)
+p.write_text(s,encoding='utf-8')
+print('Canonical six pony hair silhouettes and Malfoid tsundere dialogue with articulated folded arms.')
