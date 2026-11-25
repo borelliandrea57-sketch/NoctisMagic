@@ -1827,3 +1827,109 @@ for lang,it in [('it_it',True),('en_us',False)]:
  d['item.noctismagic.jotaro_cap.desc']='Forza II mentre indossato.' if it else 'Strength II while worn.'
  j(p,d)
 print('Jotaro guaranteed wearable epic cap with gold chain, 7 armor and Strength II.')
+
+
+# Bucciarati's spatial zipper and Giorno's occasional plant growth.
+edit('JojoMob.java','private int punch,ability,dialogue;','''private int punch,ability,dialogue;
+    private int lifeCooldown=1000,zipCooldown=600,zipTicks;
+    private Vec3 zipDestination;
+    private Vec3 zipOrigin;
+    private float zipYaw;''')
+edit('JojoMob.java','return !stand()&&super.canUse();','return !stand()&&zipTicks==0&&super.canUse();')
+edit('JojoMob.java','if(!(level() instanceof ServerLevel l)||!stand())return;','''if(!(level() instanceof ServerLevel l))return;
+        if(!stand()){JojoWorldPowers.tick(this,l);return;}''')
+edit('JojoMob.java','private int lifeCooldown=1000,zipCooldown=600,zipTicks;','int lifeCooldown=1000,zipCooldown=600,zipTicks;')
+edit('JojoMob.java','private Vec3 zipDestination;\n    private Vec3 zipOrigin;\n    private float zipYaw;','Vec3 zipDestination;\n    Vec3 zipOrigin;\n    float zipYaw;')
+# Trigger a quicker escape when attacked, without altering existing stand defense.
+edit('JojoMob.java','if(activeStand!=null&&l.getEntity(activeStand) instanceof JojoMob st&&st.isAlive()){','''if(variant()==1&&zipCooldown==0&&zipTicks==0)JojoWorldPowers.beginZip(this,l);
+            if(activeStand!=null&&l.getEntity(activeStand) instanceof JojoMob st&&st.isAlive()){''')
+write('JojoWorldPowers.java','''package it.noctis.magic;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.item.BoneMealItem;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.*;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
+public final class JojoWorldPowers{
+ static final DustParticleOptions DARK=new DustParticleOptions(new Vector3f(.07f,.04f,.15f),1.65f);
+ static final DustParticleOptions GOLD=new DustParticleOptions(new Vector3f(1f,.70f,.16f),1.2f);
+ static final DustParticleOptions BLUE=new DustParticleOptions(new Vector3f(.25f,.65f,.98f),.85f);
+ static void tick(JojoMob m,ServerLevel l){
+  if(m.variant()==1){
+   if(m.zipCooldown>0)m.zipCooldown--;
+   if(m.zipTicks>0){
+    m.getNavigation().stop();m.setDeltaMovement(0,m.getDeltaMovement().y,0);
+    if(m.zipTicks%3==0&&m.zipOrigin!=null&&m.zipDestination!=null){
+     zipper(l,m.zipOrigin,m.zipYaw,Math.min(1,(25-m.zipTicks)/9f));zipper(l,m.zipDestination,m.zipYaw,.8f);
+    }
+    if(m.zipTicks==12&&m.zipDestination!=null){
+     Vec3 q=m.zipDestination;
+     if(safe(m,l,q)){m.teleportTo(q.x,q.y,q.z);m.setDeltaMovement(Vec3.ZERO);m.resetFallDistance();m.playSound(SoundEvents.ENDERMAN_TELEPORT,1,.85f);}
+    }
+    if(--m.zipTicks==0){m.zipOrigin=null;m.zipDestination=null;}
+    return;
+   }
+   if(m.zipCooldown==0&&m.onGround()&&!m.isInWater()&&l.getNearestPlayer(m,18)!=null&&m.getRandom().nextInt(100)==0)beginZip(m,l);
+  }else if(m.variant()==2){
+   if(m.lifeCooldown>0)m.lifeCooldown--;
+   if(m.lifeCooldown==0&&m.onGround()&&l.getNearestPlayer(m,18)!=null&&m.getRandom().nextInt(120)==0){
+    int grown=0;
+    for(int i=0;i<24&&grown<5;i++){
+     BlockPos q=m.blockPosition().offset(m.getRandom().nextInt(13)-6,m.getRandom().nextInt(5)-2,m.getRandom().nextInt(13)-6);
+     if(!l.hasChunkAt(q))continue;
+     Block b=l.getBlockState(q).getBlock();
+     if(!(b instanceof CropBlock||b instanceof StemBlock||b instanceof SaplingBlock||b instanceof SweetBerryBushBlock||b instanceof GrassBlock))continue;
+     if(BoneMealItem.growCrop(new ItemStack(Items.BONE_MEAL),l,q)){
+      grown++;l.levelEvent(1505,q,0);l.sendParticles(ParticleTypes.HAPPY_VILLAGER,q.getX()+.5,q.getY()+.8,q.getZ()+.5,12,.3,.35,.3,.03);
+     }
+    }
+    m.lifeCooldown=grown>0?1800+m.getRandom().nextInt(1800):240;
+    if(grown>0){m.playSound(SoundEvents.AMETHYST_BLOCK_CHIME,.75f,1.4f);l.sendParticles(GOLD,m.getX(),m.getY()+1,m.getZ(),24,.4,.5,.4,.04);}
+   }
+  }
+ }
+ static boolean safe(JojoMob m,ServerLevel l,Vec3 q){
+  BlockPos p=BlockPos.containing(q);
+  if(!l.hasChunkAt(p)||p.getY()<l.getMinBuildHeight()+1||p.getY()>l.getMaxBuildHeight()-3||!l.getWorldBorder().isWithinBounds(p))return false;
+  if(!l.getBlockState(p.below()).isFaceSturdy(l,p.below(),Direction.UP)||!l.getFluidState(p).isEmpty()||!l.getFluidState(p.above()).isEmpty())return false;
+  return l.noCollision(m,m.getBoundingBox().move(q.x-m.getX(),q.y-m.getY(),q.z-m.getZ()));
+ }
+ static void beginZip(JojoMob m,ServerLevel l){
+  if(m.zipTicks>0||!m.onGround()||m.isInWater())return;
+  for(int i=0;i<28;i++){
+   double angle=m.getRandom().nextDouble()*Math.PI*2,range=6+m.getRandom().nextInt(8);
+   int x=(int)Math.floor(m.getX()+Math.cos(angle)*range),z=(int)Math.floor(m.getZ()+Math.sin(angle)*range);
+   for(int dy:new int[]{0,1,-1,2,-2,3,-3}){
+    Vec3 q=new Vec3(x+.5,m.getBlockY()+dy,z+.5);
+    if(!safe(m,l,q))continue;
+    m.zipOrigin=m.position();m.zipDestination=q;m.zipYaw=m.getYRot();m.zipTicks=24;m.zipCooldown=900+m.getRandom().nextInt(1000);
+    m.getNavigation().stop();m.playSound(SoundEvents.ARMOR_EQUIP_CHAIN,.9f,.8f);
+    zipper(l,m.zipOrigin,m.zipYaw,.2f);return;
+   }
+  }
+  m.zipCooldown=200;
+ }
+ // Large vertical zipper with two opening rows of golden teeth, dark seam and moving slider.
+ static void zipper(ServerLevel l,Vec3 pos,float yaw,float open){
+  double r=Math.toRadians(yaw),ax=Math.cos(r),az=Math.sin(r),nx=-Math.sin(r),nz=Math.cos(r);
+  for(int i=0;i<15;i++){
+   double y=.08+i*.19,w=.12+open*.48*Math.sin(Math.PI*i/14);
+   for(int s:new int[]{-1,1}){
+    double x=pos.x+ax*s*w,z=pos.z+az*s*w;
+    l.sendParticles(DARK,x,pos.y+y,z,1,0,0,0,0);
+    l.sendParticles(GOLD,x+ax*s*.12,pos.y+y,z+az*s*.12,1,0,0,0,0);
+    if(i%2==0)l.sendParticles(BLUE,x+ax*s*.24,pos.y+y,z+az*s*.24,1,0,0,0,0);
+   }
+   l.sendParticles(DARK,pos.x,pos.y+y,pos.z,1,0,0,0,0);
+  }
+  double sy=pos.y+2.8-open*1.9;
+  for(int a=0;a<10;a++){double t=a*Math.PI/5;l.sendParticles(GOLD,pos.x+ax*.19*Math.cos(t)+nx*.04,sy+.23*Math.sin(t),pos.z+az*.19*Math.cos(t)+nz*.04,1,0,0,0,0);}
+ }
+}''')
+print('Bucciarati spatial zipper teleportation with opening particles and Giorno rare vegetation growth.')
