@@ -9,23 +9,24 @@ a='public static final RegistryObject<Item> CATHEDRAL_EGG='
 edit('Noctis.java',a,'''public static final RegistryObject<EntityType<BakeryClerk>> BAKER_HITLER=ENTITIES.register("baker_hitler",()->EntityType.Builder.<BakeryClerk>of(BakeryClerk::new,MobCategory.CREATURE).sized(.6f,1.95f).clientTrackingRange(10).build(ID+":baker_hitler"));
     public static final RegistryObject<EntityType<BakeryClerk>> BAKER_STALIN=ENTITIES.register("baker_stalin",()->EntityType.Builder.<BakeryClerk>of(BakeryClerk::new,MobCategory.CREATURE).sized(.65f,1.95f).clientTrackingRange(10).build(ID+":baker_stalin"));
     public static final RegistryObject<Item> BAKERY_EGG=ITEMS.register("bakery_egg",()->new GothicEgg(false,true));
+    public static final RegistryObject<Item> PASTRY_EGG=ITEMS.register("pastry_egg",()->new GothicEgg(false,true,true));
     '''+a)
 a='e.put(SCRAP_THIEF.get(),ScrapThief.attributes().build());'
 edit('Noctis.java',a,'e.put(BAKER_HITLER.get(),BakeryClerk.attributes().build());e.put(BAKER_STALIN.get(),BakeryClerk.attributes().build());'+a)
-a='e.accept(CATHEDRAL_EGG.get());';edit('Noctis.java',a,a+'e.accept(BAKERY_EGG.get());')
-edit('GothicEgg.java','private final boolean castle;','private final boolean castle,bakery;')
-edit('GothicEgg.java','public GothicEgg(boolean castle){super(new Item.Properties().stacksTo(1));this.castle=castle;}','public GothicEgg(boolean castle){this(castle,false);} public GothicEgg(boolean castle,boolean bakery){super(new Item.Properties().stacksTo(1));this.castle=castle;this.bakery=bakery;}')
-edit('GothicEgg.java','Plan plan=castle?castle():cathedral();','Plan plan=bakery?bakery():castle?castle():cathedral();')
-edit('GothicEgg.java','p.w==91?Noctis.CASTLE_EGG.get():Noctis.CATHEDRAL_EGG.get()','p.w==25?Noctis.BAKERY_EGG.get():p.w==91?Noctis.CASTLE_EGG.get():Noctis.CATHEDRAL_EGG.get()')
-edit('GothicEgg.java','    static Plan cathedral(){','''    static Plan bakery(){
-        Plan p=new Plan(25,23,13,"Il Forno dei Due Brontoloni");
+a='e.accept(CATHEDRAL_EGG.get());';edit('Noctis.java',a,a+'e.accept(BAKERY_EGG.get());e.accept(PASTRY_EGG.get());')
+edit('GothicEgg.java','private final boolean castle;','private final boolean castle,bakery,pastry;')
+edit('GothicEgg.java','public GothicEgg(boolean castle){super(new Item.Properties().stacksTo(1));this.castle=castle;}','public GothicEgg(boolean castle){this(castle,false);} public GothicEgg(boolean castle,boolean bakery){this(castle,bakery,false);} public GothicEgg(boolean castle,boolean bakery,boolean pastry){super(new Item.Properties().stacksTo(1));this.castle=castle;this.bakery=bakery;this.pastry=pastry;}')
+edit('GothicEgg.java','Plan plan=castle?castle():cathedral();','Plan plan=bakery?bakery(pastry):castle?castle():cathedral();')
+edit('GothicEgg.java','p.w==91?Noctis.CASTLE_EGG.get():Noctis.CATHEDRAL_EGG.get()','p.w==25?(p.name.startsWith("Pasticceria")?Noctis.PASTRY_EGG.get():Noctis.BAKERY_EGG.get()):p.w==91?Noctis.CASTLE_EGG.get():Noctis.CATHEDRAL_EGG.get()')
+edit('GothicEgg.java','    static Plan cathedral(){','''    static Plan bakery(boolean pastry){
+        Plan p=new Plan(25,23,13,pastry?"Pasticceria dei Due Brontoloni":"Il Forno dei Due Brontoloni");
         // Warm brick exterior, striped awning, storefront windows, tiled floor.
         for(int x=0;x<25;x++)for(int z=0;z<23;z++)p.put(x,0,z,x==0||x==24||z==0||z==22?Blocks.STONE_BRICKS:((x+z)%2==0?Blocks.WHITE_TERRACOTTA:Blocks.BROWN_TERRACOTTA));
-        p.walls(1,1,3,23,7,21,Blocks.BRICKS);
+        p.walls(1,1,3,23,7,21,pastry?Blocks.SMOOTH_QUARTZ:Blocks.BRICKS);
         for(int x:new int[]{1,23})for(int z:new int[]{3,21})p.box(x,1,z,x,7,z,Blocks.DARK_OAK_LOG);
         for(int x=3;x<=21;x++)if(x<10||x>14){p.box(x,2,3,x,5,3,Blocks.GLASS);p.put(x,1,3,Blocks.QUARTZ_BLOCK);}
         p.box(11,1,3,13,3,3,Blocks.AIR);
-        for(int x=2;x<=22;x++){p.put(x,6,3,Blocks.SMOOTH_QUARTZ);p.put(x,5,2,x%2==0?Blocks.RED_WOOL:Blocks.WHITE_WOOL);p.put(x,5,1,x%2==0?Blocks.RED_WOOL:Blocks.WHITE_WOOL);p.put(x,4,1,x%2==0?Blocks.RED_WOOL:Blocks.WHITE_WOOL);}
+        for(int x=2;x<=22;x++){p.put(x,6,3,Blocks.SMOOTH_QUARTZ);p.put(x,5,2,x%2==0?(pastry?Blocks.PINK_WOOL:Blocks.RED_WOOL):Blocks.WHITE_WOOL);p.put(x,5,1,x%2==0?(pastry?Blocks.PINK_WOOL:Blocks.RED_WOOL):Blocks.WHITE_WOOL);p.put(x,4,1,x%2==0?(pastry?Blocks.PINK_WOOL:Blocks.RED_WOOL):Blocks.WHITE_WOOL);}
         for(int z=6;z<=18;z+=6)for(int x:new int[]{1,23})p.box(x,2,z,x,5,z+2,Blocks.GLASS);
         p.box(1,8,3,23,8,21,Blocks.SPRUCE_PLANKS);
         for(int k=0;k<4;k++)p.ring(k,9+k,2+k,24-k,22-k,Blocks.DARK_OAK_STAIRS);
@@ -46,6 +47,14 @@ edit('GothicEgg.java','    static Plan cathedral(){','''    static Plan bakery()
         p.box(5,1,19,8,1,19,Blocks.SPRUCE_PLANKS);p.box(16,1,19,19,1,19,Blocks.SPRUCE_PLANKS);
         p.put(6,2,19,Blocks.CAKE);p.put(17,2,19,Blocks.CAKE);
         for(int x:new int[]{5,12,19})for(int z:new int[]{8,16}){p.put(x,7,z,Blocks.CHAIN);p.put(x,6,z,Blocks.LANTERN.defaultBlockState().setValue(LanternBlock.HANGING,true));}
+        if(pastry){
+            for(int x=3;x<=21;x++)if(x<11||x>13){p.put(x,1,14,Blocks.PINK_TERRACOTTA);p.put(x,2,14,x%3==0?Blocks.CAKE:Blocks.GLASS);}
+            for(int x:new int[]{5,19})for(int z:new int[]{7,11})p.put(x,0,z,Blocks.PINK_GLAZED_TERRACOTTA);
+            p.put(3,1,17,Furniture.MODERN_LAMP.get());p.put(21,1,17,Furniture.MODERN_LAMP.get());
+        }else{
+            for(int x=3;x<=21;x+=3)p.put(x,4,20,Blocks.HAY_BLOCK);
+            p.put(3,1,17,Blocks.BARREL);p.put(21,1,17,Blocks.BARREL);
+        }
         return p;
     }
     static Plan cathedral(){''')
@@ -89,7 +98,7 @@ public class BakeryClerk extends PathfinderMob{
                 if(!p.getInventory().add(food))p.drop(food,false);
                 say(l,stalin()?"Un dolce per il cliente. Non per il comitato!":"Ecco il suo ordine. Almeno questo ha funzionato.");
                 playSound(SoundEvents.VILLAGER_YES,.6f,1.1f);
-            }else{String[] lines=stalin()?S:H;say(l,lines[random.nextInt(lines.length)]);}
+            }else{String[] lines=stalin()?S:H;say(l,lines[random.nextInt(lines.length)]);p.sendSystemMessage(Component.literal(stalin()?"1 pepita: 4 biscotti. Shift + pepita: torta di zucca.":"1 pepita: 3 pani. Shift + pepita: torta."));}
         }return InteractionResult.sidedSuccess(level().isClientSide);
     }
 }''')
@@ -151,9 +160,14 @@ for y in range(W):
         if 8<x<13 and 16<y<20 or 18<x<24 and 16<y<20:c=(244,215,151)
         pix[(y*W+x)*4:(y*W+x)*4+4]=bytes((*c,255))
 png(assets/'textures/item/bakery_egg.png',W,W,pix)
+for i in range(0,len(pix),4):
+    if pix[i+3] and pix[i]>100 and pix[i]>pix[i+1]*1.2:pix[i:i+3]=bytes((225,145,178))
+png(assets/'textures/item/pastry_egg.png',W,W,pix)
+(assets/'models/item/pastry_egg.json').write_text('{"parent":"minecraft:item/generated","textures":{"layer0":"noctismagic:item/pastry_egg"}}')
 (assets/'models/item/bakery_egg.json').write_text('{"parent":"minecraft:item/generated","textures":{"layer0":"noctismagic:item/bakery_egg"}}')
 for lang in ('it_it','en_us'):
     p=assets/'lang'/f'{lang}.json';d=json.loads(p.read_text(encoding='utf-8'));d['item.noctismagic.bakery_egg']='Uovo del Panificio - Il Forno dei Due Brontoloni' if lang=='it_it' else 'Two Grumpy Bakers Bakery Egg'
+    d['item.noctismagic.pastry_egg']='Uovo della Pasticceria' if lang=='it_it' else 'Pastry Shop Egg'
     d['entity.noctismagic.baker_hitler']='Adolf Hitler - Panettiere' if lang=='it_it' else 'Adolf Hitler - Baker'
     d['entity.noctismagic.baker_stalin']='Stalin - Pasticciere' if lang=='it_it' else 'Stalin - Pastry Chef'
     p.write_text(json.dumps(d,ensure_ascii=False,indent=2),encoding='utf-8')
