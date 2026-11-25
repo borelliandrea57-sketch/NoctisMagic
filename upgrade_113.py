@@ -167,6 +167,16 @@ for rose in (True,False):
         for j,z in enumerate((-6,6)):
             part(f'leg{i}{j}','b',f'leg{i}{j}',(sign*4,3,z),(0,0,sign*.12),[(-1.5,0,-1.5,3,6,3,'armor'),(-2,6,-3,4,2,5,'plate')])
             for n in range(3):part(f'claw{i}{j}{n}',f'leg{i}{j}',f'claw{n}',(-1+n,7,-3),(0,0,0),[(-.4,0,-2,1,1,3,'claw')])
+    # Different silhouette: rose corolla around the neck, crystalline crest and narrow silver fins.
+    for i,sign in enumerate((-1,1)):
+        if rose:
+            for j in range(4):
+                part(f'corolla{i}{j}','b',f'corolla{i}{j}',(sign*(2+j*.65),-5,-6+j*2),(-.4+j*.15,sign*.22,sign*(.5+j*.25)),[(0 if sign>0 else -5,-2,-3,5,2,6,'petal'),(sign*4 if sign>0 else -7,-1,-2,3,1,4,'plate')])
+            part('wingtip'+str(i),'wing'+str(i),'wingtip'+str(i),(sign*13,-1,2),(0,sign*.25,sign*.3),[(0 if sign>0 else -8,-1,0,8,2,5,'petal'),(0 if sign>0 else -6,0,4,6,1,5,'petal')])
+        else:
+            for j in range(3):
+                part(f'crest{i}{j}','h',f'crest{i}{j}',(sign*(1.3+j*.7),-3,1+j),(-.5-j*.12,0,sign*.25),[(-.5,-5-j,-.5,1,5+j,1,'plate')])
+            part('wingtip'+str(i),'wing'+str(i),'wingtip'+str(i),(sign*13,-1,1),(0,sign*.18,sign*.13),[(0 if sign>0 else -11,-.5,0,11,1,2,'plate'),(0 if sign>0 else -9,0,3,9,1,2,'plate')])
     parent='b'
     for i in range(9):
         part('tail'+str(i),parent,'tail'+str(i),(0,0,7) if i==0 else (0,0,5),(.05,0,0),[(-1.5,-1.5,0,3 if i<5 else 2,3 if i<5 else 2,5,'armor'),(-2,-2,1,4,1,3,'plate')]);parent='tail'+str(i)
