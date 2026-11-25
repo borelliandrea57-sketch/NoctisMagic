@@ -3513,3 +3513,30 @@ for m,base in enumerate(pal):
    q=((m//8*128+y)*W+m%8*128+x)*4;pix[q:q+4]=bytes((*c,255))
 png(assets/'textures/entity/griffith_sculpted.png',W,H,pix)
 print('Griffith White Falcon revision: individually sculpted armor feathers, shoulder wing, animated cape and hair, angular face and steel atlas.')
+
+
+# Exaggerated black toothbrush moustache, a single broad central block split into two animated halves.
+edit('MustacheRexClient.java','mustache[i]=head.child(s*.55f,-.2f,-8.1f);','mustache[i]=head.child(s*1.82f,.10f,-8.60f);')
+edit('MustacheRexClient.java','mustache[i].loft(2,16,-.9f,s*.55f,0,.75f,.45f,-.45f,s*1.2f,0,1.4f,.65f,.1f,s*2.3f,.1f,1.7f,.6f,.65f,s*2.7f,.25f,1.1f,.4f,1.0f,s*3.4f,.3f,.25f,.12f);','''mustache[i].loft(2,32,-1.45f,0,0,1.85f,.72f,-1.27f,0,-.15f,2.03f,1.03f,.65f,0,-.24f,2.05f,1.05f,.97f,0,-.18f,1.86f,.80f);
+    for(int k=0;k<9;k++){
+     float x=-1.68f+k*.42f;
+     mustache[i].loft(2,12,-1.29f,x,-.83f,.23f,.26f,-.20f,x,-1.20f,.25f,.23f,.82f,x,-.94f,.19f,.16f,1.08f,x,-.72f,.04f,.05f);
+    }''')
+edit('MustacheRexClient.java','mustache[i].blade(2,s*2.4f,.2f,0,s*4.8f,-.9f,.35f,1.35f);','mustache[i].blade(2,s*1.68f,-1.18f,-.76f,s*1.80f,.90f,-.88f,.40f);')
+edit('MustacheRexClient.java','mustache[i].rz=(float)Math.sin(age*.19+i)*.06f;','mustache[i].rz=(float)Math.sin(age*.19)*.012f*signedSide(i);')
+edit('MustacheRexClient.java',' static class M extends EntityModel<MustacheRex>{',' static int signedSide(int i){return i==0?-1:1;}\n static class M extends EntityModel<MustacheRex>{')
+# Darken only the moustache material; preserve the rest of the dinosaur atlas.
+p=assets/'textures/entity/mustache_rex.png';raw=p.read_bytes();off=8;compressed=b''
+while off<len(raw):
+ n=int.from_bytes(raw[off:off+4],'big');tag=raw[off+4:off+8];data=raw[off+8:off+8+n];off+=n+12
+ if tag==b'IHDR':W,H=struct.unpack('>II',data[:8])
+ if tag==b'IDAT':compressed+=data
+scan=zlib.decompress(compressed);stride=W*4+1
+pix=bytearray(b''.join(scan[y*stride+1:(y+1)*stride] for y in range(H)))
+for y in range(128):
+ for x in range(128):
+  g=.5+.5*math.sin(x*.65+math.sin(y*.07)*.35)
+  c=(int(12+20*g),int(10+17*g),int(9+15*g))
+  q=(y*W+256+x)*4;pix[q:q+4]=bytes((*c,255))
+png(p,W,H,pix)
+print('Baffosauro Rex: oversized dark rectangular central toothbrush moustache with sculpted bristles.')
