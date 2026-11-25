@@ -5520,3 +5520,253 @@ for y in range(128):
   off=(y*W+6*128+x)*4;pix[off:off+4]=bytes((*c,255))
 png(p,W,H,pix)
 print('Lucy: projected face UVs, matched centered pupils, symmetrical smaller almond eyes and subtle coral makeup.')
+
+
+# Reliable rebindable cast input and diagnostics; preserve all spell restrictions and server-side validation.
+p=java/'Client.java';s=p.read_text(encoding='utf-8')
+a='while(CAST.consumeClick())Noctis.NET.sendToServer(new Noctis.Cast(selected));'
+assert a in s,a
+s=s.replace(a,'while(CAST.consumeClick()){}',1)
+a='while(MENU.consumeClick())mc.setScreen(new SpellScreen());'
+assert a in s,a
+s=s.replace(a,'while(MENU.consumeClick()){}',1)
+# Raw Forge key event avoids lost key presses when other mod key mappings share R/G.
+a='public static class Input {'
+assert a in s,a
+s=s.replace(a,'''public static class Input {
+        @SubscribeEvent public static void magicKey(InputEvent.Key e){
+            Minecraft mc=Minecraft.getInstance();
+            if(e.getAction()!=GLFW.GLFW_PRESS||mc.player==null||mc.screen!=null||mc.getConnection()==null)return;
+            if(CAST.matches(e.getKey(),e.getScanCode())){
+                selected=Math.max(0,Math.min(Noctis.Spell.values().length-1,selected));
+                Noctis.NET.sendToServer(new Noctis.Cast(selected));
+                return;
+            }
+            if(MENU.matches(e.getKey(),e.getScanCode()))mc.setScreen(new SpellScreen());
+        }
+''',1)
+a=s.index('    @SubscribeEvent public static void overlay(RegisterGuiOverlaysEvent');b=s.index('    @Mod.EventBusSubscriber',a)
+s=s[:a]+'''    static float displayMana=-1;static int lastLevel=-1;
+    static int limit(int v,int lo,int hi){return Math.max(lo,Math.min(hi,v));}
+    static void diamond(GuiGraphics g,int cx,int cy,int r,int color){
+        for(int j=-r;j<=r;j++){int w=r-Math.abs(j);g.fill(cx-w,cy+j,cx+w+1,cy+j+1,color);}
+    }
+    @SubscribeEvent public static void overlay(RegisterGuiOverlaysEvent e){
+        e.registerAboveAll("mana",(gui,g,partial,w,h)->{
+            Minecraft mc=Minecraft.getInstance();if(mc.player==null||mc.options.hideGui||mc.player.isSpectator())return;
+            int lv=limit(Noctis.View.level,1,10),max=Math.max(1,Noctis.max(lv)),mana=limit(Noctis.View.mana,0,max);
+            int x=20,y=h-64,bw=Math.max(100,Math.min(158,w/2-32)),bh=11;
+            if(displayMana<0||lastLevel!=lv){displayMana=mana;lastLevel=lv;}
+            displayMana+=(mana-displayMana)*.16f;
+            int fill=limit(Math.round(bw*displayMana/max),0,bw);
+            int real=limit(bw*mana/max,0,bw);
+            selected=limit(selected,0,Noctis.Spell.values().length-1);
+            Noctis.Spell spell=Noctis.Spell.values()[selected];
+            int cd=Math.max(0,Noctis.View.cooldown);
+            boolean ready=mana>=spell.cost&&lv>=spell.level&&cd==0;
+            // Dark grimoire plaque with brass double border, beveled purple core, arcane endcaps.
+            g.fill(x-9,y-17,x+bw+9,y+33,0xB00D0B18);
+            g.fill(x-7,y-1,x+bw+7,y+bh+3,0xFF47334B);
+            g.fill(x-6,y-2,x+bw+6,y+bh+2,0xFFB69A67);
+            g.fill(x-4,y-1,x+bw+4,y+bh+1,0xFF211B32);
+            g.fill(x,y,x+bw,y+bh,0xFF100D25);
+            if(fill>0){
+                g.fillGradient(x,y,x+fill,y+bh,0xFF6845B8,0xFF291A64);
+                g.fillGradient(x,y+1,x+fill,y+5,0xFFC5ABFF,0xFF8156E4);
+                g.fill(x,y+1,x+fill,y+2,0xFFDED1FF);
+                for(int j=0;j<fill;j+=8)g.fill(x+j,y+3,x+j+1,y+bh-1,0x3077DDFF);
+            }
+            if(real>1){int spark=x+real-1;g.fill(spark,y+1,spark+1,y+bh-1,0xFFF0E4FF);}
+            for(int j=1;j<5;j++){int k=x+bw*j/5;g.fill(k,y+bh-3,k+1,y+bh,0xFF735D98);}
+            diamond(g,x-6,y+5,8,0xFF594263);diamond(g,x-6,y+5,6,0xFFCEAD70);
+            diamond(g,x-6,y+5,4,ready?0xFFC8A5FF:0xFF5A426F);diamond(g,x-6,y+5,1,0xFFF8E8FF);
+            diamond(g,x+bw+5,y+5,5,0xFFB69A67);diamond(g,x+bw+5,y+5,3,0xFF573C91);
+            g.drawString(mc.font,"MANA  "+mana+"/"+max,x,y-12,0xFFEADFFF);
+            String lvl="Lv "+lv;g.drawString(mc.font,lvl,x+bw-mc.font.width(lvl),y-12,0xFFFFDA91);
+            int exp=lv==10?bw:limit(bw*Noctis.View.xp/Math.max(1,Noctis.needed(lv)),0,bw);
+            g.fill(x,y+14,x+bw,y+17,0xFF302538);g.fillGradient(x,y+14,x+exp,y+17,0xFFFBE3A1,0xFF9A663E);
+            String label=spell.label;
+            if(mc.font.width(label)>bw+2)label=mc.font.plainSubstrByWidth(label,bw-9)+"...";
+            g.drawString(mc.font,label,x,y+20,ready?0xFFEBDFFF:0xFFBCADC9);
+            String state=cd>0?String.format(java.util.Locale.ROOT,"%.1fs",cd/20f):lv<spell.level?"Lv "+spell.level:mana<spell.cost?"Mana!":spell.cost+" MP";
+            String keys=CAST.getTranslatedKeyMessage().getString()+"/"+MENU.getTranslatedKeyMessage().getString();
+            g.drawString(mc.font,keys+"  "+state,x,y+31,ready?0xFFBDEBC9:0xFFFFB58D);
+        });
+    }
+'''+s[b:]
+p.write_text(s,encoding='utf-8')
+# Recover old/incomplete player records and make all rejected casts visible to the player.
+p=java/'Noctis.java';s=p.read_text(encoding='utf-8')
+a='return all.getCompound(ID);'
+assert a in s,a
+s=s.replace(a,'''CompoundTag d=all.getCompound(ID);
+        if(!d.contains("level")||d.getInt("level")<1)d.putInt("level",1);
+        if(d.getInt("level")>10)d.putInt("level",10);
+        if(!d.contains("mana"))d.putInt("mana",max(d.getInt("level")));
+        if(d.getInt("mana")<0)d.putInt("mana",0);
+        if(d.getInt("mana")>max(d.getInt("level")))d.putInt("mana",max(d.getInt("level")));
+        if(d.getInt("cooldown")<0||d.getInt("cooldown")>1200)d.putInt("cooldown",0);
+        return d;''',1)
+a='if(d.getInt("cooldown")>0)return;'
+assert a in s,a
+s=s.replace(a,'if(d.getInt("cooldown")>0){tell(p,"Magia in ricarica: "+((d.getInt("cooldown")+19)/20)+" s");sync(p);return;}',1)
+p.write_text(s,encoding='utf-8')
+
+# Play a short nonsexual hurt vocalization on each accepted hit (no interaction cooldown).
+p=java/'NpcPain.java';s=p.read_text(encoding='utf-8')
+s=s.replace('e.getAmount()<=0||m.getType()!=Noctis.WAIFU.get()&&!(m instanceof CabaretHealer)','e.getAmount()<=0||!(m instanceof CabaretHealer)',1)
+p.write_text(s,encoding='utf-8')
+write('AdmirerHurtVoice.java','''package it.noctis.magic;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+@Mod.EventBusSubscriber(modid=Noctis.ID)
+public final class AdmirerHurtVoice{
+ @SubscribeEvent(priority=EventPriority.LOWEST) public static void hurt(LivingHurtEvent e){
+  var m=e.getEntity();if(!(m.level() instanceof ServerLevel l)||e.getAmount()<=0)return;
+  boolean slime=m.getType()==Noctis.SLIME_LADY.get();
+  if(!slime&&m.getType()!=Noctis.WAIFU.get())return;
+  float pitch=(slime?1.55f:1.25f)+m.getRandom().nextFloat()*.24f;
+  l.playSound(null,m.getX(),m.getY(),m.getZ(),SoundEvents.PLAYER_HURT,SoundSource.NEUTRAL,1f,pitch);
+ }
+}''')
+
+# Michael Jackson: dedicated adult sculpted Billie Jean stage outfit and articulated dance.
+edit('DramaClient.java','e.registerEntityRenderer(Noctis.MICHAEL_JACKSON.get(),c->new Renderer(c,0));','')
+write('MoonwalkSculptedClient.java','''package it.noctis.magic;
+import com.mojang.blaze3d.vertex.*;
+import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.renderer.entity.*;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import it.noctis.magic.SculptedGuestsClient.Part;
+import it.noctis.magic.SculptedGuestsClient.V;
+import it.noctis.magic.SculptedGuestsClient.Q;
+@Mod.EventBusSubscriber(modid=Noctis.ID,value=Dist.CLIENT,bus=Mod.EventBusSubscriber.Bus.MOD)
+public class MoonwalkSculptedClient{
+ @SubscribeEvent public static void renderers(EntityRenderersEvent.RegisterRenderers e){e.registerEntityRenderer(Noctis.MICHAEL_JACKSON.get(),R::new);}
+ static float cl(float n){return Math.max(.025f,Math.min(.975f,n));}
+ static V uv(V v,boolean front){return new V(v.x(),v.y(),v.z(),front?cl(.5f+v.x()/6.1f):.025f,cl((v.y()+7.8f)/7.8f),v.nx(),v.ny(),v.nz());}
+ static class M extends EntityModel<DramaGuest>{
+  final Part root=new Part(0,0,0),body=root.child(0,0,0),head=body.child(0,-1.4f,0),hat=head.child(0,-7.3f,0);
+  final Part[] arms=new Part[2],fore=new Part[2],legs=new Part[2],shins=new Part[2],shoes=new Part[2];
+  M(){
+   body.loft(0,24,-.9f,0,0,1.45f,1.13f,.20f,0,0,3.68f,1.77f,2.7f,0,-.06f,3.15f,1.70f,5.3f,0,0,2.54f,1.40f,8.6f,0,0,2.38f,1.32f,10.9f,0,0,2.88f,1.64f);
+   body.loft(5,20,-2.15f,0,0,.92f,.91f,-.55f,0,0,1.14f,1.04f);
+   body.blade(1,0,.05f,-1.48f,0,9.25f,-1.45f,2.80f);
+   body.blade(1,-.90f,-.15f,-1.08f,0,1.60f,-1.70f,.93f);
+   body.blade(1,.90f,-.15f,-1.08f,0,1.60f,-1.70f,.93f);
+   for(int side:new int[]{-1,1}){
+    body.blade(2,side*2.91f,.50f,-1.36f,side*.82f,5.6f,-1.73f,1.15f);
+    body.blade(0,side*2.67f,5.8f,-1.05f,side*2.45f,11.55f,-.82f,1.4f);
+    body.blade(4,side*2.78f,6.9f,-1.18f,side*1.61f,7.06f,-1.32f,.13f);
+   }
+   for(int j=0;j<4;j++)body.oval(4,0,2.2f+j*1.35f,-1.72f,.10f,.12f,.06f);
+   body.loft(2,24,9.65f,0,0,2.61f,1.43f,10.18f,0,0,2.73f,1.54f);
+   body.oval(4,0,9.94f,-1.59f,.44f,.28f,.14f);
+   // Adult face with cheekbones, defined jaw, tapered nose and dark eyes.
+   head.loft(6,48,-7.8f,0,.18f,1.10f,1.34f,-7.2f,0,.08f,2.25f,2.13f,-5.65f,0,0,2.69f,2.44f,-4.15f,0,-.10f,2.59f,2.37f,-2.65f,0,-.19f,2.12f,2.07f,-1.2f,0,-.36f,1.43f,1.47f,-.30f,0,-.47f,.81f,.89f,0,0,-.47f,.53f,.65f);
+   for(int j=0;j<head.faces.size();j++){Q q=head.faces.get(j);if(q.tile()!=6)continue;boolean f=q.a().nz()+q.b().nz()+q.c().nz()+q.d().nz()<-.05f;head.faces.set(j,new Q(uv(q.a(),f),uv(q.b(),f),uv(q.c(),f),uv(q.d(),f),6));}
+   head.loft(5,16,-4.68f,0,-2.26f,.15f,.12f,-3.75f,0,-2.49f,.22f,.21f,-3.0f,0,-2.83f,.32f,.28f,-2.74f,0,-2.60f,.22f,.14f);
+   for(int side:new int[]{-1,1}){head.oval(5,side*2.55f,-3.52f,.04f,.30f,.63f,.38f);}
+   // Glossy black curls at the temples, nape and iconic loose forehead lock.
+   head.loft(3,24,-8.25f,0,.1f,1.64f,1.48f,-7.7f,0,.15f,2.62f,2.45f,-6.2f,0,.55f,2.88f,2.47f);
+   for(int side:new int[]{-1,1})for(int j=0;j<8;j++){
+    Part q=head.child(side*(2.23f+.16f*(j%3)),-6.65f+(j%3)*.29f,-.42f+j*.37f);q.rz=-side*.21f;
+    q.loft(3,12,-.25f,0,.12f,.30f,.41f,.63f,side*.18f,0,.49f,.45f,1.42f,side*.04f,.20f,.40f,.37f,2.23f,-side*.24f,.30f,.16f,.20f,2.52f,-side*.36f,.18f,.03f,.04f);
+   }
+   for(int j=0;j<6;j++){Part q=head.child(-2.05f+j*.82f,-5.62f,1.60f);q.loft(3,12,-.5f,0,0,.43f,.50f,.65f,.13f,.42f,.56f,.53f,2.2f,-.15f,.30f,.45f,.38f,3.5f,.27f,.12f,.07f,.08f);}
+   Part curl=head.child(-.88f,-7.12f,-2.04f);
+   curl.loft(3,12,-.35f,0,.40f,.38f,.40f,.60f,-.38f,-.37f,.43f,.36f,1.35f,-.25f,-.52f,.30f,.24f,2.0f,.10f,-.52f,.22f,.17f,2.80f,.23f,-.24f,.025f,.035f);
+   // Fedora: separate thin curved brim, pinched crown and satin hatband.
+   hat.rz=-.12f;hat.rx=.08f;
+   hat.loft(2,48,-.16f,0,.07f,4.02f,3.56f,0,0,.05f,4.16f,3.69f,.16f,0,.03f,4.02f,3.55f);
+   hat.loft(2,32,-3.1f,0,.19f,1.90f,2.05f,-2.73f,0,.15f,2.36f,2.33f,-1.25f,0,.08f,2.60f,2.49f,-.10f,0,.08f,2.73f,2.62f);
+   hat.loft(4,32,-.73f,0,.08f,2.65f,2.54f,-.13f,0,.08f,2.75f,2.65f);
+   for(int i=0;i<2;i++){
+    int side=i==0?-1:1;arms[i]=body.child(side*3.65f,.45f,0);
+    arms[i].loft(0,18,-.50f,0,0,1.02f,1.02f,.7f,0,0,1.19f,1.15f,3.05f,0,0,.94f,.96f,4.8f,0,0,.74f,.78f);
+    fore[i]=arms[i].child(0,4.7f,0);
+    fore[i].loft(0,18,-.2f,0,0,.76f,.79f,1.3f,0,0,.90f,.94f,3.8f,0,0,.59f,.66f);
+    fore[i].loft(1,16,3.62f,0,0,.66f,.70f,4.13f,0,0,.62f,.65f);
+    int mat=i==0?7:5; // only one white rhinestone glove
+    fore[i].oval(mat,0,4.85f,-.10f,.57f,.76f,.43f);
+    for(int j=0;j<4;j++){float x=-.43f+j*.29f;fore[i].loft(mat,10,5.07f,x,-.17f,.14f,.18f,5.60f,x,-.28f,.13f,.15f,5.99f-(j==3?.2f:0),x,-.37f,.04f,.05f);}
+    fore[i].oval(mat,-side*.55f,4.86f,-.20f,.19f,.43f,.20f);
+    legs[i]=root.child(side*1.41f,10.65f,0);
+    legs[i].loft(2,20,-.20f,0,0,1.34f,1.36f,2.5f,0,0,1.28f,1.22f,6.0f,0,0,.94f,.96f);
+    legs[i].blade(4,0,.55f,-1.29f,0,5.7f,-.99f,.11f);
+    shins[i]=legs[i].child(0,5.8f,0);
+    shins[i].loft(2,20,-.15f,0,0,.97f,.99f,2.8f,0,0,.91f,.93f,5.15f,0,0,.80f,.87f);
+    shins[i].loft(7,20,5.03f,0,0,.80f,.88f,6.26f,0,0,.75f,.83f);
+    shoes[i]=shins[i].child(0,6.2f,0);
+    shoes[i].loft(8,24,-.20f,0,0,.80f,.92f,.42f,0,-.58f,1.0f,1.61f,1.1f,0,-.61f,1.01f,1.68f);
+    shoes[i].blade(4,-.66f,.21f,-1.32f,.66f,.21f,-1.32f,.22f);
+   }
+  }
+  @Override public void setupAnim(DramaGuest e,float limb,float amount,float age,float yaw,float pitch){
+   boolean dance=e.dancing();float beat=(float)Math.sin(age*.32f);
+   body.ry=dance?beat*.14f:0;body.rz=dance?beat*.055f:0;body.rx=dance?.07f:0;
+   head.ry=yaw*.012f;head.rx=pitch*.012f+(dance?.16f:0);head.rz=dance?-.12f:0;
+   for(int i=0;i<2;i++){
+    int side=i==0?-1:1;float w=(float)Math.cos(limb*.666f+i*Math.PI)*amount;
+    arms[i].rx=-w*.55f;arms[i].rz=-side*.10f;fore[i].rx=-.15f;
+    legs[i].rx=w*.60f;shins[i].rx=Math.max(0,-w)*.30f;shoes[i].rx=0;
+    if(dance){
+     float step=beat*side;
+     legs[i].rx=step*.40f-.14f;shins[i].rx=Math.max(0,-step)*.85f;shoes[i].rx=-shins[i].rx*.72f;
+     arms[i].rx=i==0?-1.48f:-.40f+beat*.23f;arms[i].rz=i==0?.35f:-.42f;fore[i].rx=i==0?-.95f:-.32f;
+    }
+   }
+  }
+  @Override public void renderToBuffer(PoseStack p,VertexConsumer v,int light,int overlay,float r,float g,float b,float a){root.draw(p,v,light,overlay,r,g,b,a);}
+ }
+ static class R extends MobRenderer<DramaGuest,M>{
+  R(EntityRendererProvider.Context c){super(c,new M(),.35f);}
+  @Override public ResourceLocation getTextureLocation(DramaGuest e){return new ResourceLocation(Noctis.ID,"textures/entity/moonwalk_sculpted.png");}
+ }
+}''')
+W,H=1024,512;pix=bytearray(W*H*4)
+pal=[(30,29,39),(232,227,221),(22,21,29),(19,17,24),(66,61,76),(224,183,157),(224,183,157),(235,232,234),(20,20,29)]
+for m,base in enumerate(pal):
+ for y in range(128):
+  v=sat2((y-3)/121)
+  for x in range(128):
+   u=sat2((x-3)/121);f=abs(u-.5)
+   c=shade(base,.81+.19*math.sin(math.pi*u))
+   if m in (0,7):
+    n=(x*17+y*31+x*y*7)%43
+    if n<3:c=mix(c,(194,192,211) if m==0 else (255,255,255),.76)
+    elif n<8:c=mix(c,(85,83,105) if m==0 else (157,151,176),.43)
+   if m in (2,8):c=mix(c,(101,100,117),.33*math.exp(-((u-.28)/.12)**2))
+   if m==3:
+    wave=math.sin(u*math.pi*21+v*5+.8*math.sin(v*9))
+    c=mix(c,(91,82,103),.40*max(0,wave)**5)
+   if m==6:
+    def g(cx,cy,sx,sy):return math.exp(-((u-cx)/sx)**2-((v-cy)/sy)**2)
+    c=mix(base,(138,79,78),.27*sat2((f-.16)*4)+.10*v)
+    c=mix(c,(247,213,186),.28*g(.5,.38,.15,.2))
+    for side in (-1,1):
+     ex=.5+side*.174;dx=side*(u-ex)/.113;dy=(v-(.474-.013*dx))/.042
+     c=mix(c,(128,75,79),.30*g(ex,.48,.12,.074))
+     c=mix(c,(245,201,174),.20*g(.5+side*.21,.60,.07,.06))
+     d=abs(dx)**1.65+abs(dy)**1.3
+     if d<1.16:c=(37,24,33)
+     if d<.77:c=(236,224,211)
+     if d<.75 and abs(dx)<.43:c=(76,46,39)
+     if d<.71 and abs(dx)<.19:c=(23,17,25)
+     if d<.69 and (dx+.16)**2+(dy+.22)**2<.035:c=(255,246,232)
+     if abs(dx)<1.08 and abs(v-(.379-.025*dx))<.015:c=(47,30,34)
+    if f<.039 and abs(v-.674)<.010:c=mix(c,(143,78,74),.64)
+    if f<.092 and abs(v-(.784-.012*(1-f/.092)))<.012:c=(120,48,56)
+    if f<.073 and abs(v-.807)<.010:c=(178,86,90)
+   off=((m//8*128+y)*W+m%8*128+x)*4;pix[off:off+4]=bytes((*c,255))
+png(assets/'textures/entity/moonwalk_sculpted.png',W,H,pix)
+print('Magic input and mana HUD restored; hit vocalizations for both admirers; dedicated Michael Jackson moonwalk model.')
