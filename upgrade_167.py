@@ -628,3 +628,24 @@ for idx,lang in enumerate(('it_it','en_us')):
 edit('Joker.java','Take your time. La Calling Card reclama cinque ombre: sconfiggi cinque creature ostili, poi torna da me.','Take your time. Cinque ombre gravano sulla lettera. Quando avra ripreso vita, sai dove trovarmi.')
 edit('Joker.java','La Calling Card non e ancora pronta. Sconfiggi altre creature ostili, poi torna qui.','Le ombre non hanno ancora restituito il cuore della lettera.')
 print('Mystery quest journal expanded: vampire blood pact, Miaugusto, Cthulhu and subtler Joker/Sephiroth hints.')
+
+
+# Faputa: taller and broader, with squared, firm shoulder girdle and more restrained shoulder swing.
+edit('FaputaSculptedClient.java','p.scale(.88f,.88f,.88f);','p.scale(1.09f,1.10f,1.04f);')
+edit('FaputaSculptedClient.java','super(c,new M(),.39f);','super(c,new M(),.48f);')
+edit('FaputaSculptedClient.java','-2.2f,0,0,1.55f,1.32f,-.8f,0,0,2.48f,1.65f,2.0f,0,0,2.30f,1.56f,4.8f,0,0,1.87f,1.44f','-2.2f,0,0,1.75f,1.43f,-1.25f,0,0,3.05f,1.87f,-.5f,0,0,3.28f,1.95f,1.6f,0,0,3.02f,1.80f,3.1f,0,0,2.52f,1.62f,4.8f,0,0,2.02f,1.52f')
+edit('FaputaSculptedClient.java','s*1.32f,.05f,-1.48f','s*1.62f,.05f,-1.76f')
+edit('FaputaSculptedClient.java','int k=i*2+j;Part arm=arms[k]=body.child(s*(j==0?2.30f:2.04f),j==0?.1f:2.45f,j==0?.28f:.72f);','''int k=i*2+j;Part arm=arms[k]=body.child(s*(j==0?3.05f:2.60f),j==0?-.10f:2.45f,j==0?.28f:.72f);
+     if(j==0){
+      Part shoulder=body.child(s*2.57f,-.25f,.20f);
+      shoulder.loft(0,24,-1.10f,0,0,.70f,.83f,-.60f,s*.20f,0,1.05f,1.18f,.25f,s*.42f,0,1.14f,1.24f,1.10f,s*.32f,0,.92f,1.00f,1.75f,s*.15f,0,.62f,.72f);
+     }''')
+edit('FaputaSculptedClient.java','-.45f,0,0,.67f,.73f,.6f,0,0,.80f,.85f,2.7f,s*.28f,0,.67f,.69f,3.35f,s*.32f,0,.54f,.56f','-.45f,0,0,.79f,.82f,.6f,0,0,1.00f,1.03f,2.7f,s*.28f,0,.79f,.80f,3.35f,s*.32f,0,.59f,.63f')
+edit('FaputaSculptedClient.java','body.y=8+(float)Math.sin(limb*1.32)*move*.36f;body.rx=rage?.17f:0;','body.y=8+(float)Math.sin(limb*1.32)*move*.22f;body.rx=rage?.09f:0;')
+edit('FaputaSculptedClient.java','arms[k].rz=-s*(j==0?.24f:.57f)-(rage?s*.22f:0);arms[k].rx=-w*(j==0?.5f:-.33f)','arms[k].rz=-s*(j==0?.32f:.49f)-(rage?s*.12f:0);arms[k].rx=-w*(j==0?.26f:-.24f)')
+# Match the larger body with a wider/taller collision box without changing other MoonGuests.
+p=java/'Noctis.java';s=p.read_text(encoding='utf-8')
+s,n=re.subn(r'(FAPUTA=ENTITIES\.register\("faputa".*?\.sized\()[^)]*(\))',r'\g<1>1.10f,2.05f\2',s,count=1)
+assert n==1,'Faputa entity dimensions not found'
+p.write_text(s,encoding='utf-8')
+print('Faputa enlarged: broader rigid shoulder girdle, stronger upper arms and matched collision dimensions.')
