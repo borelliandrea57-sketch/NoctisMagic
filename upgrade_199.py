@@ -183,7 +183,7 @@ def cathedral(s):
     }
 '''+s[a:]
 edit('GothicEgg.java',cathedral)
-# Compact magic HUD at bottom right, adaptive to the vanilla hotbar.
+# Compact magic HUD at extreme bottom left, adaptive to the vanilla hotbar.
 def hud(s):
  a=s.index('    @SubscribeEvent public static void overlay(RegisterGuiOverlaysEvent');b=s.index('    @Mod.EventBusSubscriber',a)
  return s[:a]+'''    @SubscribeEvent public static void overlay(RegisterGuiOverlaysEvent e){
@@ -195,12 +195,16 @@ def hud(s):
             boolean ready=mana>=spell.cost&&lv>=spell.level&&cd==0;
             if(displayMana<0||lastLevel!=lv){displayMana=mana;lastLevel=lv;}
             displayMana+=(mana-displayMana)*.13f;
-            // Low-profile bottom-right HUD; on narrow windows move above vanilla health/food.
-            int width=Math.min(146,Math.max(110,w/3)),height=29;
-            boolean beside=w/2+96+width+6<=w;
-            if(!beside&&mc.screen instanceof net.minecraft.client.gui.screens.ChatScreen)return;
-            int left=beside?w-width-6:Math.max(3,(w-width)/2);
-            int top=Math.max(3,h-(beside?height+7:height+53));
+            // Always anchor to the bottom left; scale down before touching the vanilla hotbar.
+            if(mc.screen!=null)return;
+            int width=130,height=29;
+            int available=w/2-96-5;
+            float scale=Math.min(1f,Math.max(.65f,available/(float)width));
+            boolean beside=available>=width*scale;
+            g.pose().pushPose();
+            g.pose().translate(3,Math.max(2,h-(beside?height*scale+3:height*scale+25)),0);
+            g.pose().scale(scale,scale,1);
+            int left=0,top=0;
             int x=left+19,right=left+width-5,bw=right-x;
             int fill=limit(Math.round(bw*displayMana/max),0,bw);
             g.fillGradient(left,top,left+width,top+height,0xB51B142B,0x78080714);
@@ -231,6 +235,7 @@ def hud(s):
             if(mc.font.width(detail)<=avail)label=detail;
             g.drawString(mc.font,label,left+5,top+20,ready?0xFFF1E5FF:0xFFC3B2D1);
             g.drawString(mc.font,state,right-mc.font.width(state),top+20,ready?0xFFA9EACF:0xFFFFA68E);
+            g.pose().popPose();
         });
     }
 '''+s[b:]
