@@ -3765,3 +3765,44 @@ subprocess.run(['ffmpeg','-nostdin','-loglevel','error','-y','-i',str(tmp),'-ac'
 tmp.unlink()
 p=assets/'sounds.json';d=json.loads(p.read_text(encoding='utf-8'));d['waifu_voice']={'sounds':[{'name':'noctismagic:waifu_voice'}]};j(p,d)
 print('Shared uploaded Waifu voice on interaction, with three-second cooldown.')
+
+
+# Central spawn density guard. Existing saved mobs are never deleted or blocked from loading.
+write('CharacterSpawnLimit.java','''package it.noctis.magic;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.phys.AABB;
+import net.minecraftforge.event.entity.EntityJoinLevelEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.ForgeRegistries;
+@Mod.EventBusSubscriber(modid=Noctis.ID)
+public final class CharacterSpawnLimit{
+ private static final int CHUNK_RADIUS=2;
+ private static final String CHECKED="NoctisSpawnLimitAccepted";
+ @SubscribeEvent(priority=EventPriority.LOWEST)
+ public static void join(EntityJoinLevelEvent event){
+  if(!(event.getLevel() instanceof ServerLevel level)||!(event.getEntity() instanceof Mob incoming))return;
+  var key=ForgeRegistries.ENTITY_TYPES.getKey(incoming.getType());
+  if(key==null||!Noctis.ID.equals(key.getNamespace()))return;
+  // Never delete old mobs, prevent chunk reloads or break dimension travel.
+  if(event.loadedFromDisk()||incoming.getPersistentData().getBoolean(CHECKED)){
+   incoming.getPersistentData().putBoolean(CHECKED,true);return;
+  }
+  ChunkPos c=new ChunkPos(incoming.blockPosition());
+  double minX=(double)(c.x-CHUNK_RADIUS)*16,minZ=(double)(c.z-CHUNK_RADIUS)*16;
+  double maxX=(double)(c.x+CHUNK_RADIUS+1)*16,maxZ=(double)(c.z+CHUNK_RADIUS+1)*16;
+  AABB area=new AABB(minX,level.getMinBuildHeight(),minZ,maxX,level.getMaxBuildHeight(),maxZ);
+  // Entity queries use the loaded entity index; never force-load surrounding chunks.
+  boolean exists=!level.getEntitiesOfClass(Mob.class,area,m->{
+   if(m==incoming||!m.isAlive()||m.getType()!=incoming.getType())return false;
+   ChunkPos other=new ChunkPos(m.blockPosition());
+   return Math.abs(other.x-c.x)<=CHUNK_RADIUS&&Math.abs(other.z-c.z)<=CHUNK_RADIUS;
+  }).isEmpty();
+  if(exists){event.setCanceled(true);return;}
+  incoming.getPersistentData().putBoolean(CHECKED,true);
+ }
+}''')
+print('One new mob per exact NoctisMagic entity type within a two-chunk radius; existing mobs and vanilla unaffected.')
