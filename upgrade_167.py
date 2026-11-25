@@ -2737,7 +2737,7 @@ public final class DivineRexJudgment{
    boss.hurt(p.damageSources().genericKill(),Float.MAX_VALUE);
   }
   p.playSound(SoundEvents.NOTE_BLOCK_CHIME.value(),1,1);
-  p.sendSystemMessage(Component.literal("Gesu: Ue', ma che e' chistu? Mo ce penzo io."));
+  p.sendSystemMessage(Component.literal("Gesù: Non temete, figli miei. Finché sarò con voi, vi proteggerò dal male."));
   return true;
  }
 }''')
