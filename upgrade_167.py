@@ -1145,3 +1145,139 @@ s=s.replace(a,'''            for(int i=0;i<2;i++){
 '''+a,1)
 p.write_text(s,encoding='utf-8')
 print('Canonical six pony hair silhouettes and Malfoid tsundere dialogue with articulated folded arms.')
+
+
+# Six rideable ponies, unique canon-inspired abilities and improved mounted flight.
+p=java/'FriendshipPony.java';s=p.read_text(encoding='utf-8')
+s=s.replace('private int speech,magic,pose;','private int speech,magic,pose,flightBoost;')
+s=s.replace('if(speech>0)speech--;if(magic>0)magic--;if(pose>0)pose--;','if(speech>0)speech--;if(magic>0)magic--;if(pose>0)pose--;if(flightBoost>0)flightBoost--;')
+a=s.index('    @Override public void travel(Vec3 v)');b=s.index('    @Override public void tick()',a)
+s=s[:a]+'''    @Override public void travel(Vec3 v){
+        if(isAlive()&&getControllingPassenger() instanceof Player rider){
+            setYRot(rider.getYRot());yBodyRot=getYRot();yHeadRot=getYRot();setXRot(0);getNavigation().stop();
+            if(winged()){
+                setNoGravity(true);resetFallDistance();
+                if(isControlledByLocalInstance()){
+                    double yaw=Math.toRadians(rider.getYRot()),pitch=Math.toRadians(rider.getXRot()),f=rider.zza,side=rider.xxa;
+                    Vec3 motion=new Vec3(-Math.sin(yaw)*Math.cos(pitch)*f+Math.cos(yaw)*side*.65,-Math.sin(pitch)*f,Math.cos(yaw)*Math.cos(pitch)*f+Math.sin(yaw)*side*.65);
+                    if(motion.lengthSqr()>1)motion=motion.normalize();
+                    double speed=kind()==1?(flightBoost>0?1.65:1.02):kind()==2?.58:.79;
+                    Vec3 target=motion.scale(speed);
+                    if(onGround()&&f>.05&&rider.getXRot()<18)target=target.add(0,.30,0);
+                    Vec3 next=getDeltaMovement().scale(.68).add(target.scale(.32));
+                    if(motion.lengthSqr()<.0001&&next.lengthSqr()<.0009)next=Vec3.ZERO;
+                    setDeltaMovement(next);move(MoverType.SELF,next);resetFallDistance();calculateEntityAnimation(false);
+                }
+            }else{
+                setNoGravity(false);setSpeed(kind()==4?.39f:kind()==5?.36f:.31f);
+                if(isControlledByLocalInstance())super.travel(new Vec3(rider.xxa*.65,0,rider.zza<0?rider.zza*.5:rider.zza));
+            }return;
+        }
+        if(isNoGravity())setNoGravity(false);
+        super.travel(v);
+    }
+'''+s[b:]
+a=s.index('    public void power(ServerLevel l,Player p)');b=s.index('    @Override public void handleEntityEvent',a)
+s=s[:a]+'''    private java.util.List<LivingEntity> nearbyEnemies(ServerLevel l,double range){
+        return l.getEntitiesOfClass(LivingEntity.class,getBoundingBox().inflate(range),e->e!=this&&e.isAlive()&&Eclipse.hostile(e)&&e.getMaxHealth()<100);
+    }
+    public void power(ServerLevel l,Player p){
+        if(!isOwnedBy(p)||isOrderedToSit())return;
+        if(magic>0){p.displayClientMessage(Component.literal("Potere in ricarica: "+((magic+19)/20)+" s"),true);return;}
+        magic=kind()==0?280:kind()==1?320:kind()==2?400:kind()==3?300:kind()==4?220:240;
+        l.broadcastEntityEvent(this,(byte)93);
+        String name;
+        switch(kind()){
+            case 0->{
+                name="Magia dell amicizia";
+                for(LivingEntity e:nearbyEnemies(l,9)){e.hurt(damageSources().magic(),18);e.addEffect(new MobEffectInstance(MobEffects.GLOWING,120,0));e.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN,80,1));}
+                p.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE,180,0));
+                l.sendParticles(ParticleTypes.WITCH,getX(),getY()+1,getZ(),55,1.2,.6,1.2,.06);
+            }
+            case 1->{
+                name="Sonic Rainboom";flightBoost=140;l.broadcastEntityEvent(this,(byte)109);
+                p.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED,140,2));
+                l.sendParticles(ParticleTypes.FIREWORK,getX(),getY()+.7,getZ(),70,1.2,.6,1.2,.14);
+                playSound(SoundEvents.FIREWORK_ROCKET_BLAST,1,.9f);
+            }
+            case 2->{
+                name="Lo sguardo di Fluttershy";p.heal(6);p.addEffect(new MobEffectInstance(MobEffects.REGENERATION,100,0));
+                for(LivingEntity e:nearbyEnemies(l,10)){
+                    e.addEffect(new MobEffectInstance(MobEffects.WEAKNESS,140,2));
+                    e.getPersistentData().putLong("NoctisPonyFear",l.getGameTime()+120);
+                    e.getPersistentData().putUUID("NoctisPonyFearSource",getUUID());
+                    if(e instanceof Mob m){m.setTarget(null);Vec3 away=m.position().subtract(position()).normalize();m.getNavigation().moveTo(m.getX()+away.x*9,m.getY(),m.getZ()+away.z*9,1.5);}
+                    l.sendParticles(ParticleTypes.ANGRY_VILLAGER,e.getX(),e.getY()+e.getBbHeight(),e.getZ(),4,.2,.2,.2,.02);
+                }
+            }
+            case 3->{
+                name="Scudo di cristallo";
+                p.addEffect(new MobEffectInstance(MobEffects.ABSORPTION,400,2));p.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE,220,0));
+                p.addEffect(new MobEffectInstance(MobEffects.LUCK,600,1));p.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION,600,0));
+                l.sendParticles(ParticleTypes.ENCHANT,getX(),getY()+1,getZ(),55,.65,.8,.65,.08);
+            }
+            case 4->{
+                name="Calcio della fattoria";p.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST,220,1));p.addEffect(new MobEffectInstance(MobEffects.SATURATION,20,0));
+                for(LivingEntity e:nearbyEnemies(l,5)){e.hurt(damageSources().mobAttack(this),10);e.knockback(2.0,getX()-e.getX(),getZ()-e.getZ());}
+                l.sendParticles(ParticleTypes.POOF,getX(),getY()+.2,getZ(),36,1.1,.15,1.1,.07);
+            }
+            default->{
+                name="Festa a sorpresa";p.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED,240,0));p.addEffect(new MobEffectInstance(MobEffects.JUMP,240,1));
+                for(LivingEntity e:nearbyEnemies(l,8)){e.addEffect(new MobEffectInstance(MobEffects.BLINDNESS,100,0));e.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN,100,2));}
+                l.sendParticles(ParticleTypes.NOTE,getX(),getY()+1,getZ(),50,1.2,.65,1.2,.08);
+            }
+        }
+        p.displayClientMessage(Component.literal(name),true);
+        l.sendParticles(kind()==5?ParticleTypes.HAPPY_VILLAGER:kind()==2?ParticleTypes.HEART:ParticleTypes.END_ROD,getX(),getY()+1,getZ(),24,.6,.6,.6,.04);
+        playSound(SoundEvents.AMETHYST_BLOCK_CHIME,1,1.3f);
+    }
+'''+s[b:]
+s=s.replace('if(id==93){pose=24;return;}','if(id==109){flightBoost=140;return;}if(id==93){pose=24;return;}')
+p.write_text(s,encoding='utf-8')
+# Server-side fear overrides normal targeting for a short period; only ordinary hostile mobs.
+write('PonyFear.java','''package it.noctis.magic;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.event.entity.living.LivingEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+@Mod.EventBusSubscriber(modid=Noctis.ID)
+public class PonyFear{
+ @SubscribeEvent public static void flee(LivingEvent.LivingTickEvent event){
+  if(!(event.getEntity() instanceof Mob mob)||!(mob.level() instanceof ServerLevel l))return;
+  var data=mob.getPersistentData();
+  if(!data.contains("NoctisPonyFear"))return;
+  if(data.getLong("NoctisPonyFear")<=l.getGameTime()||!data.hasUUID("NoctisPonyFearSource")){
+   data.remove("NoctisPonyFear");data.remove("NoctisPonyFearSource");return;
+  }
+  if(!(l.getEntity(data.getUUID("NoctisPonyFearSource")) instanceof FriendshipPony pony))return;
+  mob.setTarget(null);mob.setAggressive(false);
+  if(mob.tickCount%5==0){Vec3 away=mob.position().subtract(pony.position()).normalize();
+   mob.getNavigation().moveTo(mob.getX()+away.x*9,mob.getY(),mob.getZ()+away.z*9,1.45);}
+ }
+}''')
+# Support activating a pony power while mounted or when right-clicking one's own pony.
+p=java/'FriendshipPony.java';s=p.read_text(encoding='utf-8')
+a='if(isTame()&&isOwnedBy(p)){\n            if(isFood(s))'
+assert a in s
+s=s.replace(a,'''if(isTame()&&isOwnedBy(p)){
+            if(s.is(Items.BLAZE_ROD)){if(level() instanceof ServerLevel l)power(l,p);return InteractionResult.sidedSuccess(level().isClientSide);}
+            if(isFood(s))''',1)
+p.write_text(s,encoding='utf-8')
+# Less exaggerated, natural and reserved Malfoid dialogue, while retaining her folded arms.
+p=java/'Malfoid.java';s=p.read_text(encoding='utf-8')
+a=s.index('            String[] lines=a<4?');b=s.index(';\n            say(l,lines',a)
+s=s[:a]+'''            String[] lines=a<4?new String[]{"Cosa vuoi?","Non credo ci siamo gia presentati.","Hai bisogno di qualcosa?","Preferisco stare per conto mio.","Spero tu abbia un buon motivo."}:a<8?new String[]{"Ah, sei di nuovo qui.","Non mi dispiace la tua compagnia.","E una giornata piuttosto tranquilla.","Puoi restare, se vuoi.","Hai trovato qualcosa di interessante?"}:new String[]{"Mi fa piacere rivederti.","Come sta andando il viaggio?","Se hai bisogno di aiuto, dimmelo.","Cerchiamo di non perderci di vista.","Restiamo qui ancora un momento.","Non serve che tu faccia tutto da solo."}'''+s[b:]
+for a,b in {
+"Non devi comprarti il mio affetto, idiota.":"Hai gia fatto abbastanza. Conserva il regalo.",
+"Tsk. Almeno hai un minimo di gusto.":"Un regalo? Non era necessario.",
+"Non pensare che questo significhi qualcosa!":"Grazie. Lo apprezzo.",
+"Forse... la tua compagnia non e' cosi terribile.":"Sei stato molto premuroso.",
+"Forse mi piaci davvero. Non farmelo ripetere!":"Mi fido di te. Credo che potremmo viaggiare insieme.",
+"Va bene, ti accompagnero'. Ma non montarti la testa!":"D accordo, ti accompagno.",
+"Ti aspetto qui. Non tardare.":"Ti aspetto qui.",
+"Andiamo, prima che cambi idea.":"Bene, possiamo andare."
+}.items():s=s.replace(a,b)
+p.write_text(s,encoding='utf-8')
+print('All six ponies rideable with distinctive powers, flight and fear; neutral Malfoid dialogues.')
