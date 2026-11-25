@@ -112,8 +112,8 @@ public class SushiCats extends SavedData{
 }''',encoding='utf-8')
 # Third line gets its own timer; prevent strolling during the whole exchange.
 edit('GemGuest.java','int conversation=80,answer=0,pose=0;','int conversation=80,answer=0,reply=0,pose=0;')
-edit('GemGuest.java','phos()&&answer==0&&conversation>40&&together()','phos()&&answer==0&&reply==0&&(conversation<300||conversation>390)&&conversation>40&&together()')
-edit('GemGuest.java','phos()&&answer==0&&conversation>40&&together()','phos()&&answer==0&&reply==0&&(conversation<300||conversation>390)&&conversation>40&&together()')
+edit('GemGuest.java','phos()&&answer==0&&conversation>40&&together()','phos()&&answer==0&&reply==0&&conversation<300&&conversation>40&&together()')
+edit('GemGuest.java','phos()&&answer==0&&conversation>40&&together()','phos()&&answer==0&&reply==0&&conversation<300&&conversation>40&&together()')
 edit('GemGuest.java','if(q==null){getNavigation().stop();answer=0;return;}','if(q==null){getNavigation().stop();answer=0;reply=0;return;}')
 edit('GemGuest.java','        if(answer>0){','''        if(phos()&&reply>0){
             getNavigation().stop();getLookControl().setLookAt(q,30,30);
